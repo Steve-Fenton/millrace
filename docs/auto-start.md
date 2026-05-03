@@ -69,6 +69,10 @@ pm2 restart millrace-devrel
 
 You'll see the same output as for the `status` command showing the service running (with 0 uptime as it just restarted).
 
+| id | name            | mode | ↺ | status | cpu | memory |
+| -- | --------------- | ---- | - | ------ | --- | ------ |
+| 0  | millrace-fenton | fork | 0 | online | 0%  | 69.6mb |
+
 ## Removing auto-start
 
 Remove the init script:
