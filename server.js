@@ -1022,6 +1022,23 @@ async function pullArchiveThenMaybePushForSlug(slug) {
 }
 
 /**
+ * Pull, archive stale closed cards, and maybe push — once per board at process start.
+ * Avoids doing this on every column / completed-cards request (parallel column loads
+ * were each queuing a full serialized git cycle and made the board feel slow).
+ */
+async function runStartupPullArchivePushForCatalogSlugs() {
+  try {
+    const catalog = await loadBoardCatalog();
+    const slugs = [...new Set(catalog.map((e) => e.slug))];
+    for (const slug of slugs) {
+      await pullArchiveThenMaybePushForSlug(slug);
+    }
+  } catch (e) {
+    console.error("[flow] startup pull/archive:", e);
+  }
+}
+
+/**
  * Max `sort_order` among cards in this column + swimlane (flat layout only).
  * @param {string | null} excludeFilename — omit when computing space for a moved card
  */
@@ -1592,8 +1609,6 @@ async function sendColumnCards(res, slug, col) {
       return;
     }
 
-    await pullArchiveThenMaybePushForSlug(slug);
-
     const { columns: columnsDef, swimlanes: swimlanesDef } =
       await loadBoardColumnAndSwimlaneDefsForSlug(slug);
     const boardRoot = path.join(DATA_ROOT, "tasks", slug);
@@ -1764,8 +1779,6 @@ async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
  * @param {string} slug
  */
 async function gatherCompletedAndArchiveRows(slug) {
-  await pullArchiveThenMaybePushForSlug(slug);
-
   const { columns: columnsDef } = await loadBoardColumnAndSwimlaneDefsForSlug(
     slug
   );
@@ -3160,6 +3173,7 @@ async function onListen() {
     }
   }
   await migrateLegacyGitPullStateIfPresent();
+  await runStartupPullArchivePushForCatalogSlugs();
   startAutoGitPullScheduler();
 }
 
