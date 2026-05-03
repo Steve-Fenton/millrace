@@ -658,12 +658,25 @@ body {
   min-width: 0;
 }
 
+.git-conflict-col-action {
+  display: flex;
+  margin-top: 0.25rem;
+}
+
+.git-conflict-hunk-col--first .git-conflict-col-action {
+  justify-content: flex-start;
+}
+
+.git-conflict-hunk-col--second .git-conflict-col-action {
+  justify-content: flex-end;
+}
+
 .git-conflict-hunk-col-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   color: var(--muted, #94a3b8);
+  word-break: break-word;
 }
 
 .git-conflict-side {
@@ -680,12 +693,6 @@ body {
   background: var(--surface, #1e293b);
   border: 1px solid var(--border, #334155);
   border-radius: var(--radius-sm, 6px);
-}
-
-.git-conflict-hunk-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .git-conflict-editor-label {

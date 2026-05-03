@@ -6,6 +6,13 @@ import {
 } from "./gitConflictMerge.js";
 import { showFlowAlert } from "./flowDialogs.js";
 
+/** @param {string} [s] @param {number} [max] */
+function shortRef(s, max = 40) {
+  const t = String(s ?? "").trim();
+  if (!t) return "";
+  return t.length > max ? `${t.slice(0, max - 1)}…` : t;
+}
+
 /**
  * Full-screen editor for merge conflict files returned by `/api/git/sync`.
  * @param {{ path: string, content: string }[]} files
@@ -32,7 +39,7 @@ export function openGitConflictResolutionScreen(files) {
     const intro = document.createElement("p");
     intro.className = "git-conflict-intro";
     intro.textContent =
-      "For each conflict, use Keep yours or Keep incoming to drop the other side, then adjust the full file below if needed. Repeat until no conflict remains, then Continue sync.";
+      "For each conflict, choose one version with the button under that column, then adjust the full file below if needed. Repeat until no conflict markers remain, then Continue sync.";
 
     header.append(h1, intro);
 
@@ -63,41 +70,44 @@ export function openGitConflictResolutionScreen(files) {
       const cols = document.createElement("div");
       cols.className = "git-conflict-hunk-columns";
 
-      const colOurs = document.createElement("div");
-      colOurs.className = "git-conflict-hunk-col";
-      const labOurs = document.createElement("div");
-      labOurs.className = "git-conflict-hunk-col-label";
-      const preOurs = document.createElement("pre");
-      preOurs.className = "git-conflict-side";
-      preOurs.setAttribute("tabindex", "0");
-      colOurs.append(labOurs, preOurs);
+      const colFirst = document.createElement("div");
+      colFirst.className = "git-conflict-hunk-col git-conflict-hunk-col--first";
+      const labFirst = document.createElement("div");
+      labFirst.className = "git-conflict-hunk-col-label";
+      const preFirst = document.createElement("pre");
+      preFirst.className = "git-conflict-side";
+      preFirst.setAttribute("tabindex", "0");
+      const actFirst = document.createElement("div");
+      actFirst.className = "git-conflict-col-action";
+      const btnFirst = document.createElement("button");
+      btnFirst.type = "button";
+      btnFirst.className =
+        "flow-btn flow-btn-primary git-conflict-keep-side";
+      btnFirst.textContent = "Use this version";
+      actFirst.append(btnFirst);
+      colFirst.append(labFirst, preFirst, actFirst);
 
-      const colTheirs = document.createElement("div");
-      colTheirs.className = "git-conflict-hunk-col";
-      const labTheirs = document.createElement("div");
-      labTheirs.className = "git-conflict-hunk-col-label";
-      const preTheirs = document.createElement("pre");
-      preTheirs.className = "git-conflict-side";
-      preTheirs.setAttribute("tabindex", "0");
-      colTheirs.append(labTheirs, preTheirs);
+      const colSecond = document.createElement("div");
+      colSecond.className =
+        "git-conflict-hunk-col git-conflict-hunk-col--second";
+      const labSecond = document.createElement("div");
+      labSecond.className = "git-conflict-hunk-col-label";
+      const preSecond = document.createElement("pre");
+      preSecond.className = "git-conflict-side";
+      preSecond.setAttribute("tabindex", "0");
+      const actSecond = document.createElement("div");
+      actSecond.className = "git-conflict-col-action";
+      const btnSecond = document.createElement("button");
+      btnSecond.type = "button";
+      btnSecond.className =
+        "flow-btn flow-btn-ghost git-conflict-keep-side";
+      btnSecond.textContent = "Use this version";
+      actSecond.append(btnSecond);
+      colSecond.append(labSecond, preSecond, actSecond);
 
-      cols.append(colOurs, colTheirs);
+      cols.append(colFirst, colSecond);
 
-      const actions = document.createElement("div");
-      actions.className = "git-conflict-hunk-actions";
-      const btnOurs = document.createElement("button");
-      btnOurs.type = "button";
-      btnOurs.className =
-        "flow-btn flow-btn-primary git-conflict-keep-ours";
-      btnOurs.textContent = "Keep yours";
-      const btnTheirs = document.createElement("button");
-      btnTheirs.type = "button";
-      btnTheirs.className =
-        "flow-btn flow-btn-ghost git-conflict-keep-theirs";
-      btnTheirs.textContent = "Keep incoming";
-      actions.append(btnOurs, btnTheirs);
-
-      tools.append(meta, cols, actions);
+      tools.append(meta, cols);
 
       const editorLab = document.createElement("div");
       editorLab.className = "git-conflict-editor-label";
@@ -121,22 +131,32 @@ export function openGitConflictResolutionScreen(files) {
           return;
         }
         tools.hidden = false;
-        meta.textContent = `Conflict 1 of ${total} — pick a side, then edit below if needed.`;
-        labOurs.textContent = `Yours — ${h.headLabel || "HEAD"}`;
-        labTheirs.textContent = `Incoming — ${h.theirLabel || "theirs"}`;
-        preOurs.textContent = h.ours.length ? h.ours : " ";
-        preTheirs.textContent = h.theirs.length ? h.theirs : " ";
-        preOurs.title = h.headLabel ? `Yours (${h.headLabel})` : "Yours (HEAD)";
-        preTheirs.title = h.theirLabel
-          ? `Incoming (${h.theirLabel})`
-          : "Incoming";
+        meta.textContent = `Conflict 1 of ${total} — pick one column, then edit the full file below if needed.`;
+        const leftTitle = shortRef(h.headLabel) || "Left";
+        const rightTitle = shortRef(h.theirLabel) || "Right";
+        labFirst.textContent = leftTitle;
+        labSecond.textContent = rightTitle;
+        preFirst.textContent = h.ours.length ? h.ours : " ";
+        preSecond.textContent = h.theirs.length ? h.theirs : " ";
+        preFirst.title = h.headLabel || leftTitle;
+        preSecond.title = h.theirLabel || rightTitle;
+        const leftFull = h.headLabel || leftTitle;
+        const rightFull = h.theirLabel || rightTitle;
+        btnFirst.setAttribute(
+          "aria-label",
+          `Keep the text from the left column (${leftFull})`
+        );
+        btnSecond.setAttribute(
+          "aria-label",
+          `Keep the text from the right column (${rightFull})`
+        );
       }
 
-      btnOurs.addEventListener("click", () => {
+      btnFirst.addEventListener("click", () => {
         ta.value = replaceFirstConflictHunk(ta.value, "ours");
         syncToolsFromTextarea();
       });
-      btnTheirs.addEventListener("click", () => {
+      btnSecond.addEventListener("click", () => {
         ta.value = replaceFirstConflictHunk(ta.value, "theirs");
         syncToolsFromTextarea();
       });
@@ -212,7 +232,7 @@ export function openGitConflictResolutionScreen(files) {
     document.body.append(backdrop);
     document.addEventListener("keydown", onKey, { capture: true });
     const firstKeep = scroll.querySelector(
-      ".git-conflict-hunk-tools:not([hidden]) .git-conflict-keep-ours"
+      ".git-conflict-hunk-tools:not([hidden]) .git-conflict-keep-side"
     );
     if (firstKeep instanceof HTMLElement) firstKeep.focus();
     else scroll.querySelector("textarea")?.focus();
