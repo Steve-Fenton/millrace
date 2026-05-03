@@ -81,8 +81,7 @@ export function openGitConflictResolutionScreen(files) {
       actFirst.className = "git-conflict-col-action";
       const btnFirst = document.createElement("button");
       btnFirst.type = "button";
-      btnFirst.className =
-        "flow-btn flow-btn-primary git-conflict-keep-side";
+      btnFirst.className = "flow-btn flow-btn-ghost git-conflict-keep-side";
       btnFirst.textContent = "Use this version";
       actFirst.append(btnFirst);
       colFirst.append(labFirst, preFirst, actFirst);
