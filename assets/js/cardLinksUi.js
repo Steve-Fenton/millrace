@@ -78,11 +78,12 @@ export function createLinksEditor(initialLinks) {
       }
     }
 
-    urlIn.addEventListener("input", syncTextFromUrlIfEmpty);
+    textIn.addEventListener("focus", () => {
+      syncTextFromUrlIfEmpty();
+    });
 
     row.append(urlIn, textIn, rm);
     list.append(row);
-    syncTextFromUrlIfEmpty();
     if (focusUrlField) {
       requestAnimationFrame(() => urlIn.focus());
     }
