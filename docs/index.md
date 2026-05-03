@@ -16,6 +16,8 @@ Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com
 
 Run the server using `pnpm exec millrace` or `npx millrace` and open the URL in your browser. By default the URL is `localhost:8888`.
 
+## Kanban boards
+
 Kanban boards are divided into columns and swimlanes.
 
 - **Columns**: Represent stages tasks progress through on their way to done.
@@ -23,7 +25,12 @@ Kanban boards are divided into columns and swimlanes.
 
 You can add, rename, reorder, and delete columns and swimlanes. You should move cards out of a column/swimlane before you delete it, otherwise the cards will be moved to the first column/swimlane so you don't lose them.
 
-You set up task owners against the project to power select lists in the application.
+Useful features:
+
+- Switch boards using the board name drop-down
+- Set the task owner filter to "Mine" to clear the clutter and just see your own work
+- Can't find a card? Use the search box
+- Remember to use the **Sync** button; it will pulse to remind you to share your changes and avoid merge conflicts
 
 ## Features
 
