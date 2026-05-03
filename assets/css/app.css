@@ -857,7 +857,7 @@ body {
 .complete-table__td {
   padding: 0.5rem 0.65rem;
   border-bottom: 1px solid var(--border-subtle);
-  vertical-align: top;
+  vertical-align: middle;
   color: var(--text);
 }
 
@@ -867,14 +867,14 @@ body {
 
 .complete-table__title-inner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
 .complete-table__title-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.35rem;
   flex: 1;
   min-width: 0;

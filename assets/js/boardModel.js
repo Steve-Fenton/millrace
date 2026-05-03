@@ -188,3 +188,23 @@ export function sectionsToBoardModel(sections) {
 export function parseBoardIni(iniText) {
   return sectionsToBoardModel(parseIni(iniText));
 }
+
+/**
+ * Kanban boards require exactly one column with `is_done` (Done in the editor).
+ * @param {BoardModel} model
+ * @returns {string | null} Error message, or null if valid.
+ */
+export function validateExactlyOneDoneColumn(model) {
+  const cols = Array.isArray(model.columns) ? model.columns : [];
+  const done = cols.filter((c) => c.isDone === true);
+  if (done.length === 0) {
+    return "The board must have exactly one column marked Done. None are marked.";
+  }
+  if (done.length > 1) {
+    const labels = done.map(
+      (c) => String(c.title ?? "").trim() || `Column ${c.index}`
+    );
+    return `The board must have exactly one column marked Done. These ${done.length} are marked: ${labels.join(", ")}.`;
+  }
+  return null;
+}

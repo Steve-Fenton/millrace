@@ -1,4 +1,4 @@
-import { parseBoardIni } from "./boardModel.js";
+import { parseBoardIni, validateExactlyOneDoneColumn } from "./boardModel.js";
 import { serializeBoardIniFromModel } from "./boardIniSerialize.js";
 import {
   createSortableBoardUserList,
@@ -451,6 +451,11 @@ export async function openBoardEditorDialog(ctx) {
         swimRows,
         rawUserRows
       );
+      const doneErr = validateExactlyOneDoneColumn(model);
+      if (doneErr) {
+        await showFlowAlert(doneErr, { title: "Edit board" });
+        return;
+      }
       const text = serializeBoardIniFromModel(model);
 
       try {

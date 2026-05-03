@@ -23,6 +23,7 @@ import {
   boardOwnerEmailsForFilter,
   canAssignCardOwner,
   parseBoardIni,
+  validateExactlyOneDoneColumn,
 } from "./assets/js/boardModel.js";
 import {
   defaultSwimlaneIndex,
@@ -1130,6 +1131,12 @@ app.put("/api/board-definition", async (req, res) => {
     }
     if (!newModel.columns || newModel.columns.length === 0) {
       res.status(400).json({ message: "Board must define at least one column." });
+      return;
+    }
+
+    const doneColumnError = validateExactlyOneDoneColumn(newModel);
+    if (doneColumnError) {
+      res.status(400).json({ message: doneColumnError });
       return;
     }
 
