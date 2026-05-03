@@ -2924,7 +2924,7 @@ async function onListen() {
       ? `http://${HOST}:${PORT}/`
       : `http://localhost:${PORT}/`;
   console.error(
-    `Millrace ${where}(data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
+    `Millrace ${where} (data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
   if (FLOW_GIT_AUTO_COMMIT) {
     console.error(
