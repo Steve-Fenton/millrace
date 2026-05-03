@@ -2760,12 +2760,12 @@ app.post("/api/git/sync", async (req, res) => {
   try {
     const out = await runGitSerialized(async () => {
       if (resolutions && resolutions.length > 0) {
-        const mergeHead = existsSync(path.join(cwd, ".git", "MERGE_HEAD"));
-        if (!mergeHead) {
+        const unmergedBefore = await gitUnmergedPaths(opts);
+        if (unmergedBefore.length === 0) {
           return {
             kind: "badRequest",
             message:
-              "No merge in progress — start Sync again from the board (pull phase).",
+              "No files are in a conflicted state anymore — try Sync again from the start, or finish resolving in another Git client.",
           };
         }
         for (const entry of resolutions) {
@@ -2781,7 +2781,14 @@ app.post("/api/git/sync", async (req, res) => {
           }
           const abs = path.join(cwd, ...safe.split("/"));
           await fs.writeFile(abs, content, "utf8");
-          await execFileAsync("git", ["add", "--", safe], opts);
+          const relForGit = path.relative(cwd, abs);
+          if (!relForGit || relForGit.startsWith("..")) {
+            return {
+              kind: "badRequest",
+              message: `Could not map path for git add: ${safe}`,
+            };
+          }
+          await execFileAsync("git", ["add", "--", relForGit], opts);
         }
         const still = await gitUnmergedPaths(opts);
         if (still.length > 0) {
@@ -2793,11 +2800,15 @@ app.post("/api/git/sync", async (req, res) => {
         try {
           await execFileAsync("git", ["commit", "--no-edit"], opts);
         } catch {
-          await execFileAsync(
-            "git",
-            ["commit", "-m", "Merge: resolve conflicts (Millrace)"],
-            opts
-          );
+          try {
+            await execFileAsync(
+              "git",
+              ["commit", "-m", "Merge: resolve conflicts (Millrace)"],
+              opts
+            );
+          } catch {
+            /* Nothing to commit (unusual); continue to tasks/ commit + push. */
+          }
         }
         try {
           await commitOutstandingTasksDir(opts);
