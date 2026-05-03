@@ -112,7 +112,7 @@ body {
   justify-content: center;
   align-self: center;
   margin-right: 0.1rem;
-  color: var(--text-muted);
+  color: var(--accent);
   line-height: 0;
   border-radius: var(--radius-sm);
   text-decoration: none;
@@ -122,7 +122,7 @@ body {
 }
 
 .millrace-brand:hover {
-  color: var(--accent);
+  color: #7dd3fc;
   background: var(--accent-dim);
 }
 
@@ -133,8 +133,8 @@ body {
 
 .millrace-brand__svg {
   display: block;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2.2rem;
+  height: 2.2rem;
 }
 
 .board-owner-filter {
