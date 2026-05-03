@@ -834,10 +834,14 @@ function renderChartsShell(
   const body = document.createElement("div");
   body.className = "charts-body";
 
+  const secCompletions = document.createElement("h2");
+  secCompletions.className = "charts-section-title";
+  secCompletions.textContent = "Completions";
+
   const note = document.createElement("p");
   note.className = "charts-note";
   note.textContent =
-    "Completions: cards closed.";
+    "Cards closed in the selected period (UTC buckets); board and archive INIs with a parseable close date.";
 
   const wrap = document.createElement("div");
   wrap.className = "charts-svg-wrap";
@@ -898,6 +902,7 @@ function renderChartsShell(
   wrap2.append(renderCycleScatterSvg(cycleData, granularity, timeDomain));
 
   body.append(
+    secCompletions,
     note,
     wrap,
     secSwim,

@@ -16,7 +16,7 @@ Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com
 
 Run the server using `pnpm exec millrace` or `npx millrace` and open the URL in your browser. By default the URL is `localhost:8888`.
 
-## Kanban boards
+### Kanban boards
 
 Kanban boards are divided into columns and swimlanes.
 
@@ -32,7 +32,7 @@ Useful features:
 - Can't find a card? Use the search box
 - Remember to use the **Sync** button; it will pulse to remind you to share your changes and avoid merge conflicts
 
-## Task cards
+### Task cards
 
 Task cards are units of work. They contain information to help you manage your work, including a title, description, and links to helpful information or working docs and tools. Links are shown on the board view for quick access.
 
@@ -44,7 +44,7 @@ To save space, the completed list on the Kanban board just shows the more recent
 
 You can use the search box to find closed cards.
 
-## Charts
+### Charts
 
 The charts are carefully designed to increase informational value. You'll notice the charts are aggregated for the board and don't show individual numbers or league tables. We want the charts to power your continuous improvement process, not your performance review process.
 
