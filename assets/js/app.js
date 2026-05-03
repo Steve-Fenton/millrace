@@ -17,6 +17,7 @@ import {
 import { showFlowAlert } from "./flowDialogs.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
+import { createMillraceBrandMark } from "./millraceBrandMark.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,
@@ -392,6 +393,8 @@ function renderBoard(
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
 
+  const brand = createMillraceBrandMark();
+
   const titleOrPicker = createBoardTitlePicker(
     { boards: flowCtx.boards, activeSlug: flowCtx.activeSlug },
     (slug) => {
@@ -535,7 +538,7 @@ function renderBoard(
   });
   searchWrap.append(searchLabel, searchFieldWrap, searchBtn);
 
-  topLeft.append(titleOrPicker, filterWrap, searchWrap);
+  topLeft.append(brand, titleOrPicker, filterWrap, searchWrap);
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";

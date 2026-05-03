@@ -1,5 +1,6 @@
 import { openCardEditorDialog } from "./cardEditorDialog.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
+import { createMillraceBrandMark } from "./millraceBrandMark.js";
 import {
   boardOwnerEmailsForFilter,
   ownerDisplayLabel,
@@ -140,6 +141,8 @@ function renderCompleteShell(
 
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
+
+  const brand = createMillraceBrandMark();
 
   const titleOrPicker = createBoardTitlePicker(
     { boards: flowCtx.boards, activeSlug: flowCtx.activeSlug },
@@ -319,7 +322,7 @@ function renderCompleteShell(
     }
   });
   searchWrap.append(searchLabel, searchFieldWrap, searchBtn, deepLabel);
-  topLeft.append(titleOrPicker, filterWrap, searchWrap);
+  topLeft.append(brand, titleOrPicker, filterWrap, searchWrap);
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";

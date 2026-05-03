@@ -1,5 +1,6 @@
 import { openBoardEditorDialog } from "./boardEditorDialog.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
+import { createMillraceBrandMark } from "./millraceBrandMark.js";
 import { createBoardDefinition } from "./repoAccess.js";
 import {
   resolveActiveBoardSelection,
@@ -244,10 +245,11 @@ function renderAdminShell(boardsSection) {
 
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
+  const brand = createMillraceBrandMark();
   const title = document.createElement("h1");
   title.className = "board-title";
   title.textContent = "Admin";
-  topLeft.append(title);
+  topLeft.append(brand, title);
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";

@@ -1,4 +1,5 @@
 import { createFlowNavMenu } from "./flowNavMenu.js";
+import { createMillraceBrandMark } from "./millraceBrandMark.js";
 import { parseBoardIni } from "./boardModel.js";
 import {
   fetchBoardIni,
@@ -764,6 +765,8 @@ function renderChartsShell(
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
 
+  const brand = createMillraceBrandMark();
+
   const titleOrPicker = createBoardTitlePicker(
     { boards: flowCtx.boards, activeSlug: flowCtx.activeSlug },
     (slug) => {
@@ -817,7 +820,7 @@ function renderChartsShell(
   });
 
   toolbar.append(granLabel, granSelect);
-  topLeft.append(titleOrPicker, toolbar);
+  topLeft.append(brand, titleOrPicker, toolbar);
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
