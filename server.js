@@ -75,21 +75,49 @@ function boardCatalogIniPath() {
   return path.join(DATA_ROOT, "tasks", BOARD_CATALOG_INI_BASENAME);
 }
 
-/** Closed items with `closed` older than this many days are moved to `tasks/{slug}/archive/`. `0` disables. */
-const ARCHIVE_CLOSED_AFTER_DAYS = (() => {
-  const raw = process.env.FLOW_ARCHIVE_CLOSED_AFTER_DAYS;
-  if (raw === undefined || raw === "") return 14;
-  const n = Number.parseInt(String(raw), 10);
-  return Number.isFinite(n) && n >= 0 ? n : 14;
-})();
+/** Default when `tasks/.millrace.ini` omits `archive_closed_after_days` / `cold_storage_archive_after_months`. */
+const DEFAULT_ARCHIVE_CLOSED_AFTER_DAYS = 14;
+const DEFAULT_COLD_STORAGE_ARCHIVE_AFTER_MONTHS = 12;
 
-/** Archive INIs whose `closed` is older than this many months move to `tasks/{slug}/cold-storage/{year}/` (UTC year of `closed`). `0` disables. */
-const COLD_STORAGE_ARCHIVE_AFTER_MONTHS = (() => {
-  const raw = process.env.FLOW_COLD_STORAGE_AFTER_MONTHS;
-  if (raw === undefined || raw === "") return 12;
-  const n = Number.parseFloat(String(raw));
-  return Number.isFinite(n) && n >= 0 ? n : 12;
-})();
+/**
+ * Keys from `[millrace]` merged over legacy `[flow]` (modern wins).
+ * @param {Record<string, Record<string, string>>} sections
+ */
+function millraceCatalogKeyBag(sections) {
+  const leg = sections[LEGACY_BOARD_CATALOG_SECTION] ?? {};
+  const mod = sections[BOARD_CATALOG_SECTION] ?? {};
+  return { ...leg, ...mod };
+}
+
+/**
+ * Retention thresholds from `[millrace]` in `tasks/.millrace.ini` (same section as `boards`).
+ * @returns {Promise<{ archiveClosedAfterDays: number, coldStorageArchiveAfterMonths: number }>}
+ */
+async function readMillraceCatalogRetentionSettings() {
+  let archiveClosedAfterDays = DEFAULT_ARCHIVE_CLOSED_AFTER_DAYS;
+  let coldStorageArchiveAfterMonths = DEFAULT_COLD_STORAGE_ARCHIVE_AFTER_MONTHS;
+  try {
+    const text = await fs.readFile(boardCatalogIniPath(), "utf8");
+    const sections = parseIni(text.replace(/^\uFEFF/, ""));
+    const bag = millraceCatalogKeyBag(sections);
+    const ad =
+      bag.archive_closed_after_days ?? bag.archiveClosedAfterDays;
+    const cm =
+      bag.cold_storage_archive_after_months ??
+      bag.coldStorageArchiveAfterMonths;
+    if (ad !== undefined && String(ad).trim() !== "") {
+      const n = Number.parseInt(String(ad).trim(), 10);
+      if (Number.isFinite(n) && n >= 0) archiveClosedAfterDays = n;
+    }
+    if (cm !== undefined && String(cm).trim() !== "") {
+      const n = Number.parseFloat(String(cm).trim());
+      if (Number.isFinite(n) && n >= 0) coldStorageArchiveAfterMonths = n;
+    }
+  } catch {
+    /* missing or unreadable catalog — defaults */
+  }
+  return { archiveClosedAfterDays, coldStorageArchiveAfterMonths };
+}
 
 /** Average Gregorian month length for age cutoffs (archive → cold-storage). */
 const MS_PER_MONTH = (365.25 / 12) * 24 * 60 * 60 * 1000;
@@ -851,13 +879,15 @@ async function runArchiveStaleClosedForSlug(slug) {
   if (p) return p;
 
   p = (async () => {
+    const { archiveClosedAfterDays, coldStorageArchiveAfterMonths } =
+      await readMillraceCatalogRetentionSettings();
     const nBoard = await archiveStaleClosedTaskFiles(
       slug,
-      ARCHIVE_CLOSED_AFTER_DAYS
+      archiveClosedAfterDays
     );
     const nCold = await moveStaleArchiveFilesToColdStorage(
       slug,
-      COLD_STORAGE_ARCHIVE_AFTER_MONTHS
+      coldStorageArchiveAfterMonths
     );
     if (nBoard + nCold > 0) {
       queueTasksGitCommit(
