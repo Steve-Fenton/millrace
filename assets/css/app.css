@@ -618,6 +618,82 @@ body {
   background: var(--surface, #1e293b);
 }
 
+.git-conflict-file-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.git-conflict-hunk-tools {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border, #334155);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--elevated, #0f172a);
+}
+
+.git-conflict-hunk-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted, #94a3b8);
+}
+
+.git-conflict-hunk-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .git-conflict-hunk-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.git-conflict-hunk-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.git-conflict-hunk-col-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #94a3b8);
+}
+
+.git-conflict-side {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.5rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: inherit;
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--border, #334155);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.git-conflict-hunk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.git-conflict-editor-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted, #94a3b8);
+}
+
 /* Header hamburger: Board / Completed */
 .flow-nav-menu {
   position: relative;

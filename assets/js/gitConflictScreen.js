@@ -1,3 +1,9 @@
+import {
+  countConflictHunks,
+  getFirstConflictHunk,
+  hasConflictMarkerLines,
+  replaceFirstConflictHunk,
+} from "./gitConflictMerge.js";
 import { showFlowAlert } from "./flowDialogs.js";
 
 /**
@@ -26,7 +32,7 @@ export function openGitConflictResolutionScreen(files) {
     const intro = document.createElement("p");
     intro.className = "git-conflict-intro";
     intro.textContent =
-      "Edit each file below and remove all conflict markers (<<<<<<<, =======, >>>>>>>). When finished, choose Continue sync to commit the merge, save any pending task changes, and push to the remote.";
+      "For each conflict, use Keep yours or Keep incoming to drop the other side, then adjust the full file below if needed. Repeat until no conflict remains, then Continue sync.";
 
     header.append(h1, intro);
 
@@ -39,11 +45,64 @@ export function openGitConflictResolutionScreen(files) {
       const p = String(f.path ?? "");
       const sec = document.createElement("section");
       sec.className = "git-conflict-file";
-      const lab = document.createElement("label");
-      lab.className = "git-conflict-file-label";
+      const pathLab = document.createElement("label");
+      pathLab.className = "git-conflict-file-label";
       const code = document.createElement("code");
       code.textContent = p;
-      lab.append(code);
+      pathLab.append(code);
+
+      const wrap = document.createElement("div");
+      wrap.className = "git-conflict-file-wrap";
+
+      const tools = document.createElement("div");
+      tools.className = "git-conflict-hunk-tools";
+
+      const meta = document.createElement("p");
+      meta.className = "git-conflict-hunk-meta";
+
+      const cols = document.createElement("div");
+      cols.className = "git-conflict-hunk-columns";
+
+      const colOurs = document.createElement("div");
+      colOurs.className = "git-conflict-hunk-col";
+      const labOurs = document.createElement("div");
+      labOurs.className = "git-conflict-hunk-col-label";
+      const preOurs = document.createElement("pre");
+      preOurs.className = "git-conflict-side";
+      preOurs.setAttribute("tabindex", "0");
+      colOurs.append(labOurs, preOurs);
+
+      const colTheirs = document.createElement("div");
+      colTheirs.className = "git-conflict-hunk-col";
+      const labTheirs = document.createElement("div");
+      labTheirs.className = "git-conflict-hunk-col-label";
+      const preTheirs = document.createElement("pre");
+      preTheirs.className = "git-conflict-side";
+      preTheirs.setAttribute("tabindex", "0");
+      colTheirs.append(labTheirs, preTheirs);
+
+      cols.append(colOurs, colTheirs);
+
+      const actions = document.createElement("div");
+      actions.className = "git-conflict-hunk-actions";
+      const btnOurs = document.createElement("button");
+      btnOurs.type = "button";
+      btnOurs.className =
+        "flow-btn flow-btn-primary git-conflict-keep-ours";
+      btnOurs.textContent = "Keep yours";
+      const btnTheirs = document.createElement("button");
+      btnTheirs.type = "button";
+      btnTheirs.className =
+        "flow-btn flow-btn-ghost git-conflict-keep-theirs";
+      btnTheirs.textContent = "Keep incoming";
+      actions.append(btnOurs, btnTheirs);
+
+      tools.append(meta, cols, actions);
+
+      const editorLab = document.createElement("div");
+      editorLab.className = "git-conflict-editor-label";
+      editorLab.textContent = "Full file";
+
       const ta = document.createElement("textarea");
       ta.className = "git-conflict-textarea";
       ta.spellcheck = false;
@@ -53,8 +112,40 @@ export function openGitConflictResolutionScreen(files) {
       const lines = String(ta.value).split("\n").length;
       ta.rows = Math.min(40, Math.max(14, lines + 3));
       areas.set(p, ta);
-      sec.append(lab, ta);
+
+      function syncToolsFromTextarea() {
+        const total = countConflictHunks(ta.value);
+        const h = getFirstConflictHunk(ta.value);
+        if (!h || total === 0) {
+          tools.hidden = true;
+          return;
+        }
+        tools.hidden = false;
+        meta.textContent = `Conflict 1 of ${total} — pick a side, then edit below if needed.`;
+        labOurs.textContent = `Yours — ${h.headLabel || "HEAD"}`;
+        labTheirs.textContent = `Incoming — ${h.theirLabel || "theirs"}`;
+        preOurs.textContent = h.ours.length ? h.ours : " ";
+        preTheirs.textContent = h.theirs.length ? h.theirs : " ";
+        preOurs.title = h.headLabel ? `Yours (${h.headLabel})` : "Yours (HEAD)";
+        preTheirs.title = h.theirLabel
+          ? `Incoming (${h.theirLabel})`
+          : "Incoming";
+      }
+
+      btnOurs.addEventListener("click", () => {
+        ta.value = replaceFirstConflictHunk(ta.value, "ours");
+        syncToolsFromTextarea();
+      });
+      btnTheirs.addEventListener("click", () => {
+        ta.value = replaceFirstConflictHunk(ta.value, "theirs");
+        syncToolsFromTextarea();
+      });
+      ta.addEventListener("input", syncToolsFromTextarea);
+
+      wrap.append(tools, editorLab, ta);
+      sec.append(pathLab, wrap);
       scroll.append(sec);
+      syncToolsFromTextarea();
     }
 
     const footer = document.createElement("footer");
@@ -92,11 +183,10 @@ export function openGitConflictResolutionScreen(files) {
       }
       for (const ta of areas.values()) {
         const p = String(ta.dataset.path ?? "");
-        const v = ta.value;
-        if (/<<<<<<<|=======|>>>>>>>/.test(v)) {
+        if (hasConflictMarkerLines(ta.value)) {
           await showFlowAlert(
-            `Remove all conflict markers in ${p} (lines starting with <<<<<<<, =======, or >>>>>>>).`,
-            { title: "Unresolved conflict markers" }
+            `Remove or resolve remaining conflict markers in ${p} (lines starting with <<<<<<<, a line that is only =======, or >>>>>>>).`,
+            { title: "Unresolved conflicts" }
           );
           return;
         }
@@ -121,6 +211,10 @@ export function openGitConflictResolutionScreen(files) {
     backdrop.append(panel);
     document.body.append(backdrop);
     document.addEventListener("keydown", onKey, { capture: true });
-    scroll.querySelector("textarea")?.focus();
+    const firstKeep = scroll.querySelector(
+      ".git-conflict-hunk-tools:not([hidden]) .git-conflict-keep-ours"
+    );
+    if (firstKeep instanceof HTMLElement) firstKeep.focus();
+    else scroll.querySelector("textarea")?.focus();
   });
 }
