@@ -59,6 +59,16 @@ Example output from the `status` command:
 | -- | --------------- | ---- | - | ------ | --- | ------ |
 | 0  | millrace-fenton | fork | 0 | online | 0%  | 69.6mb |
 
+## Restarting the PM2 Millrace service
+
+If you update Millrace and want to restart it to get the latest changes, you can run:
+
+```bash
+pm2 restart millrace-devrel
+```
+
+You'll see the same output as for the `status` command showing the service running (with 0 uptime as it just restarted).
+
 ## Removing auto-start
 
 Remove the init script:
