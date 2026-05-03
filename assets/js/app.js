@@ -10,10 +10,10 @@ import {
   fetchColumnCards,
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
-  gitSyncRemote,
   moveCard,
   reorderCards,
 } from "./repoAccess.js";
+import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
 import { showFlowAlert } from "./flowDialogs.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
@@ -108,17 +108,25 @@ const emptyFlowCtx = () => ({
   activeSlug: "board",
 });
 
-/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null }} */
+/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean }} */
 let boardCache = {
   model: null,
   cardsByColumn: null,
   mineEmail: "",
   defaultCardOwner: "",
   flowCtx: null,
+  pendingSync: false,
 };
 
 /** Set on full board load; used when re-rendering after owner filter only. */
 let gitRepoAvailable = false;
+
+function applyPendingSyncPulseToBoardShell() {
+  const btn = document.querySelector(".board-sync-btn");
+  if (!btn) return;
+  const show = Boolean(gitRepoAvailable && boardCache.pendingSync);
+  btn.classList.toggle("board-sync-btn--pulse", show);
+}
 
 /**
  * @param {Map<number, object[]>} cardsByColumn
@@ -307,7 +315,14 @@ function positionDropMarker(list, clientY, mode) {
  * @param {Map<number, Array<{ filename?: string, title?: string, owner?: string, swimlane?: string, links?: { text?: string, url?: string }[] }>>} cardsByColumn
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  */
-function renderBoard(model, cardsByColumn, mineEmail, gitSyncOk, flowCtx) {
+function renderBoard(
+  model,
+  cardsByColumn,
+  mineEmail,
+  gitSyncOk,
+  flowCtx,
+  pendingSync
+) {
   const { board, columns, swimlanes } = model;
   const name = board.name?.trim() || "Board";
   const boardSlug = boardSlugFrom(board);
@@ -493,12 +508,17 @@ function renderBoard(model, cardsByColumn, mineEmail, gitSyncOk, flowCtx) {
   syncBtn.type = "button";
   syncBtn.className = "board-sync-btn";
   syncBtn.textContent = "Sync";
-  syncBtn.title =
-    "Git: pull remote changes, then push local commits (runs on the machine hosting Millrace)";
+  const syncTitleBase =
+    "Pull from origin, resolve merge conflicts if needed, commit pending task changes, then push (runs on the machine hosting Millrace)";
+  syncBtn.title = syncTitleBase;
   syncBtn.disabled = !gitSyncOk;
   if (!gitSyncOk) {
     syncBtn.title =
       "Git sync unavailable — server data root has no .git (run Millrace from your repo clone).";
+  }
+  if (gitSyncOk && pendingSync) {
+    syncBtn.classList.add("board-sync-btn--pulse");
+    syncBtn.title = `${syncTitleBase} Unsaved task changes are not on the remote yet — sync when ready.`;
   }
 
   syncBtn.addEventListener("click", () => {
@@ -508,7 +528,8 @@ function renderBoard(model, cardsByColumn, mineEmail, gitSyncOk, flowCtx) {
     syncBtn.textContent = "Syncing…";
     void (async () => {
       try {
-        await gitSyncRemote();
+        await runGitSyncWithConflictFlow();
+        boardCache.pendingSync = false;
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -516,6 +537,7 @@ function renderBoard(model, cardsByColumn, mineEmail, gitSyncOk, flowCtx) {
       } finally {
         syncBtn.disabled = !gitSyncOk;
         syncBtn.textContent = prev;
+        applyPendingSyncPulseToBoardShell();
       }
     })();
   });
@@ -962,7 +984,8 @@ async function loadApp(fullReload = true) {
       boardCache.cardsByColumn,
       boardCache.mineEmail,
       gitRepoAvailable,
-      boardCache.flowCtx ?? emptyFlowCtx()
+      boardCache.flowCtx ?? emptyFlowCtx(),
+      boardCache.pendingSync
     );
     if (shell) shell.replaceWith(next);
     return;
@@ -1001,6 +1024,7 @@ async function loadApp(fullReload = true) {
 
     const mineEmail = String(profile.mine ?? "").trim();
     const defaultCardOwner = String(profile.owner ?? "").trim();
+    const pendingSync = Boolean(profile.pendingSync);
 
     boardCache = {
       model,
@@ -1008,13 +1032,21 @@ async function loadApp(fullReload = true) {
       mineEmail,
       defaultCardOwner,
       flowCtx,
+      pendingSync,
     };
 
     applyStoredOwnerFilter();
 
     mount.replaceChildren();
     mount.append(
-      renderBoard(model, cardsByColumn, mineEmail, gitRepoAvailable, flowCtx)
+      renderBoard(
+        model,
+        cardsByColumn,
+        mineEmail,
+        gitRepoAvailable,
+        flowCtx,
+        pendingSync
+      )
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -1032,6 +1064,17 @@ async function main() {
   document.addEventListener("flow:active-board-changed", () => {
     boardCardSearch = "";
     void loadApp(true);
+  });
+
+  document.addEventListener("flow:pending-sync", () => {
+    boardCache.pendingSync = true;
+    applyPendingSyncPulseToBoardShell();
+    const btn = document.querySelector(".board-sync-btn");
+    if (btn && gitRepoAvailable) {
+      const syncTitleBase =
+        "Pull from origin, resolve merge conflicts if needed, commit pending task changes, then push (runs on the machine hosting Millrace)";
+      btn.title = `${syncTitleBase} Unsaved task changes are not on the remote yet — sync when ready.`;
+    }
   });
 }
 

@@ -8,6 +8,12 @@
  */
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 
+function emitPendingSync() {
+  if (typeof document !== "undefined") {
+    document.dispatchEvent(new CustomEvent("flow:pending-sync"));
+  }
+}
+
 /**
  * @param {Response} res
  */
@@ -125,6 +131,7 @@ export async function updateBoardDefinition(payload) {
         : res.statusText || "Request failed"
     );
   }
+  emitPendingSync();
   return data;
 }
 
@@ -147,6 +154,7 @@ export async function createBoardDefinition(name) {
         : res.statusText || "Request failed"
     );
   }
+  emitPendingSync();
   return {
     ok: Boolean(data.ok),
     slug: String(data.slug ?? "").trim(),
@@ -172,6 +180,7 @@ export async function deleteBoardDefinition(boardSlug) {
         : res.statusText || "Request failed"
     );
   }
+  emitPendingSync();
   return data;
 }
 
@@ -232,7 +241,7 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
 }
 
 /**
- * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string }>}
+ * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean }>}
  */
 export async function fetchLocalUserProfile() {
   try {
@@ -242,6 +251,7 @@ export async function fetchLocalUserProfile() {
         owner: "",
         mine: "",
         chartsGranularity: "",
+        pendingSync: false,
       };
     }
     const data = await res.json();
@@ -249,12 +259,14 @@ export async function fetchLocalUserProfile() {
       owner: String(data.owner ?? "").trim(),
       mine: String(data.mine ?? "").trim(),
       chartsGranularity: String(data.chartsGranularity ?? "").trim(),
+      pendingSync: Boolean(data.pendingSync),
     };
   } catch {
     return {
       owner: "",
       mine: "",
       chartsGranularity: "",
+      pendingSync: false,
     };
   }
 }
@@ -320,6 +332,7 @@ export async function createCard(payload) {
   if (!res.ok) {
     throw new Error(data.message || res.statusText || "Request failed");
   }
+  emitPendingSync();
   return data;
 }
 
@@ -379,6 +392,7 @@ export async function updateCard(payload) {
   if (!res.ok) {
     throw new Error(await errorBodyMessage(res));
   }
+  emitPendingSync();
   return res.json();
 }
 
@@ -398,6 +412,7 @@ export async function deleteCard(payload) {
   if (!res.ok) {
     throw new Error(await errorBodyMessage(res));
   }
+  emitPendingSync();
   return res.json();
 }
 
@@ -430,6 +445,7 @@ export async function reorderCards(payload) {
   if (!res.ok) {
     throw new Error(await errorBodyMessage(res));
   }
+  emitPendingSync();
   return res.json();
 }
 
@@ -446,17 +462,24 @@ export async function fetchGitRepoAvailable() {
 }
 
 /**
- * Runs `git pull` then `git push` in the server’s data root (your clone).
- * @returns {Promise<{ ok?: boolean, pull?: string, push?: string }>}
+ * @param {Record<string, unknown>} [body]
+ * @returns {Promise<{ ok: boolean, needConflictResolution?: boolean, files?: { path: string, content: string }[], message?: string }>}
  */
-export async function gitSyncRemote() {
+export async function gitSyncRequest(body = {}) {
   const res = await fetch("/api/git/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "{}",
+    body: JSON.stringify(body && typeof body === "object" ? body : {}),
     ...NO_STORE,
   });
   const data = await res.json().catch(() => ({}));
+  if (res.ok && data.needConflictResolution) {
+    return {
+      ok: false,
+      needConflictResolution: true,
+      files: Array.isArray(data.files) ? data.files : [],
+    };
+  }
   if (!res.ok) {
     throw new Error(
       typeof data.message === "string" && data.message.trim()
@@ -464,5 +487,5 @@ export async function gitSyncRemote() {
         : await errorBodyMessage(res)
     );
   }
-  return data;
+  return { ok: true, ...data };
 }

@@ -240,6 +240,152 @@ function formatGitExecError(step, err) {
   return text ? `${step}:\n${text}` : `${step} failed.`;
 }
 
+/**
+ * @param {Record<string, Record<string, string>>} sections
+ */
+function pendingSyncFromSections(sections) {
+  const v = sections.flow?.pending_sync ?? sections.flow?.pendingSync ?? "";
+  return /^1|true|yes$/i.test(String(v).trim());
+}
+
+async function markDataRootPendingSync() {
+  try {
+    const sections = await readLocalUserIniSections();
+    sections.flow = sections.flow ?? {};
+    sections.flow.pending_sync = "1";
+    await writeLocalUserIniSections(sections);
+  } catch (e) {
+    console.warn("[flow] could not set pending_sync:", e);
+  }
+}
+
+async function clearDataRootPendingSync() {
+  try {
+    const sections = await readLocalUserIniSections();
+    if (!sections.flow) return;
+    delete sections.flow.pending_sync;
+    delete sections.flow.pendingSync;
+    await writeLocalUserIniSections(sections);
+  } catch (e) {
+    console.warn("[flow] could not clear pending_sync:", e);
+  }
+}
+
+/**
+ * Repo-relative path using `/`; rejects `..` and paths escaping `DATA_ROOT`.
+ * @param {string} rel
+ * @returns {string | null}
+ */
+function safeRepoRelativePath(rel) {
+  const raw = String(rel ?? "").trim().replace(/\\/g, "/");
+  if (!raw || raw.includes("..")) return null;
+  const top = raw.split("/").filter(Boolean)[0] ?? "";
+  if (top === ".git") return null;
+  const abs = path.resolve(DATA_ROOT, ...raw.split("/"));
+  const root = path.resolve(DATA_ROOT);
+  if (abs !== root && !abs.startsWith(root + path.sep)) return null;
+  const out = path.relative(root, abs);
+  if (out.startsWith("..") || path.isAbsolute(out)) return null;
+  return out.split(path.sep).join("/");
+}
+
+/**
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ * @returns {Promise<string[]>} repo-relative paths with `/`
+ */
+async function gitUnmergedPaths(opts) {
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["diff", "--name-only", "--diff-filter=U"],
+      opts
+    );
+    return String(stdout ?? "")
+      .split(/\r?\n/)
+      .map((s) => s.trim().replace(/\\/g, "/"))
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @param {string[]} relPaths
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ */
+async function readConflictFilePayloads(relPaths, opts) {
+  const cwd = opts.cwd;
+  /** @type {{ path: string, content: string }[]} */
+  const files = [];
+  for (const raw of relPaths) {
+    const rel = String(raw).trim().replace(/\\/g, "/");
+    const safe = safeRepoRelativePath(rel);
+    if (!safe) continue;
+    const abs = path.join(cwd, ...safe.split("/"));
+    let content = "";
+    try {
+      content = await fs.readFile(abs, "utf8");
+    } catch {
+      content = "";
+    }
+    files.push({ path: safe, content });
+  }
+  return files;
+}
+
+/**
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ */
+async function gitIndexHasStagedChanges(opts) {
+  try {
+    await execFileAsync("git", ["diff", "--cached", "--quiet"], opts);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Stage everything under `tasks/` and create one commit if there are staged changes.
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ */
+async function commitOutstandingTasksDir(opts) {
+  await execFileAsync("git", ["add", "--", "tasks"], opts);
+  if (!(await gitIndexHasStagedChanges(opts))) return;
+  await execFileAsync(
+    "git",
+    ["commit", "-m", "Millrace: save pending changes"],
+    opts
+  );
+}
+
+/**
+ * `git pull --autostash` when available (Git 2.14+), else plain pull.
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ */
+async function gitPullWithOptionalAutostash(opts) {
+  try {
+    await execFileAsync(
+      "git",
+      ["pull", "--no-edit", "--autostash"],
+      opts
+    );
+    return;
+  } catch (e) {
+    const err = /** @type {Error & { stderr?: Buffer }} */ (e);
+    const msg = `${err.stderr ? err.stderr.toString() : ""} ${err.message ?? ""}`.toLowerCase();
+    if (
+      msg.includes("unknown option") ||
+      msg.includes("invalid option") ||
+      msg.includes("unrecognized option")
+    ) {
+      await execFileAsync("git", ["pull", "--no-edit"], opts);
+      return;
+    }
+    throw e;
+  }
+}
+
 function sanitizeSegment(s) {
   const t = String(s)
     .trim()
@@ -835,6 +981,7 @@ app.post("/api/board", async (req, res) => {
     const boardRoot = path.join(tasksDir, slug);
     await ensureDir(boardRoot);
 
+    await markDataRootPendingSync();
     res.json({
       ok: true,
       slug,
@@ -1016,7 +1163,7 @@ app.put("/api/board-definition", async (req, res) => {
 
     await fs.writeFile(boardPath, t.replace(/^\uFEFF/, ""), "utf8");
 
-
+    await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -1098,7 +1245,7 @@ app.delete("/api/board-definition", async (req, res) => {
       /* no catalog file — single-file setups already blocked by catalog length */
     }
 
-
+    await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2260,8 +2407,7 @@ app.put("/api/card", async (req, res) => {
 
     if (newOwner) await writeLocalUserIni(newOwner);
 
-
-
+    await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2289,6 +2435,7 @@ app.delete("/api/card", async (req, res) => {
 
     await fs.unlink(fullPath);
 
+    await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2367,8 +2514,7 @@ app.post("/api/cards", async (req, res) => {
 
     if (newOwner) await writeLocalUserIni(newOwner);
 
-
-
+    await markDataRootPendingSync();
     res.json({ id, filename, path: path.join("tasks", slug, filename) });
   } catch (e) {
     console.error(e);
@@ -2475,8 +2621,7 @@ app.post("/api/cards/move", async (req, res) => {
       await fs.unlink(srcPath);
     }
 
-
-
+    await markDataRootPendingSync();
     res.json({
       ok: true,
       moved: path.resolve(srcPath) !== path.resolve(destPath),
@@ -2567,8 +2712,7 @@ app.post("/api/cards/reorder", async (req, res) => {
       await fs.writeFile(fullPath, serializeFullCardIni(item, links), "utf8");
     }
 
-
-
+    await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2589,9 +2733,10 @@ app.get("/api/git/status", async (_req, res) => {
 });
 
 /**
- * `git pull` then `git push` at the Millrace data root (same repo as `tasks/`).
+ * Sync: pull (with autostash when supported), optional conflict resolution payload,
+ * commit outstanding `tasks/` changes, push. Body: `{ conflictResolutions?: { path, content }[] }`.
  */
-app.post("/api/git/sync", async (_req, res) => {
+app.post("/api/git/sync", async (req, res) => {
   const cwd = DATA_ROOT;
   if (!existsSync(path.join(cwd, ".git"))) {
     res.status(400).json({
@@ -2600,6 +2745,10 @@ app.post("/api/git/sync", async (_req, res) => {
     });
     return;
   }
+
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const rawResolutions = body.conflictResolutions;
+  const resolutions = Array.isArray(rawResolutions) ? rawResolutions : null;
 
   const env = gitChildEnv();
   const opts = {
@@ -2610,42 +2759,130 @@ app.post("/api/git/sync", async (_req, res) => {
 
   try {
     const out = await runGitSerialized(async () => {
-      try {
-        const pullResult = await execFileAsync(
-          "git",
-          ["pull", "--no-edit"],
-          opts
-        );
-        const pullLog = String(pullResult.stdout ?? "").trim();
+      if (resolutions && resolutions.length > 0) {
+        const mergeHead = existsSync(path.join(cwd, ".git", "MERGE_HEAD"));
+        if (!mergeHead) {
+          return {
+            kind: "badRequest",
+            message:
+              "No merge in progress — start Sync again from the board (pull phase).",
+          };
+        }
+        for (const entry of resolutions) {
+          const rel =
+            typeof entry?.path === "string" ? entry.path.trim() : "";
+          const content = entry?.content != null ? String(entry.content) : "";
+          const safe = safeRepoRelativePath(rel);
+          if (!safe) {
+            return {
+              kind: "badRequest",
+              message: `Invalid or unsafe path: ${rel || "(empty)"}`,
+            };
+          }
+          const abs = path.join(cwd, ...safe.split("/"));
+          await fs.writeFile(abs, content, "utf8");
+          await execFileAsync("git", ["add", "--", safe], opts);
+        }
+        const still = await gitUnmergedPaths(opts);
+        if (still.length > 0) {
+          return {
+            kind: "conflicts",
+            files: await readConflictFilePayloads(still, opts),
+          };
+        }
         try {
-          const pushResult = await execFileAsync("git", ["push"], opts);
-          const pushLog = String(pushResult.stdout ?? "").trim();
-          return { kind: "ok", pullLog, pushLog };
+          await execFileAsync("git", ["commit", "--no-edit"], opts);
+        } catch {
+          await execFileAsync(
+            "git",
+            ["commit", "-m", "Merge: resolve conflicts (Millrace)"],
+            opts
+          );
+        }
+        try {
+          await commitOutstandingTasksDir(opts);
+        } catch (e) {
+          return { kind: "commitFail", err: e };
+        }
+        try {
+          await execFileAsync("git", ["push"], opts);
         } catch (e) {
           return { kind: "pushFail", err: e };
         }
+        return { kind: "done" };
+      }
+
+      try {
+        await gitPullWithOptionalAutostash(opts);
       } catch (e) {
+        const unmerged = await gitUnmergedPaths(opts);
+        if (unmerged.length > 0) {
+          return {
+            kind: "conflicts",
+            files: await readConflictFilePayloads(unmerged, opts),
+          };
+        }
         return { kind: "pullFail", err: e };
       }
+
+      const unmergedAfter = await gitUnmergedPaths(opts);
+      if (unmergedAfter.length > 0) {
+        return {
+          kind: "conflicts",
+          files: await readConflictFilePayloads(unmergedAfter, opts),
+        };
+      }
+
+      try {
+        await commitOutstandingTasksDir(opts);
+      } catch (e) {
+        return { kind: "commitFail", err: e };
+      }
+      try {
+        await execFileAsync("git", ["push"], opts);
+      } catch (e) {
+        return { kind: "pushFail", err: e };
+      }
+      return { kind: "done" };
     });
-    if (out.kind === "ok") {
-      console.error("[flow] git sync: pull + push ok");
+
+    if (out.kind === "conflicts") {
       res.json({
-        ok: true,
-        pull: out.pullLog,
-        push: out.pushLog,
+        ok: false,
+        needConflictResolution: true,
+        files: out.files,
       });
-    } else if (out.kind === "pullFail") {
+      return;
+    }
+    if (out.kind === "badRequest") {
+      res.status(400).json({ message: out.message });
+      return;
+    }
+    if (out.kind === "pullFail") {
       console.error("[flow] git sync: pull failed", out.err);
       res.status(500).json({
         message: formatGitExecError("git pull", out.err),
       });
-    } else {
+      return;
+    }
+    if (out.kind === "commitFail") {
+      console.error("[flow] git sync: commit failed", out.err);
+      res.status(500).json({
+        message: formatGitExecError("git commit", out.err),
+      });
+      return;
+    }
+    if (out.kind === "pushFail") {
       console.error("[flow] git sync: push failed", out.err);
       res.status(500).json({
         message: formatGitExecError("git push", out.err),
       });
+      return;
     }
+
+    await clearDataRootPendingSync();
+    console.error("[flow] git sync: pull, commits, push ok");
+    res.json({ ok: true });
   } catch (e) {
     console.error("[flow] git sync: failed", e);
     res.status(500).json({
@@ -2672,12 +2909,14 @@ app.get("/api/local-user", async (_req, res) => {
       owner: String(raw).trim(),
       mine: String(mineRaw).trim(),
       chartsGranularity,
+      pendingSync: pendingSyncFromSections(sections),
     });
   } catch {
     res.json({
       owner: "",
       mine: "",
       chartsGranularity: "",
+      pendingSync: false,
     });
   }
 });
@@ -2753,6 +2992,7 @@ app.patch("/api/local-user", async (req, res) => {
       owner,
       mine,
       chartsGranularity,
+      pendingSync: pendingSyncFromSections(out),
     });
   } catch (e) {
     console.error(e);
