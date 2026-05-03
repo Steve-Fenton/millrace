@@ -389,6 +389,55 @@ function gitChildEnv() {
   };
 }
 
+/** One git mutation at a time at `DATA_ROOT` (auto pull vs archive pull/push). */
+let gitSerializedChain = Promise.resolve();
+
+/**
+ * @template T
+ * @param {() => Promise<T>} fn
+ * @returns {Promise<T>}
+ */
+function runGitSerialized(fn) {
+  const run = gitSerializedChain.then(() => fn());
+  gitSerializedChain = run.then(
+    () => {},
+    () => {}
+  );
+  return run;
+}
+
+/** True when we should skip archiving: unpushed Millrace commits or commits ahead of `@{u}`. */
+async function hasLocalCommitsToSync() {
+  if (!existsSync(path.join(DATA_ROOT, ".git"))) return false;
+  try {
+    const sections = await readLocalUserIniSections();
+    const raw = String(
+      sections.flow?.first_unsynced_commit_at ??
+        sections.flow?.firstUnsyncedCommitAt ??
+        ""
+    ).trim();
+    if (raw && Number.isFinite(Date.parse(raw))) return true;
+  } catch {
+    /* fall through to rev-list */
+  }
+  const opts = {
+    cwd: DATA_ROOT,
+    env: gitChildEnv(),
+    maxBuffer: 1024 * 1024,
+  };
+  try {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["rev-list", "--count", "@{u}..HEAD"],
+      opts
+    );
+    const n = Number.parseInt(String(stdout).trim(), 10);
+    return Number.isFinite(n) && n > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** Default `[board] pull_frequency` in minutes when unset in board.ini. */
 const DEFAULT_PULL_FREQUENCY_MINUTES = 30;
 
@@ -442,8 +491,10 @@ async function runAutoGitPullIfDue() {
       env,
       maxBuffer: 10 * 1024 * 1024,
     };
-    await execFileAsync("git", ["pull", "--no-edit"], opts);
-    await recordSuccessfulGitPull();
+    await runGitSerialized(async () => {
+      await execFileAsync("git", ["pull", "--no-edit"], opts);
+      await recordSuccessfulGitPull();
+    });
     console.error("[flow] auto git pull: ok");
   } catch (e) {
     console.error(
@@ -874,7 +925,12 @@ async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {
 /** @type {Map<string, Promise<void>>} */
 const archiveStaleInFlight = new Map();
 
-async function runArchiveStaleClosedForSlug(slug) {
+/**
+ * @param {string} slug
+ * @param {{ commitMode?: "debounce" | "immediate" }} [opts]
+ */
+async function runArchiveStaleClosedForSlug(slug, opts = {}) {
+  const commitMode = opts.commitMode ?? "debounce";
   let p = archiveStaleInFlight.get(slug);
   if (p) return p;
 
@@ -890,13 +946,17 @@ async function runArchiveStaleClosedForSlug(slug) {
       coldStorageArchiveAfterMonths
     );
     if (nBoard + nCold > 0) {
-      queueTasksGitCommit(
+      const summary =
         nBoard > 0 && nCold > 0
           ? "archive old closed tasks and cold-storage"
           : nCold > 0
             ? "move old archive to cold-storage"
-            : "archive old closed tasks"
-      );
+            : "archive old closed tasks";
+      if (commitMode === "immediate") {
+        await commitTasksDirOnce(summary);
+      } else {
+        queueTasksGitCommit(summary);
+      }
     }
   })().finally(() => {
     archiveStaleInFlight.delete(slug);
@@ -904,6 +964,61 @@ async function runArchiveStaleClosedForSlug(slug) {
 
   archiveStaleInFlight.set(slug, p);
   return p;
+}
+
+/**
+ * When Git is enabled: skip archiving if there are local commits to push/sync.
+ * Otherwise: `git pull` → archive (immediate auto-commit when enabled) → `git push`.
+ * Without `.git`, archiving runs as before (no pull/push).
+ * @param {string} slug
+ */
+async function pullArchiveThenMaybePushForSlug(slug) {
+  if (!existsSync(path.join(DATA_ROOT, ".git"))) {
+    await runArchiveStaleClosedForSlug(slug);
+    return;
+  }
+  if (await hasLocalCommitsToSync()) {
+    return;
+  }
+  const opts = {
+    cwd: DATA_ROOT,
+    env: gitChildEnv(),
+    maxBuffer: 10 * 1024 * 1024,
+  };
+  await runGitSerialized(async () => {
+    try {
+      await execFileAsync("git", ["pull", "--no-edit"], opts);
+      await recordSuccessfulGitPull();
+    } catch (e) {
+      const detail = formatGitExecError("git pull", e);
+      const low = detail.toLowerCase();
+      const noUpstream =
+        low.includes("no tracking information") ||
+        low.includes("there is no tracking information") ||
+        low.includes("has no upstream branch");
+      if (noUpstream) {
+        console.error(
+          "[flow] archive: no upstream — archiving without pull/push"
+        );
+        await runArchiveStaleClosedForSlug(slug);
+        return;
+      }
+      console.error("[flow] archive: skipped after failed git pull —", detail);
+      return;
+    }
+    await runArchiveStaleClosedForSlug(slug, { commitMode: "immediate" });
+    if (!FLOW_GIT_AUTO_COMMIT) return;
+    try {
+      await execFileAsync("git", ["push"], opts);
+      await clearFirstUnsyncedCommitAt();
+      console.error("[flow] archive: pull, archive, push ok");
+    } catch (e) {
+      console.error(
+        "[flow] archive: git push failed after archive —",
+        formatGitExecError("git push", e)
+      );
+    }
+  });
 }
 
 /**
@@ -1477,7 +1592,7 @@ async function sendColumnCards(res, slug, col) {
       return;
     }
 
-    await runArchiveStaleClosedForSlug(slug);
+    await pullArchiveThenMaybePushForSlug(slug);
 
     const { columns: columnsDef, swimlanes: swimlanesDef } =
       await loadBoardColumnAndSwimlaneDefsForSlug(slug);
@@ -1649,7 +1764,7 @@ async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
  * @param {string} slug
  */
 async function gatherCompletedAndArchiveRows(slug) {
-  await runArchiveStaleClosedForSlug(slug);
+  await pullArchiveThenMaybePushForSlug(slug);
 
   const { columns: columnsDef } = await loadBoardColumnAndSwimlaneDefsForSlug(
     slug
@@ -2751,34 +2866,49 @@ app.post("/api/git/sync", async (_req, res) => {
   };
 
   try {
-    const pullResult = await execFileAsync(
-      "git",
-      ["pull", "--no-edit"],
-      opts
-    );
-    const pullLog = String(pullResult.stdout ?? "").trim();
-    await recordSuccessfulGitPull();
-
-    try {
-      const pushResult = await execFileAsync("git", ["push"], opts);
-      const pushLog = String(pushResult.stdout ?? "").trim();
+    const out = await runGitSerialized(async () => {
+      try {
+        const pullResult = await execFileAsync(
+          "git",
+          ["pull", "--no-edit"],
+          opts
+        );
+        const pullLog = String(pullResult.stdout ?? "").trim();
+        await recordSuccessfulGitPull();
+        try {
+          const pushResult = await execFileAsync("git", ["push"], opts);
+          const pushLog = String(pushResult.stdout ?? "").trim();
+          await clearFirstUnsyncedCommitAt();
+          return { kind: "ok", pullLog, pushLog };
+        } catch (e) {
+          return { kind: "pushFail", err: e };
+        }
+      } catch (e) {
+        return { kind: "pullFail", err: e };
+      }
+    });
+    if (out.kind === "ok") {
       console.error("[flow] git sync: pull + push ok");
-      await clearFirstUnsyncedCommitAt();
       res.json({
         ok: true,
-        pull: pullLog,
-        push: pushLog,
+        pull: out.pullLog,
+        push: out.pushLog,
       });
-    } catch (e) {
-      console.error("[flow] git sync: push failed", e);
+    } else if (out.kind === "pullFail") {
+      console.error("[flow] git sync: pull failed", out.err);
       res.status(500).json({
-        message: formatGitExecError("git push", e),
+        message: formatGitExecError("git pull", out.err),
+      });
+    } else {
+      console.error("[flow] git sync: push failed", out.err);
+      res.status(500).json({
+        message: formatGitExecError("git push", out.err),
       });
     }
   } catch (e) {
-    console.error("[flow] git sync: pull failed", e);
+    console.error("[flow] git sync: failed", e);
     res.status(500).json({
-      message: formatGitExecError("git pull", e),
+      message: e instanceof Error ? e.message : "Git sync failed.",
     });
   }
 });
