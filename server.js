@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Serves the Flow UI and writes task INIs + tasks/localuser.ini under this repo
  * ([user] default owner, [flow] machine-local timestamps, etc.).
@@ -34,8 +35,9 @@ import { parseTaskCardIni, parseTaskCardIniFull } from "./assets/js/taskCardMode
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Repo root for tasks/ — prefers FLOW_ROOT, else the directory that contains tasks/board.ini
- * or tasks/flow.ini (script dir or process.cwd()), else script dir for writes.
+ * Repo root for tasks/ — prefers FLOW_ROOT, else a directory that contains tasks/board.ini
+ * or tasks/flow.ini (script dir then cwd). If neither exists, uses cwd so installs under
+ * node_modules never become the data root by default.
  */
 function findDataRoot() {
   if (process.env.FLOW_ROOT) {
@@ -50,7 +52,7 @@ function findDataRoot() {
       return base;
     }
   }
-  return SCRIPT_DIR;
+  return process.cwd();
 }
 
 const DATA_ROOT = findDataRoot();
@@ -2840,7 +2842,9 @@ app.patch("/api/local-user", async (req, res) => {
   }
 });
 
+/** User project (tasks/, optional files); then packaged UI if not present there. */
 app.use(express.static(DATA_ROOT));
+app.use(express.static(SCRIPT_DIR));
 
 function portFromArgv(argv) {
   const raw = argv[2];

@@ -1,12 +1,33 @@
 {
-  "name": "Millrace",
-  "version": "0.0.1",
-  "private": true,
+  "name": "millrace",
+  "version": "0.0.2",
+  "description": "Git-friendly Kanban work items as INI files under tasks/ — local server and web UI",
   "type": "module",
+  "bin": {
+    "millrace": "server.js"
+  },
+  "files": [
+    "server.js",
+    "index.html",
+    "assets",
+    "admin",
+    "charts",
+    "complete"
+  ],
   "scripts": {
     "start": "FLOW_GIT_AUTO_COMMIT=1 node server.js 7713",
     "start:no-commit": "node server.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "kanban",
+    "flow",
+    "tasks",
+    "ini",
+    "git"
+  ],
   "dependencies": {
     "express": "^4.21.2"
   }
