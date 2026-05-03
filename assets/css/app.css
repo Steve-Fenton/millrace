@@ -867,6 +867,38 @@ body {
   max-height: min(70vh, 520px);
 }
 
+.charts-stack-area {
+  opacity: 0.9;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.charts-stack-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  align-items: center;
+  margin: 0.35rem 0 0;
+  max-width: 48rem;
+}
+
+.charts-stack-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.charts-stack-swatch {
+  flex-shrink: 0;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .charts-axis {
   fill: none;
   stroke: var(--border);

@@ -1809,6 +1809,7 @@ async function gatherCompletedAndArchiveRows(slug) {
       title: parsed.title,
       description: parsed.description,
       owner: parsed.owner,
+      swimlane: parsed.swimlane,
       closed: parsed.closed,
       created: parsed.created,
       links: parsed.links,
@@ -1851,6 +1852,7 @@ async function gatherCompletedAndArchiveRows(slug) {
       title: parsed.title,
       description: parsed.description,
       owner: parsed.owner,
+      swimlane: parsed.swimlane,
       closed: parsed.closed,
       created: parsed.created,
       links: parsed.links,
@@ -1951,6 +1953,7 @@ async function gatherColdStorageCardRows(slug) {
       title: parsed.title,
       description: parsed.description,
       owner: parsed.owner,
+      swimlane: parsed.swimlane,
       closed: parsed.closed,
       created: parsed.created,
       links: parsed.links,
@@ -2078,6 +2081,72 @@ async function aggregateCompletionBuckets(slug, granularity) {
     t: new Date(t).toISOString(),
     n: counts.get(t) ?? 0,
   }));
+}
+
+/**
+ * Completions per time bucket, split by resolved swimlane index (for stacked charts).
+ * @param {string} slug
+ * @param {"daily" | "weekly" | "monthly"} granularity
+ */
+async function aggregateCompletionSwimlaneStack(slug, granularity) {
+  const { swimlanes } = await loadBoardColumnAndSwimlaneDefsForSlug(slug);
+  const rows = await gatherCompletedAndArchiveRows(slug);
+
+  /** @type {Map<number, Map<number, number>>} bucket start ms → lane index → count */
+  const byBucket = new Map();
+
+  for (const row of rows) {
+    const closedMs = parseIsoMs(row.closed);
+    if (closedMs == null) continue;
+    const bucketMs = bucketStartMsForGranularity(closedMs, granularity);
+    const laneIdx = resolveCardSwimlaneIndex(
+      /** @type {string | undefined} */ (row.swimlane),
+      swimlanes
+    );
+    if (!byBucket.has(bucketMs)) byBucket.set(bucketMs, new Map());
+    const inner = byBucket.get(bucketMs);
+    inner.set(laneIdx, (inner.get(laneIdx) ?? 0) + 1);
+  }
+
+  /** @type {Set<number>} */
+  const usedLanes = new Set();
+  for (const m of byBucket.values()) {
+    for (const k of m.keys()) usedLanes.add(k);
+  }
+  const fromDef = swimlanes.map((l) => l.index);
+  const indices = [...new Set([...fromDef, ...usedLanes])].sort(
+    (a, b) => a - b
+  );
+
+  /**
+   * @param {number} i
+   */
+  function labelForLaneIndex(i) {
+    const lane = swimlanes.find((l) => l.index === i);
+    const t = lane?.title && String(lane.title).trim();
+    if (t) return t;
+    if (!swimlanes.length) return "Completed";
+    return `Lane ${i}`;
+  }
+
+  const series = indices.map((index) => ({
+    key: String(index),
+    label: labelForLaneIndex(index),
+    index,
+  }));
+
+  const sortedBuckets = [...byBucket.keys()].sort((a, b) => a - b);
+  const buckets = sortedBuckets.map((bm) => {
+    const inner = byBucket.get(bm) ?? new Map();
+    /** @type {Record<string, number>} */
+    const counts = {};
+    for (const s of series) {
+      counts[s.key] = inner.get(s.index) ?? 0;
+    }
+    return { t: new Date(bm).toISOString(), counts };
+  });
+
+  return { series, buckets };
 }
 
 /**
@@ -2258,6 +2327,30 @@ app.get("/api/completion-buckets", async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Failed to load completion buckets." });
+  }
+});
+
+/**
+ * Query: boardSlug, granularity=weekly|monthly (default weekly).
+ * Stacked completion counts by swimlane per UTC bucket (same rules as `/api/completion-buckets`).
+ */
+app.get("/api/completion-swimlane-stack", async (req, res) => {
+  try {
+    const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
+    const gRaw = String(req.query.granularity ?? "weekly").toLowerCase();
+    let granularity = "weekly";
+    if (gRaw === "monthly") granularity = "monthly";
+    else if (gRaw === "daily") granularity = "daily";
+    const { series, buckets } = await aggregateCompletionSwimlaneStack(
+      slug,
+      granularity
+    );
+    res.json({ boardSlug: slug, granularity, series, buckets });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Failed to load swimlane completion stack.",
+    });
   }
 });
 

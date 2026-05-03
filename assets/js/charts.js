@@ -72,12 +72,14 @@ function formatBucketLabel(iso, granularity) {
 /**
  * @param {{ t: string, n: number }[]} buckets
  * @param {{ t: string, d: number }[]} cyclePoints
+ * @param {{ t: string }[]} [extraBuckets]
  * @returns {{ tLo: number, tHi: number }}
  */
-function sharedTimeDomain(buckets, cyclePoints) {
+function sharedTimeDomain(buckets, cyclePoints, extraBuckets = []) {
   const ts = [];
   for (const b of buckets) ts.push(Date.parse(b.t));
   for (const p of cyclePoints) ts.push(Date.parse(p.t));
+  for (const b of extraBuckets) ts.push(Date.parse(b.t));
   if (ts.length === 0) {
     const n = Date.now();
     return { tLo: n - 30 * 86400000, tHi: n + 86400000 };
@@ -118,6 +120,282 @@ async function fetchCycleTimeScatter(boardSlug, granularity) {
     throw new Error(msg);
   }
   return data;
+}
+
+/**
+ * @param {string} boardSlug
+ * @param {Granularity} granularity
+ */
+async function fetchCompletionSwimlaneStack(boardSlug, granularity) {
+  const q = new URLSearchParams({ boardSlug, granularity });
+  const res = await fetch(`/api/completion-swimlane-stack?${q}`, NO_STORE);
+  const ct = res.headers.get("content-type") ?? "";
+  /** @type {Record<string, unknown>} */
+  let data = {};
+  if (ct.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
+  } else {
+    await res.text().catch(() => {});
+  }
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed";
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/**
+ * @param {number} i
+ * @param {number} n
+ */
+function swimlaneStackFill(i, n) {
+  const hue = ((i * 47) % 360) + (n > 1 ? 0 : 200);
+  const sat = n <= 1 ? 45 : 52;
+  const light = 48 - (i % 3) * 4;
+  return `hsl(${hue} ${sat}% ${light}%)`;
+}
+
+/**
+ * @param {Record<string, unknown>} stackPayload
+ * @param {Granularity} granularity
+ * @param {{ tLo: number, tHi: number }} timeDomain
+ */
+function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
+  const series = Array.isArray(stackPayload.series)
+    ? /** @type {{ key: string, label: string, index: number }[]} */ (
+        stackPayload.series
+      )
+    : [];
+  const buckets = Array.isArray(stackPayload.buckets)
+    ? /** @type {{ t: string, counts: Record<string, number> }[]} */ (
+        stackPayload.buckets
+      )
+    : [];
+
+  const vbW = 720;
+  const vbH = 360;
+  const padL = 52;
+  const padR = 20;
+  const padT = 28;
+  const padB = 52;
+  const plotW = vbW - padL - padR;
+  const plotH = vbH - padT - padB;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
+  svg.setAttribute("class", "charts-scatter-svg charts-stack-svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute(
+    "aria-label",
+    `Completions by swimlane per ${granularity} period (UTC buckets)`
+  );
+
+  const { tLo, tHi } = timeDomain;
+  /** @param {number} tm */
+  const xAt = (tm) => padL + ((tm - tLo) / (tHi - tLo)) * plotW;
+
+  if (buckets.length === 0) {
+    const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    msg.setAttribute("x", String(vbW / 2));
+    msg.setAttribute("y", String(vbH / 2));
+    msg.setAttribute("text-anchor", "middle");
+    msg.setAttribute("class", "charts-empty-label");
+    msg.textContent = "No completions with a close date yet.";
+    svg.append(msg);
+    return svg;
+  }
+
+  let yMax = 1;
+  for (const b of buckets) {
+    let sum = 0;
+    for (const s of series) {
+      sum += Number(b.counts[s.key] ?? 0) || 0;
+    }
+    yMax = Math.max(yMax, sum);
+  }
+  const yTop = yMax * 1.08;
+
+  /** @param {number} v */
+  const yAt = (v) => padT + plotH - (v / yTop) * plotH;
+
+  const axes = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  axes.setAttribute(
+    "d",
+    `M${padL} ${padT + plotH}L${padL + plotW} ${padT + plotH}M${padL} ${padT}L${padL} ${padT + plotH}`
+  );
+  axes.setAttribute("class", "charts-axis");
+  svg.append(axes);
+
+  const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  yLabel.setAttribute("x", String(14));
+  yLabel.setAttribute("y", String(padT + plotH / 2));
+  yLabel.setAttribute(
+    "transform",
+    `rotate(-90 14 ${padT + plotH / 2})`
+  );
+  yLabel.setAttribute("class", "charts-axis-title");
+  yLabel.textContent = "Completions";
+  svg.append(yLabel);
+
+  const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  xLabel.setAttribute("x", String(padL + plotW / 2));
+  xLabel.setAttribute("y", String(vbH - 12));
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("class", "charts-axis-title");
+  xLabel.textContent = "Close period (UTC)";
+  svg.append(xLabel);
+
+  const yTicks = Math.min(5, Math.max(2, Math.ceil(yMax)));
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (i / yTicks) * yTop;
+    const yy = yAt(v);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", String(padL));
+    line.setAttribute("x2", String(padL + plotW));
+    line.setAttribute("y1", String(yy));
+    line.setAttribute("y2", String(yy));
+    line.setAttribute("class", "charts-grid-line");
+    const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    lab.setAttribute("x", String(padL - 8));
+    lab.setAttribute("y", String(yy + 4));
+    lab.setAttribute("text-anchor", "end");
+    lab.setAttribute("class", "charts-tick-label");
+    lab.textContent = String(Math.round(v));
+    svg.append(line, lab);
+  }
+
+  const xTickN = Math.min(7, buckets.length);
+  for (let i = 0; i < xTickN; i++) {
+    const idx =
+      xTickN <= 1 ? 0 : Math.round((i / (xTickN - 1)) * (buckets.length - 1));
+    const b = buckets[idx];
+    const tm = Date.parse(b.t);
+    const xx = xAt(tm);
+    const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    lab.setAttribute("x", String(xx));
+    lab.setAttribute("y", String(padT + plotH + 22));
+    lab.setAttribute("text-anchor", "middle");
+    lab.setAttribute("class", "charts-tick-label charts-tick-label--x");
+    lab.textContent = formatBucketLabel(b.t, granularity);
+    svg.append(lab);
+  }
+
+  const n = buckets.length;
+  const nSeries = series.length;
+
+  for (let si = 0; si < nSeries; si++) {
+    const s = series[si];
+    let any = false;
+    for (const b of buckets) {
+      if ((Number(b.counts[s.key] ?? 0) || 0) > 0) {
+        any = true;
+        break;
+      }
+    }
+    if (!any) continue;
+
+    /** @param {number} i */
+    function stackY0(i) {
+      let y0 = 0;
+      for (let j = 0; j < si; j++) {
+        y0 += Number(buckets[i].counts[series[j].key] ?? 0) || 0;
+      }
+      return y0;
+    }
+    /** @param {number} i */
+    function stackY1(i) {
+      return stackY0(i) + (Number(buckets[i].counts[s.key] ?? 0) || 0);
+    }
+
+    const fill = swimlaneStackFill(si, nSeries);
+
+    if (n === 1) {
+      const tm = Date.parse(buckets[0].t);
+      const xc = xAt(tm);
+      const barW = Math.min(48, plotW * 0.12);
+      const y0 = yAt(stackY0(0));
+      const y1 = yAt(stackY1(0));
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", String(xc - barW / 2));
+      rect.setAttribute("width", String(barW));
+      rect.setAttribute("y", String(Math.min(y0, y1)));
+      rect.setAttribute("height", String(Math.max(1, Math.abs(y1 - y0))));
+      rect.setAttribute("fill", fill);
+      rect.setAttribute("class", "charts-stack-area");
+      const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      const c = Number(buckets[0].counts[s.key] ?? 0) || 0;
+      tip.textContent = `${s.label}: ${c} in ${formatBucketLabel(buckets[0].t, granularity)}`;
+      rect.append(tip);
+      svg.append(rect);
+      continue;
+    }
+
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const tm = Date.parse(buckets[i].t);
+      parts.push({ x: xAt(tm), y0: yAt(stackY0(i)), y1: yAt(stackY1(i)) });
+    }
+
+    let d = `M ${parts[0].x} ${parts[0].y1}`;
+    for (let i = 1; i < n; i++) {
+      d += ` L ${parts[i].x} ${parts[i].y1}`;
+    }
+    for (let i = n - 1; i >= 0; i--) {
+      d += ` L ${parts[i].x} ${parts[i].y0}`;
+    }
+    d += " Z";
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    path.setAttribute("fill", fill);
+    path.setAttribute("class", "charts-stack-area");
+    const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    const bits = buckets
+      .map((b) => {
+        const c = Number(b.counts[s.key] ?? 0) || 0;
+        return c > 0
+          ? `${formatBucketLabel(b.t, granularity)}: ${c}`
+          : null;
+      })
+      .filter(Boolean);
+    tip.textContent = `${s.label} — ${bits.join("; ") || "0"}`;
+    path.append(tip);
+    svg.append(path);
+  }
+
+  return svg;
+}
+
+/**
+ * @param {Record<string, unknown>} stackPayload
+ */
+function renderSwimlaneStackLegend(stackPayload) {
+  const series = Array.isArray(stackPayload.series)
+    ? /** @type {{ key: string, label: string }[]} */ (stackPayload.series)
+    : [];
+  const wrap = document.createElement("div");
+  wrap.className = "charts-stack-legend";
+  const n = series.length;
+  for (let i = 0; i < series.length; i++) {
+    const s = series[i];
+    const row = document.createElement("span");
+    row.className = "charts-stack-legend-item";
+    const sw = document.createElement("span");
+    sw.className = "charts-stack-swatch";
+    sw.style.background = swimlaneStackFill(i, n);
+    const lab = document.createElement("span");
+    lab.textContent = s.label;
+    row.append(sw, lab);
+    wrap.append(row);
+  }
+  return wrap;
 }
 
 function fmtDays(n) {
@@ -449,9 +727,17 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
  * @param {Granularity} granularity
  * @param {{ buckets: { t: string, n: number }[] }} completionData
  * @param {Record<string, unknown>} cycleData
+ * @param {Record<string, unknown>} swimlaneStackData
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  */
-function renderChartsShell(model, granularity, completionData, cycleData, flowCtx) {
+function renderChartsShell(
+  model,
+  granularity,
+  completionData,
+  cycleData,
+  swimlaneStackData,
+  flowCtx
+) {
   const name = model.board.name?.trim() || "Board";
   const buckets = Array.isArray(completionData.buckets)
     ? completionData.buckets
@@ -459,7 +745,10 @@ function renderChartsShell(model, granularity, completionData, cycleData, flowCt
   const cyclePoints = Array.isArray(cycleData.points)
     ? /** @type {{ t: string, d: number }[]} */ (cycleData.points)
     : [];
-  const timeDomain = sharedTimeDomain(buckets, cyclePoints);
+  const stackBuckets = Array.isArray(swimlaneStackData.buckets)
+    ? /** @type {{ t: string }[]} */ (swimlaneStackData.buckets)
+    : [];
+  const timeDomain = sharedTimeDomain(buckets, cyclePoints, stackBuckets);
   const medianDays =
     typeof cycleData.medianDays === "number" ? cycleData.medianDays : null;
   const stdevDays =
@@ -548,11 +837,27 @@ function renderChartsShell(model, granularity, completionData, cycleData, flowCt
   const note = document.createElement("p");
   note.className = "charts-note";
   note.textContent =
-    "Completions: cards closed in the selected period.";
+    "Completions: cards closed.";
 
   const wrap = document.createElement("div");
   wrap.className = "charts-svg-wrap";
   wrap.append(renderScatterSvg(buckets, granularity, timeDomain));
+
+  const secSwim = document.createElement("h2");
+  secSwim.className = "charts-section-title";
+  secSwim.textContent = "Completions by swimlane";
+
+  const noteSwim = document.createElement("p");
+  noteSwim.className = "charts-note";
+  noteSwim.textContent =
+    "Completions: cards closed grouped by swimlane .";
+
+  const wrapStack = document.createElement("div");
+  wrapStack.className = "charts-svg-wrap";
+  wrapStack.append(
+    renderStackedAreaSvg(swimlaneStackData, granularity, timeDomain)
+  );
+  const stackLegend = renderSwimlaneStackLegend(swimlaneStackData);
 
   const secTitle = document.createElement("h2");
   secTitle.className = "charts-section-title";
@@ -592,7 +897,18 @@ function renderChartsShell(model, granularity, completionData, cycleData, flowCt
   wrap2.className = "charts-svg-wrap";
   wrap2.append(renderCycleScatterSvg(cycleData, granularity, timeDomain));
 
-  body.append(note, wrap, secTitle, stats, note2, wrap2);
+  body.append(
+    note,
+    wrap,
+    secSwim,
+    noteSwim,
+    wrapStack,
+    stackLegend,
+    secTitle,
+    stats,
+    note2,
+    wrap2
+  );
   root.append(top, body);
   return root;
 }
@@ -632,9 +948,10 @@ async function main() {
       return;
     }
     const boardSlug = boardSlugFrom(model.board);
-    const [completionData, cycleData] = await Promise.all([
+    const [completionData, cycleData, swimlaneStackData] = await Promise.all([
       fetchCompletionBuckets(boardSlug, granularity),
       fetchCycleTimeScatter(boardSlug, granularity),
+      fetchCompletionSwimlaneStack(boardSlug, granularity),
     ]);
 
     mount.replaceChildren();
@@ -644,6 +961,7 @@ async function main() {
         granularity,
         completionData,
         cycleData,
+        swimlaneStackData,
         flowCtx
       )
     );

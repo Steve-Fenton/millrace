@@ -48,8 +48,9 @@ You can use the search box to find closed cards.
 
 The charts are carefully designed to increase informational value. You'll notice the charts are aggregated for the board and don't show individual numbers or league tables. We want the charts to power your continuous improvement process, not your performance review process.
 
-- **Completions**: The number of cards completed each week/month (depending on your selection)
-- **Cycle times**: A scatter plot of closed card durations, with median and standard deviation shown
+- **Completions**: The number of cards completed
+- **Completions by swimlane**: Completed cards, grouped by their swimlane
+- **Cycle times**: A scatter plot of closed card durations, with median and standard deviation
 
 ## Features
 
