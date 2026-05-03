@@ -150,7 +150,7 @@ function applySyncCommitPulseUi(syncBtn, lastCommitIso, gitSyncOk) {
   const show = Boolean(gitSyncOk) && syncPulseShouldShow(lastCommitIso);
   syncBtn.classList.toggle("board-sync-btn--pulse", show);
   const baseTitle =
-    "Git: pull remote changes, then push local commits (runs on the machine hosting Flow)";
+    "Git: pull remote changes, then push local commits (runs on the machine hosting Millrace)";
   if (show) {
     syncBtn.title = `${baseTitle} You have local commits — sync when ready.`;
   } else if (gitSyncOk) {
@@ -551,11 +551,11 @@ function renderBoard(
   syncBtn.className = "board-sync-btn";
   syncBtn.textContent = "Sync";
   syncBtn.title =
-    "Git: pull remote changes, then push local commits (runs on the machine hosting Flow)";
+    "Git: pull remote changes, then push local commits (runs on the machine hosting Millrace)";
   syncBtn.disabled = !gitSyncOk;
   if (!gitSyncOk) {
     syncBtn.title =
-      "Git sync unavailable — server data root has no .git (run Flow from your repo clone).";
+      "Git sync unavailable — server data root has no .git (run Millrace from your repo clone).";
   }
 
   syncBtn.addEventListener("click", () => {

@@ -1,6 +1,6 @@
 export const FLOW_ACTIVE_BOARD_SLUG_KEY = "flow:active-board-slug";
 
-/** @typedef {{ slug: string, name: string, file?: string }} FlowBoardRef */
+/** @typedef {{ slug: string, name: string, file?: string }} BoardCatalogEntry */
 
 /**
  * @returns {string}
@@ -26,15 +26,16 @@ export function writeStoredActiveBoardSlug(slug) {
 }
 
 function defaultBoards() {
-  return /** @type {FlowBoardRef[]} */ ([
+  return /** @type {BoardCatalogEntry[]} */ ([
     { slug: "board", name: "Board", file: "board.ini" },
   ]);
 }
 
 /**
- * @returns {Promise<FlowBoardRef[]>}
+ * Board list from `GET /api/flow` (catalog in `tasks/flow.ini`).
+ * @returns {Promise<BoardCatalogEntry[]>}
  */
-export async function fetchFlowBoards() {
+async function fetchBoardCatalog() {
   const res = await fetch("/api/flow", { cache: "no-store" });
   if (!res.ok) return defaultBoards();
   /** @type {Record<string, unknown>} */
@@ -46,7 +47,7 @@ export async function fetchFlowBoards() {
   }
   const raw = data.boards;
   if (!Array.isArray(raw) || raw.length === 0) return defaultBoards();
-  /** @type {FlowBoardRef[]} */
+  /** @type {BoardCatalogEntry[]} */
   const boards = [];
   for (const row of raw) {
     if (!row || typeof row !== "object") continue;
@@ -69,7 +70,7 @@ export async function fetchFlowBoards() {
 }
 
 /**
- * @param {FlowBoardRef[]} boards
+ * @param {BoardCatalogEntry[]} boards
  * @param {string} stored
  */
 export function pickActiveSlug(boards, stored) {
@@ -80,10 +81,10 @@ export function pickActiveSlug(boards, stored) {
 }
 
 /**
- * @returns {Promise<{ boards: FlowBoardRef[], activeSlug: string }>}
+ * @returns {Promise<{ boards: BoardCatalogEntry[], activeSlug: string }>}
  */
 export async function resolveActiveBoardSelection() {
-  const boards = await fetchFlowBoards();
+  const boards = await fetchBoardCatalog();
   const stored = readStoredActiveBoardSlug();
   const activeSlug = pickActiveSlug(boards, stored);
   if (activeSlug !== stored) writeStoredActiveBoardSlug(activeSlug);
@@ -92,7 +93,7 @@ export async function resolveActiveBoardSelection() {
 
 /**
  * Title-styled board switcher (single board → plain `h1`).
- * @param {{ boards: FlowBoardRef[], activeSlug: string }} opts
+ * @param {{ boards: BoardCatalogEntry[], activeSlug: string }} opts
  * @param {(slug: string) => void} onSelect
  * @returns {HTMLElement}
  */

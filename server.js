@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Serves the Flow UI and writes task INIs + tasks/localuser.ini under this repo
+ * Serves the Millrace UI and writes task INIs + tasks/localuser.ini under this repo
  * ([user] default owner, [flow] machine-local timestamps, etc.).
  */
 
@@ -230,7 +230,7 @@ async function recordSuccessfulGitPull() {
 }
 
 /**
- * Before each Flow auto-commit: set `[flow] first_unsynced_commit_at` to now only if unset.
+ * Before each Millrace auto-commit: set `[flow] first_unsynced_commit_at` to now only if unset.
  * If already set (user has not synced since the first unsynced commit), keep that time.
  */
 async function ensureFirstUnsyncedCommitAt() {
@@ -276,7 +276,7 @@ let flowGitCommitTimer = null;
 /**
  * Stage everything under `tasks/` and create one commit if there are staged changes.
  * Requires a Git repo at `DATA_ROOT`, `git` on `PATH`, and `user.name` / `user.email` if empty.
- * @param {string} summary — short phrase for the commit subject (after `Flow: `).
+ * @param {string} summary — short phrase for the commit subject (after `Millrace: `).
  */
 async function commitTasksDirOnce(summary) {
   if (!FLOW_GIT_AUTO_COMMIT) return;
@@ -304,7 +304,7 @@ async function commitTasksDirOnce(summary) {
 
     const { stdout: commitMsg } = await execFileAsync(
       "git",
-      ["commit", "-m", `Flow: ${safeSummary}`],
+      ["commit", "-m", `Millrace: ${safeSummary}`],
       { cwd }
     );
     const firstLine = String(commitMsg).trim().split(/\r?\n/)[0];
@@ -510,7 +510,7 @@ async function resolveCardFilePath(slug, col, filename) {
   return null;
 }
 
-async function readFlowIniBoardFilenames() {
+async function readBoardCatalogIniBasenames() {
   const flowPath = path.join(DATA_ROOT, "tasks", "flow.ini");
   const defaultList = ["board.ini"];
   try {
@@ -532,8 +532,8 @@ async function readFlowIniBoardFilenames() {
  * Boards from `tasks/flow.ini` with parsed slug and display name.
  * @returns {Promise<{ file: string, slug: string, name: string }[]>}
  */
-async function loadFlowBoardCatalog() {
-  const files = await readFlowIniBoardFilenames();
+async function loadBoardCatalog() {
+  const files = await readBoardCatalogIniBasenames();
   /** @type {{ file: string, slug: string, name: string }[]} */
   const out = [];
   for (const file of files) {
@@ -597,7 +597,7 @@ title = Default
  * Append `newBoardIniBasename` to tasks/flow.ini (create flow.ini if missing).
  * @param {string} newBoardIniBasename e.g. "acme.ini"
  */
-async function appendBoardToFlowCatalog(newBoardIniBasename) {
+async function appendBoardCatalogEntry(newBoardIniBasename) {
   const tasksDir = path.join(DATA_ROOT, "tasks");
   const flowPath = path.join(tasksDir, "flow.ini");
   const want = path.basename(String(newBoardIniBasename ?? "").trim());
@@ -613,7 +613,7 @@ async function appendBoardToFlowCatalog(newBoardIniBasename) {
   }
 
   if (!flowText.trim()) {
-    const catalog = await loadFlowBoardCatalog();
+    const catalog = await loadBoardCatalog();
     /** @type {string[]} */
     const files = catalog.map((c) => c.file).filter(Boolean);
     if (!files.includes(want)) files.push(want);
@@ -625,17 +625,17 @@ async function appendBoardToFlowCatalog(newBoardIniBasename) {
   const lines = flowText.split(/\r?\n/);
   /** @type {string[]} */
   const out = [];
-  let inFlow = false;
+  let inRootIniSection = false;
   let updatedBoards = false;
   for (const line of lines) {
     const trimmed = line.trim();
     const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
     if (secMatch) {
-      inFlow = secMatch[1].toLowerCase() === "flow";
+      inRootIniSection = secMatch[1].toLowerCase() === "flow";
       out.push(line);
       continue;
     }
-    if (inFlow && /^boards\s*=/i.test(trimmed)) {
+    if (inRootIniSection && /^boards\s*=/i.test(trimmed)) {
       const eq = line.indexOf("=");
       const val = eq >= 0 ? line.slice(eq + 1).trim() : "";
       const parts = val
@@ -651,7 +651,7 @@ async function appendBoardToFlowCatalog(newBoardIniBasename) {
     out.push(line);
   }
   if (!updatedBoards) {
-    const catalog = await loadFlowBoardCatalog();
+    const catalog = await loadBoardCatalog();
     const files = catalog.map((c) => c.file).filter(Boolean);
     if (!files.includes(want)) files.push(want);
     out.push("", "[flow]", `boards = ${files.join(", ")}`);
@@ -664,7 +664,7 @@ async function appendBoardToFlowCatalog(newBoardIniBasename) {
  * @returns {Promise<{ slug: string, file: string }>}
  */
 async function allocateNewBoardSlugAndFile(boardDisplayName) {
-  const catalog = await loadFlowBoardCatalog();
+  const catalog = await loadBoardCatalog();
   const tasksDir = path.join(DATA_ROOT, "tasks");
   const base = sanitizeSegment(boardDisplayName);
 
@@ -681,7 +681,7 @@ async function allocateNewBoardSlugAndFile(boardDisplayName) {
 
 async function resolveBoardIniPathForSlug(slug) {
   const want = sanitizeSegment(slug);
-  const catalog = await loadFlowBoardCatalog();
+  const catalog = await loadBoardCatalog();
   const hit = catalog.find((e) => e.slug === want);
   if (hit) return path.join(DATA_ROOT, "tasks", hit.file);
   const fallback = path.join(DATA_ROOT, "tasks", "board.ini");
@@ -935,7 +935,7 @@ app.use(express.json({ limit: "512kb" }));
 
 app.get("/api/flow", async (_req, res) => {
   try {
-    const boards = await loadFlowBoardCatalog();
+    const boards = await loadBoardCatalog();
     res.json({ boards });
   } catch (e) {
     console.error(e);
@@ -997,7 +997,7 @@ app.post("/api/board", async (req, res) => {
     const boardIniPath = path.join(tasksDir, file);
     await fs.writeFile(boardIniPath, iniText, "utf8");
     try {
-      await appendBoardToFlowCatalog(file);
+      await appendBoardCatalogEntry(file);
     } catch (e) {
       try {
         await fs.unlink(boardIniPath);
@@ -1205,7 +1205,7 @@ app.put("/api/board-definition", async (req, res) => {
 app.delete("/api/board-definition", async (req, res) => {
   try {
     const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
-    const catalog = await loadFlowBoardCatalog();
+    const catalog = await loadBoardCatalog();
     if (catalog.length <= 1) {
       res.status(400).json({
         message: "Cannot delete the only board in the catalog.",
@@ -1235,16 +1235,16 @@ app.delete("/api/board-definition", async (req, res) => {
       const lines = flowText.split(/\r?\n/);
       /** @type {string[]} */
       const out = [];
-      let inFlow = false;
+      let inRootIniSection = false;
       for (const line of lines) {
         const trimmed = line.trim();
         const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
         if (secMatch) {
-          inFlow = secMatch[1].toLowerCase() === "flow";
+          inRootIniSection = secMatch[1].toLowerCase() === "flow";
           out.push(line);
           continue;
         }
-        if (inFlow && /^boards\s*=/i.test(trimmed)) {
+        if (inRootIniSection && /^boards\s*=/i.test(trimmed)) {
           const eq = line.indexOf("=");
           const val = eq >= 0 ? line.slice(eq + 1).trim() : "";
           const parts = val
@@ -1301,7 +1301,7 @@ app.get("/api/board-definition/git-history", async (req, res) => {
         gitAvailable: false,
         path: null,
         commits: [],
-        message: "No Git repository at the Flow data root.",
+        message: "No Git repository at the Millrace data root.",
       });
       return;
     }
@@ -2161,7 +2161,7 @@ app.get("/api/card/git-history", async (req, res) => {
         gitAvailable: false,
         path: null,
         commits: [],
-        message: "No Git repository at the Flow data root.",
+        message: "No Git repository at the Millrace data root.",
       });
       return;
     }
@@ -2671,14 +2671,14 @@ app.get("/api/git/status", async (_req, res) => {
 });
 
 /**
- * `git pull` then `git push` at the Flow data root (same repo as `tasks/`).
+ * `git pull` then `git push` at the Millrace data root (same repo as `tasks/`).
  */
 app.post("/api/git/sync", async (_req, res) => {
   const cwd = DATA_ROOT;
   if (!existsSync(path.join(cwd, ".git"))) {
     res.status(400).json({
       message:
-        "No Git repository at the Flow data root — run the server from your clone (see FLOW_ROOT).",
+        "No Git repository at the Millrace data root — run the server from your clone (see FLOW_ROOT).",
     });
     return;
   }
@@ -2864,7 +2864,7 @@ async function onListen() {
       ? `http://${HOST}:${PORT}/`
       : `http://localhost:${PORT}/`;
   console.error(
-    `Flow ${where}(data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${flowPath}`})`
+    `Millrace ${where}(data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${flowPath}`})`
   );
   if (FLOW_GIT_AUTO_COMMIT) {
     console.error(

@@ -1,6 +1,6 @@
-# Flow
+# Millrace
 
-Flow is a **git-friendly** work item manager with a **Kanban-first** workflow. You run it locally with **Node.js**; boards and work items are **INI files** under `tasks/`, so you can **commit, diff, and merge** them with Git like any other project files.
+Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You run it locally with **Node.js**; boards and work items are **INI files** under `tasks/`, so you can **commit, diff, and merge** them with Git like any other project files.
 
 ## Running the app
 
@@ -8,8 +8,8 @@ Flow is a **git-friendly** work item manager with a **Kanban-first** workflow. Y
 
 After **`pnpm add millrace`** (or **`npm install millrace`**) from the registry your build publishes to:
 
-1. Add a script in your **`package.json`**, for example **`"flow": "millrace"`** (or **`"flow": "millrace 8888"`** to set the port via argv instead of **`PORT`**).
-2. Run **`pnpm flow`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/flow.ini`** (that directory becomes the data root for INIs and for **Git**).
+1. Add a script in your **`package.json`**, for example **`"millrace": "millrace"`** (or **`"millrace": "millrace 8888"`** to set the port via argv instead of **`PORT`**). You can still use a shorter alias such as **`"mr": "millrace"`** if you prefer.
+2. Run **`pnpm millrace`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/flow.ini`** (that directory becomes the data root for INIs and for **Git**).
 
 The published tarball includes the server and web UI only (no sample **`tasks/`** tree). The UI is served from the package; **`tasks/`** and **`.git`** are read from your **`FLOW_ROOT`** / resolved project root, so **Sync**, auto-commit, and history run against **your** clone.
 
@@ -44,7 +44,7 @@ Opening **`index.html`** as a **`file://`** URL will not load board data; use th
 - **`[board]`** — **`name`** (shown in the UI) and **`slug`** (folder name under **`tasks/`**, e.g. **`board`** → **`tasks/board/`**).
 - **`[columns.N]`** — **`title`** for each column; **`N`** orders columns left to right (`columns.1`, `columns.2`, …).
   - Optional **`wip_limit = \<non‑negative integer\>`** — Kanban **WIP** cap for that column. The board shows **`Title (current/limit)`** in the column header when set; if **more cards** are in that column than the limit (count includes **all swimlanes**), the column header and cells use a **subtle red** highlight.
-  - Optional **`is_done = true`** (also **`1`**, **`yes`**, **`on`**) marks a **done** column. When a card is **moved** into that column (its **`column`** field changes to **`N`** for a done column), Flow adds **`closed = \<ISO-8601 UTC timestamp\>`** to the work item. Moving to a non-done column removes **`closed`** (unless you edit the file by hand).
+  - Optional **`is_done = true`** (also **`1`**, **`yes`**, **`on`**) marks a **done** column. When a card is **moved** into that column (its **`column`** field changes to **`N`** for a done column), Millrace adds **`closed = \<ISO-8601 UTC timestamp\>`** to the work item. Moving to a non-done column removes **`closed`** (unless you edit the file by hand).
 - **`[swimlanes.N]`** — Optional horizontal rows, top to bottom. If you omit all swimlane sections, the board has a single implicit lane.
 
 ```ini
@@ -125,7 +125,7 @@ last_auto_git_pull = 2026-05-03T08:40:21.777Z
 
 ## Web UI
 
-- **Sync** — Runs **`git pull`** then **`git push`** in the repo whose **`tasks/`** directory Flow is using (the server’s “data root”). Requires **`git`** on the server machine, a configured remote, and credentials/SSH access as usual; conflicts or auth failures appear in an alert. The button is disabled if that directory is not a Git clone (no **`.git`**).
+- **Sync** — Runs **`git pull`** then **`git push`** in the repo whose **`tasks/`** directory Millrace is using (the server’s “data root”). Requires **`git`** on the server machine, a configured remote, and credentials/SSH access as usual; conflicts or auth failures appear in an alert. The button is disabled if that directory is not a Git clone (no **`.git`**).
 - **Drag and drop** cards between columns and swimlanes (updates **`column`**, **`swimlane`**, **`sort_order`**, and related fields in the INI). With the owner filter on **All**, you can also reorder within a column + swimlane by dropping onto the desired position in the list.
 - **Cards** filter — **All**, **Mine** (owner matches **`localuser.ini`**), or a specific owner from the board; the choice is stored in the browser (**`localStorage`**).
 - **Edit** a card via the pencil control (shown on hover over the card, or when the row/card has keyboard focus). **Links** on a card are shown as clickable rows (open in a new tab).

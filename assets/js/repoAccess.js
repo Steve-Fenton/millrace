@@ -1,5 +1,5 @@
 /**
- * HTTP API to the Flow Node server (same origin), with fallbacks when /api is absent.
+ * HTTP API to the Millrace Node server (same origin), with fallbacks when /api is absent.
  */
 
 /**
@@ -22,7 +22,7 @@ async function errorBodyMessage(res) {
   }
   const text = await res.text().catch(() => "");
   if (res.status === 404 && /cannot get\s+\//i.test(text)) {
-    return "Card API unavailable — restart the Flow server from this repo (`pnpm start`).";
+    return "Card API unavailable — restart the Millrace server from this repo (`pnpm start`).";
   }
   const oneLine = text.replace(/\s+/g, " ").trim();
   if (oneLine.length > 0 && oneLine.length < 400) {
