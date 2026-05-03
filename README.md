@@ -1,15 +1,52 @@
 # Millrace
 
-Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You run it locally with **Node.js**; boards and work items are **INI files** under `tasks/`, so you can **commit, diff, and merge** them with Git like any other project files.
+Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You create a git repository for you work, add Millrace, and run the app to visuallly manage work, while git does all the hard work tracking changes in high-fidelity.
+
+## Using Millrace in your project
+
+To use Millrace, follow these steps.
+
+- Install (with pnpm or npm)
+- Add one `.gitignore` rule for `tasks/localuser.ini`
+
+### pnpm
+
+From your project root:
+
+```bash
+pnpm add millrace
+```
+
+Run the server with **`pnpm exec millrace`** (optionally pass a port: **`pnpm exec millrace 8888`**), or add a script to your **`package.json`** (for example **`"start": "millrace"`**) and run **`pnpm start`**.
+
+### npm
+
+From your project root:
+
+```bash
+npm install millrace
+```
+
+Run with **`npx millrace`** (or **`npx millrace 8888`** for a port), or add a **`package.json`** script such as **`"start": "millrace"`** and run **`npm run start`**.
+
+### Ignore `tasks/localuser.ini` in Git
+
+Millrace may create **`tasks/localuser.ini`** to store the default owner on this machine (used for new cards and filters). That file is machine-specific, so add it to **`.gitignore`** in the repo where you keep **`tasks/`**:
+
+```gitignore
+tasks/localuser.ini
+```
+
+---
 
 ## Running the app
 
 ### From a published package (your own repo + `tasks/`)
 
-After **`pnpm add millrace`** (or **`npm install millrace`**) from the registry your build publishes to:
+After you [install millrace in your project](#using-millrace-in-your-project):
 
 1. Add a script in your **`package.json`**, for example **`"millrace": "millrace"`** (or **`"millrace": "millrace 8888"`** to set the port via argv instead of **`PORT`**). You can still use a shorter alias such as **`"mr": "millrace"`** if you prefer.
-2. Run **`pnpm millrace`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/flow.ini`** (that directory becomes the data root for INIs and for **Git**).
+2. Run **`pnpm millrace`** or **`npm run millrace`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/flow.ini`** (that directory becomes the data root for INIs and for **Git**).
 
 The published tarball includes the server and web UI only (no sample **`tasks/`** tree). The UI is served from the package; **`tasks/`** and **`.git`** are read from your **`FLOW_ROOT`** / resolved project root, so **Sync**, auto-commit, and history run against **your** clone.
 
