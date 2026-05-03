@@ -38,7 +38,6 @@ function renderBoardsTable(selection) {
     { label: "Config file", align: "left" },
     { label: "Current", align: "right" },
     { label: "Open", align: "left" },
-    { label: "", align: "left" },
   ]) {
     const th = document.createElement("th");
     th.scope = "col";
@@ -69,6 +68,24 @@ function renderBoardsTable(selection) {
     titleDiv.className = "column-card-title complete-table__title-text";
     titleDiv.textContent = b.name;
     titleMain.append(titleDiv);
+
+    const fn = b.file && String(b.file).trim();
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "flow-card-edit-btn";
+    editBtn.setAttribute("aria-label", `Edit board ${b.name}`);
+    editBtn.title = "Edit board";
+    editBtn.innerHTML = EDIT_BOARD_ICON;
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      void openBoardEditorDialog({
+        boardSlug: b.slug,
+        displayName: b.name,
+        configFile: fn || `${b.slug}.ini`,
+      });
+    });
+    titleMain.append(editBtn);
+
     titleInner.append(titleMain);
     tdName.append(titleInner);
 
@@ -78,7 +95,6 @@ function renderBoardsTable(selection) {
 
     const tdFile = document.createElement("td");
     tdFile.className = "complete-table__td";
-    const fn = b.file && String(b.file).trim();
     tdFile.textContent = fn || "—";
 
     const tdCurrent = document.createElement("td");
@@ -102,32 +118,14 @@ function renderBoardsTable(selection) {
     linkWrap.append(a);
     tdOpen.append(linkWrap);
 
-    const tdEdit = document.createElement("td");
-    tdEdit.className = "complete-table__td complete-table__td--actions";
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "flow-card-edit-btn";
-    editBtn.setAttribute("aria-label", `Edit board ${b.name}`);
-    editBtn.title = "Edit board";
-    editBtn.innerHTML = EDIT_BOARD_ICON;
-    editBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      void openBoardEditorDialog({
-        boardSlug: b.slug,
-        displayName: b.name,
-        configFile: fn || `${b.slug}.ini`,
-      });
-    });
-    tdEdit.append(editBtn);
-
-    tr.append(tdName, tdSlug, tdFile, tdCurrent, tdOpen, tdEdit);
+    tr.append(tdName, tdSlug, tdFile, tdCurrent, tdOpen);
     tbody.append(tr);
   }
 
   if (boards.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 6;
+    td.colSpan = 5;
     td.className = "complete-empty";
     td.textContent = "No boards configured.";
     tr.append(td);

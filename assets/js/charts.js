@@ -215,7 +215,7 @@ function renderScatterSvg(buckets, granularity, timeDomain = null) {
   xLabel.setAttribute("y", String(vbH - 12));
   xLabel.setAttribute("text-anchor", "middle");
   xLabel.setAttribute("class", "charts-axis-title");
-  xLabel.textContent = "Period (UTC)";
+  xLabel.textContent = "Close period (UTC)";
   svg.append(xLabel);
 
   const yTicks = Math.min(5, Math.max(2, nMax));
