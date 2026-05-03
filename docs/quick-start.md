@@ -32,3 +32,5 @@ Millrace may create **`tasks/localuser.ini`** to store the default owner on this
 ```gitignore
 tasks/localuser.ini
 ```
+
+To run Millrace on login with PM2, see the [guide to auto start](auto-start.md).
