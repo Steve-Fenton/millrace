@@ -1,0 +1,13 @@
+{
+  "name": "Millrace",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "FLOW_GIT_AUTO_COMMIT=1 node server.js 7713",
+    "start:no-commit": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

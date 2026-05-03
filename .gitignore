@@ -1,0 +1,8 @@
+.DS_Store
+.pnpm-store
+node_modules
+
+# tasks/ holds versioned work-item INI files — do not gitignore the folder
+
+# tasks/localuser.ini is a special file that is used to store local only settings
+tasks/localuser.ini
