@@ -115,7 +115,7 @@ async function openBoardGitHistoryNested(ctx) {
       empty.className = "flow-git-history-empty";
       empty.textContent =
         msg ||
-        "No commits yet for this file in Git (save with FLOW_GIT_AUTO_COMMIT or commit manually).";
+        "No commits yet for this file in Git (commit changes in the repo manually).";
       listEl.append(empty);
       return;
     }
@@ -180,14 +180,7 @@ async function openBoardGitHistoryNested(ctx) {
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
  */
-function buildModel(
-  initialModel,
-  boardName,
-  pullFreq,
-  colRows,
-  swimRows,
-  userRows
-) {
+function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
   const columns = colRows.map((r, i) => {
     const wip = r.wipLimit.trim();
     let wipLimit = undefined;
@@ -218,12 +211,15 @@ function buildModel(
     const active = r.active !== false;
     users.push({ index: userIdx++, email, name: display, active });
   }
+  const ib = initialModel.board ?? {};
+  const rest = { ...ib };
+  delete rest.pull_frequency;
+  delete rest.pullFrequency;
   return {
     board: {
-      ...initialModel.board,
+      ...rest,
       name: boardName.trim(),
-      slug: String(initialModel.board?.slug ?? "").trim(),
-      pull_frequency: String(pullFreq ?? "").trim() || "0",
+      slug: String(ib.slug ?? "").trim(),
     },
     columns,
     swimlanes,
@@ -303,10 +299,6 @@ export async function openBoardEditorDialog(ctx) {
           <span class="flow-field-label">Slug</span>
           <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Change slug by renaming the board file and tasks folder in the repo" />
         </label>
-        <label class="flow-field">
-          <span class="flow-field-label">Pull frequency (minutes)</span>
-          <input class="flow-input" name="pullFrequency" type="text" inputmode="numeric" autocomplete="off" placeholder="0" />
-        </label>
         <div class="flow-board-editor-sortables"></div>
         <div class="flow-modal-actions flow-modal-actions--split">
           <button
@@ -332,14 +324,8 @@ export async function openBoardEditorDialog(ctx) {
   const form = modal.querySelector("form");
   const nameInput = modal.querySelector('input[name="boardName"]');
   const slugInput = modal.querySelector('input[name="boardSlug"]');
-  const pullInput = modal.querySelector('input[name="pullFrequency"]');
   nameInput.value = String(initialModel.board?.name ?? def.name ?? "").trim();
   slugInput.value = ctx.boardSlug;
-  pullInput.value = String(
-    initialModel.board?.pull_frequency ??
-      initialModel.board?.pullFrequency ??
-      "0"
-  ).trim();
 
   const sortWrap = modal.querySelector(".flow-board-editor-sortables");
   const colEditor = createSortableColumnList(colSeeds.length ? colSeeds : [{ title: "Backlog", wipLimit: "", isDone: false }]);
@@ -461,7 +447,6 @@ export async function openBoardEditorDialog(ctx) {
       const model = buildModel(
         initialModel,
         boardName,
-        pullInput.value,
         colRows,
         swimRows,
         rawUserRows

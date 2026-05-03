@@ -232,7 +232,7 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
 }
 
 /**
- * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, firstUnsyncedCommitAt: string }>}
+ * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string }>}
  */
 export async function fetchLocalUserProfile() {
   try {
@@ -242,7 +242,6 @@ export async function fetchLocalUserProfile() {
         owner: "",
         mine: "",
         chartsGranularity: "",
-        firstUnsyncedCommitAt: "",
       };
     }
     const data = await res.json();
@@ -250,16 +249,12 @@ export async function fetchLocalUserProfile() {
       owner: String(data.owner ?? "").trim(),
       mine: String(data.mine ?? "").trim(),
       chartsGranularity: String(data.chartsGranularity ?? "").trim(),
-      firstUnsyncedCommitAt: String(
-        data.firstUnsyncedCommitAt ?? ""
-      ).trim(),
     };
   } catch {
     return {
       owner: "",
       mine: "",
       chartsGranularity: "",
-      firstUnsyncedCommitAt: "",
     };
   }
 }

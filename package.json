@@ -19,8 +19,7 @@
     "complete"
   ],
   "scripts": {
-    "start": "FLOW_GIT_AUTO_COMMIT=1 node server.js 7713",
-    "start:no-commit": "node server.js"
+    "start": "node server.js 7713"
   },
   "engines": {
     "node": ">=18"

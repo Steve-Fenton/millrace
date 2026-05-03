@@ -13,10 +13,6 @@ export function serializeBoardIniFromModel(model) {
   if (name) lines.push(`name = ${name}`);
   const slug = String(b.slug ?? "").trim();
   if (slug) lines.push(`slug = ${slug}`);
-  const pf = b.pull_frequency ?? b.pullFrequency;
-  if (pf !== undefined && String(pf).trim() !== "") {
-    lines.push(`pull_frequency = ${String(pf).trim()}`);
-  }
   lines.push("");
   lines.push(
     "; Columns appear in list order by section index (columns.1, columns.2, …)."

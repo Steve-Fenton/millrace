@@ -108,71 +108,14 @@ const emptyFlowCtx = () => ({
   activeSlug: "board",
 });
 
-/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, firstUnsyncedCommitAt: string }} */
+/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null }} */
 let boardCache = {
   model: null,
   cardsByColumn: null,
   mineEmail: "",
   defaultCardOwner: "",
   flowCtx: null,
-  firstUnsyncedCommitAt: "",
 };
-
-/** Pulse Sync after this many ms from `first_unsynced_commit_at` in localuser.ini. */
-const SYNC_PULSE_AFTER_MS = 5 * 60 * 1000;
-
-/** @type {ReturnType<typeof setInterval> | null} */
-let syncCommitPulseTimerId = null;
-
-function clearSyncCommitPulseTimer() {
-  if (syncCommitPulseTimerId != null) {
-    clearInterval(syncCommitPulseTimerId);
-    syncCommitPulseTimerId = null;
-  }
-}
-
-/**
- * @param {string} lastCommitIso
- */
-function syncPulseShouldShow(lastCommitIso) {
-  const t = String(lastCommitIso ?? "").trim();
-  if (!t) return false;
-  const ms = Date.parse(t);
-  if (!Number.isFinite(ms)) return false;
-  return Date.now() >= ms + SYNC_PULSE_AFTER_MS;
-}
-
-/**
- * @param {HTMLButtonElement} syncBtn
- * @param {string} lastCommitIso
- * @param {boolean} gitSyncOk
- */
-function applySyncCommitPulseUi(syncBtn, lastCommitIso, gitSyncOk) {
-  const show = Boolean(gitSyncOk) && syncPulseShouldShow(lastCommitIso);
-  syncBtn.classList.toggle("board-sync-btn--pulse", show);
-  const baseTitle =
-    "Git: pull remote changes, then push local commits (runs on the machine hosting Millrace)";
-  if (show) {
-    syncBtn.title = `${baseTitle} You have local commits — sync when ready.`;
-  } else if (gitSyncOk) {
-    syncBtn.title = baseTitle;
-  }
-}
-
-/**
- * @param {HTMLButtonElement} syncBtn
- * @param {string} lastCommitIso
- * @param {boolean} gitSyncOk
- */
-function attachSyncCommitPulse(syncBtn, lastCommitIso, gitSyncOk) {
-  clearSyncCommitPulseTimer();
-  applySyncCommitPulseUi(syncBtn, lastCommitIso, gitSyncOk);
-  const iso = String(lastCommitIso ?? "").trim();
-  if (!iso || !gitSyncOk) return;
-  syncCommitPulseTimerId = setInterval(() => {
-    applySyncCommitPulseUi(syncBtn, lastCommitIso, gitSyncOk);
-  }, 10_000);
-}
 
 /** Set on full board load; used when re-rendering after owner filter only. */
 let gitRepoAvailable = false;
@@ -364,14 +307,7 @@ function positionDropMarker(list, clientY, mode) {
  * @param {Map<number, Array<{ filename?: string, title?: string, owner?: string, swimlane?: string, links?: { text?: string, url?: string }[] }>>} cardsByColumn
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  */
-function renderBoard(
-  model,
-  cardsByColumn,
-  mineEmail,
-  gitSyncOk,
-  flowCtx,
-  firstUnsyncedCommitAt
-) {
+function renderBoard(model, cardsByColumn, mineEmail, gitSyncOk, flowCtx) {
   const { board, columns, swimlanes } = model;
   const name = board.name?.trim() || "Board";
   const boardSlug = boardSlugFrom(board);
@@ -573,9 +509,6 @@ function renderBoard(
     void (async () => {
       try {
         await gitSyncRemote();
-        clearSyncCommitPulseTimer();
-        syncBtn.classList.remove("board-sync-btn--pulse");
-        applySyncCommitPulseUi(syncBtn, "", gitSyncOk);
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -586,8 +519,6 @@ function renderBoard(
       }
     })();
   });
-
-  attachSyncCommitPulse(syncBtn, firstUnsyncedCommitAt, gitSyncOk);
 
   topActions.append(syncBtn, badge, navMenu);
   top.append(topLeft, topMiddle, topActions);
@@ -1031,8 +962,7 @@ async function loadApp(fullReload = true) {
       boardCache.cardsByColumn,
       boardCache.mineEmail,
       gitRepoAvailable,
-      boardCache.flowCtx ?? emptyFlowCtx(),
-      boardCache.firstUnsyncedCommitAt ?? ""
+      boardCache.flowCtx ?? emptyFlowCtx()
     );
     if (shell) shell.replaceWith(next);
     return;
@@ -1071,7 +1001,6 @@ async function loadApp(fullReload = true) {
 
     const mineEmail = String(profile.mine ?? "").trim();
     const defaultCardOwner = String(profile.owner ?? "").trim();
-    const firstUnsyncedCommitAt = profile.firstUnsyncedCommitAt ?? "";
 
     boardCache = {
       model,
@@ -1079,21 +1008,13 @@ async function loadApp(fullReload = true) {
       mineEmail,
       defaultCardOwner,
       flowCtx,
-      firstUnsyncedCommitAt,
     };
 
     applyStoredOwnerFilter();
 
     mount.replaceChildren();
     mount.append(
-      renderBoard(
-        model,
-        cardsByColumn,
-        mineEmail,
-        gitRepoAvailable,
-        flowCtx,
-        firstUnsyncedCommitAt
-      )
+      renderBoard(model, cardsByColumn, mineEmail, gitRepoAvailable, flowCtx)
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

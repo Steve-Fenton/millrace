@@ -101,7 +101,7 @@ async function openCardGitHistoryNested(ctx) {
       empty.className = "flow-git-history-empty";
       empty.textContent =
         msg ||
-        "No commits yet for this file in Git (save with FLOW_GIT_AUTO_COMMIT or commit manually).";
+        "No commits yet for this file in Git (commit changes in the repo manually).";
       listEl.append(empty);
       return;
     }

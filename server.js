@@ -122,25 +122,8 @@ async function readMillraceCatalogRetentionSettings() {
 /** Average Gregorian month length for age cutoffs (archive → cold-storage). */
 const MS_PER_MONTH = (365.25 / 12) * 24 * 60 * 60 * 1000;
 
-/** When set (`1` / `true` / `yes`), stage `tasks/` and commit after writes (debounced). */
-const FLOW_GIT_AUTO_COMMIT = /^1|true|yes$/i.test(
-  String(process.env.FLOW_GIT_AUTO_COMMIT ?? "")
-);
-
-const FLOW_GIT_COMMIT_DELAY_MS = (() => {
-  const raw = process.env.FLOW_GIT_COMMIT_DELAY_MS;
-  if (raw === undefined || raw === "") return 1500;
-  const n = Number.parseInt(String(raw), 10);
-  return Number.isFinite(n) && n >= 0 ? n : 1500;
-})();
-
 const LOCAL_USER_REL = path.join("tasks", "localuser.ini");
 const LOCAL_USER_PATH = path.join(DATA_ROOT, LOCAL_USER_REL);
-/** @deprecated Migrated into tasks/localuser.ini `[flow] last_auto_git_pull` on server start. */
-const LEGACY_FLOW_LAST_AUTO_GIT_PULL = path.join(
-  DATA_ROOT,
-  ".flow-last-auto-git-pull"
-);
 
 const execFileAsync = promisify(execFile);
 
@@ -216,170 +199,6 @@ async function writeLocalUserIniSections(sections) {
   await fs.writeFile(LOCAL_USER_PATH, text, "utf8");
 }
 
-async function migrateLegacyGitPullStateIfPresent() {
-  if (!existsSync(LEGACY_FLOW_LAST_AUTO_GIT_PULL)) return;
-  try {
-    const raw = (
-      await fs.readFile(LEGACY_FLOW_LAST_AUTO_GIT_PULL, "utf8")
-    ).trim();
-    const ms = Date.parse(raw);
-    if (!Number.isFinite(ms)) {
-      await fs.unlink(LEGACY_FLOW_LAST_AUTO_GIT_PULL).catch(() => {});
-      return;
-    }
-    const sections = await readLocalUserIniSections();
-    sections.flow = sections.flow ?? {};
-    const existing = String(
-      sections.flow.last_auto_git_pull ??
-        sections.flow.lastAutoGitPull ??
-        ""
-    ).trim();
-    if (!existing) {
-      sections.flow.last_auto_git_pull = new Date(ms).toISOString();
-    }
-    await writeLocalUserIniSections(sections);
-    await fs.unlink(LEGACY_FLOW_LAST_AUTO_GIT_PULL);
-  } catch (e) {
-    console.warn("[flow] could not migrate legacy git pull timestamp:", e);
-  }
-}
-
-/** @returns {Promise<number | null>} last successful pull time (ms), or null */
-async function readLastGitPullMs() {
-  try {
-    const sections = await readLocalUserIniSections();
-    const raw =
-      sections.flow?.last_auto_git_pull ??
-      sections.flow?.lastAutoGitPull ??
-      "";
-    const ms = Date.parse(String(raw).trim());
-    return Number.isFinite(ms) ? ms : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Record that a `git pull` succeeded (auto or `/api/git/sync`). */
-async function recordSuccessfulGitPull() {
-  try {
-    const sections = await readLocalUserIniSections();
-    sections.flow = sections.flow ?? {};
-    delete sections.flow.lastAutoGitPull;
-    sections.flow.last_auto_git_pull = new Date().toISOString();
-    await writeLocalUserIniSections(sections);
-  } catch (e) {
-    console.warn(
-      "[flow] could not write last git pull time to localuser.ini:",
-      e
-    );
-  }
-}
-
-/**
- * Before each Millrace auto-commit: set `[flow] first_unsynced_commit_at` to now only if unset.
- * If already set (user has not synced since the first unsynced commit), keep that time.
- */
-async function ensureFirstUnsyncedCommitAt() {
-  try {
-    const sections = await readLocalUserIniSections();
-    sections.flow = sections.flow ?? {};
-    delete sections.flow.firstUnsyncedCommitAt;
-
-    const first = String(sections.flow.first_unsynced_commit_at ?? "").trim();
-    if (Number.isFinite(Date.parse(first))) {
-      return;
-    }
-
-    sections.flow.first_unsynced_commit_at = new Date().toISOString();
-    await writeLocalUserIniSections(sections);
-  } catch (e) {
-    console.warn(
-      "[flow] could not write first_unsynced_commit_at to localuser.ini:",
-      e
-    );
-  }
-}
-
-/** Cleared after a successful `git pull` + `git push` from `/api/git/sync`. */
-async function clearFirstUnsyncedCommitAt() {
-  try {
-    const sections = await readLocalUserIniSections();
-    if (!sections.flow) return;
-    delete sections.flow.first_unsynced_commit_at;
-    delete sections.flow.firstUnsyncedCommitAt;
-    await writeLocalUserIniSections(sections);
-  } catch (e) {
-    console.warn(
-      "[flow] could not clear first_unsynced_commit_at in localuser.ini:",
-      e
-    );
-  }
-}
-
-/** @type {ReturnType<typeof setTimeout> | null} */
-let flowGitCommitTimer = null;
-
-/**
- * Stage everything under `tasks/` and create one commit if there are staged changes.
- * Requires a Git repo at `DATA_ROOT`, `git` on `PATH`, and `user.name` / `user.email` if empty.
- * @param {string} summary — short phrase for the commit subject (after `Millrace: `).
- */
-async function commitTasksDirOnce(summary) {
-  if (!FLOW_GIT_AUTO_COMMIT) return;
-  const cwd = DATA_ROOT;
-  if (!existsSync(path.join(cwd, ".git"))) return;
-
-  const safeSummary = summary.replace(/\r?\n/g, " ").trim().slice(0, 120) || "update tasks";
-
-  try {
-    await execFileAsync("git", ["add", "--", "tasks"], { cwd });
-    const { stdout: stagedNames } = await execFileAsync(
-      "git",
-      ["diff", "--cached", "--name-only"],
-      { cwd }
-    );
-    if (!String(stagedNames).trim()) {
-      console.error(
-        "[flow] FLOW_GIT_AUTO_COMMIT: skipped — nothing staged under tasks/ (already matches HEAD, or paths ignored)"
-      );
-      return;
-    }
-
-    await ensureFirstUnsyncedCommitAt();
-    await execFileAsync("git", ["add", "--", "tasks"], { cwd });
-
-    const { stdout: commitMsg } = await execFileAsync(
-      "git",
-      ["commit", "-m", `Millrace: ${safeSummary}`],
-      { cwd }
-    );
-    const firstLine = String(commitMsg).trim().split(/\r?\n/)[0];
-    if (firstLine) {
-      console.error("[flow] FLOW_GIT_AUTO_COMMIT:", firstLine);
-    }
-  } catch (e) {
-    const err = /** @type {Error & { stderr?: string }} */ (e);
-    console.error(
-      "[flow] FLOW_GIT_AUTO_COMMIT: git failed —",
-      err.message,
-      err.stderr ? `\n${err.stderr}` : ""
-    );
-  }
-}
-
-/**
- * Debounce Git commits so bursts of API calls (e.g. reorder) produce one commit.
- * @param {string} summary
- */
-function queueTasksGitCommit(summary) {
-  if (!FLOW_GIT_AUTO_COMMIT) return;
-  if (flowGitCommitTimer) clearTimeout(flowGitCommitTimer);
-  flowGitCommitTimer = setTimeout(() => {
-    flowGitCommitTimer = null;
-    void commitTasksDirOnce(summary);
-  }, FLOW_GIT_COMMIT_DELAY_MS);
-}
-
 /** Non-interactive git (no editor / terminal prompt for pull merge messages / credentials). */
 function gitChildEnv() {
   return {
@@ -389,7 +208,7 @@ function gitChildEnv() {
   };
 }
 
-/** One git mutation at a time at `DATA_ROOT` (auto pull vs archive pull/push). */
+/** One git mutation at a time at `DATA_ROOT` (e.g. `/api/git/sync` vs log endpoints). */
 let gitSerializedChain = Promise.resolve();
 
 /**
@@ -404,113 +223,6 @@ function runGitSerialized(fn) {
     () => {}
   );
   return run;
-}
-
-/** True when we should skip archiving: unpushed Millrace commits or commits ahead of `@{u}`. */
-async function hasLocalCommitsToSync() {
-  if (!existsSync(path.join(DATA_ROOT, ".git"))) return false;
-  try {
-    const sections = await readLocalUserIniSections();
-    const raw = String(
-      sections.flow?.first_unsynced_commit_at ??
-        sections.flow?.firstUnsyncedCommitAt ??
-        ""
-    ).trim();
-    if (raw && Number.isFinite(Date.parse(raw))) return true;
-  } catch {
-    /* fall through to rev-list */
-  }
-  const opts = {
-    cwd: DATA_ROOT,
-    env: gitChildEnv(),
-    maxBuffer: 1024 * 1024,
-  };
-  try {
-    const { stdout } = await execFileAsync(
-      "git",
-      ["rev-list", "--count", "@{u}..HEAD"],
-      opts
-    );
-    const n = Number.parseInt(String(stdout).trim(), 10);
-    return Number.isFinite(n) && n > 0;
-  } catch {
-    return false;
-  }
-}
-
-/** Default `[board] pull_frequency` in minutes when unset in board.ini. */
-const DEFAULT_PULL_FREQUENCY_MINUTES = 30;
-
-/** How often we check whether a scheduled pull is due (ms). */
-const AUTO_GIT_PULL_CHECK_INTERVAL_MS = 60_000;
-
-/** @type {boolean} */
-let autoGitPullInFlight = false;
-
-/**
- * Minutes between automatic `git pull` runs at DATA_ROOT (`0` = off). Reads `tasks/board.ini` each time.
- */
-async function readPullFrequencyMinutesFromBoardIni() {
-  try {
-    const boardPath = path.join(DATA_ROOT, "tasks", "board.ini");
-    let text = await fs.readFile(boardPath, "utf8");
-    text = text.replace(/^\uFEFF/, "");
-    const sections = parseIni(text);
-    const board = sections.board ?? {};
-    const raw =
-      board.pull_frequency ?? board.pullFrequency ?? board.PULL_FREQUENCY;
-    if (raw === undefined || String(raw).trim() === "") {
-      return DEFAULT_PULL_FREQUENCY_MINUTES;
-    }
-    const n = Number.parseFloat(String(raw).trim());
-    if (!Number.isFinite(n) || n < 0) {
-      return DEFAULT_PULL_FREQUENCY_MINUTES;
-    }
-    return n;
-  } catch {
-    return DEFAULT_PULL_FREQUENCY_MINUTES;
-  }
-}
-
-async function runAutoGitPullIfDue() {
-  if (autoGitPullInFlight) return;
-  const freqMin = await readPullFrequencyMinutesFromBoardIni();
-  if (freqMin <= 0) return;
-  if (!existsSync(path.join(DATA_ROOT, ".git"))) return;
-
-  const periodMs = freqMin * 60 * 1000;
-  const last = await readLastGitPullMs();
-  const now = Date.now();
-  if (last != null && now - last < periodMs) return;
-
-  autoGitPullInFlight = true;
-  try {
-    const env = gitChildEnv();
-    const opts = {
-      cwd: DATA_ROOT,
-      env,
-      maxBuffer: 10 * 1024 * 1024,
-    };
-    await runGitSerialized(async () => {
-      await execFileAsync("git", ["pull", "--no-edit"], opts);
-      await recordSuccessfulGitPull();
-    });
-    console.error("[flow] auto git pull: ok");
-  } catch (e) {
-    console.error(
-      "[flow] auto git pull: failed —",
-      formatGitExecError("git pull", e)
-    );
-  } finally {
-    autoGitPullInFlight = false;
-  }
-}
-
-function startAutoGitPullScheduler() {
-  setInterval(() => {
-    void runAutoGitPullIfDue();
-  }, AUTO_GIT_PULL_CHECK_INTERVAL_MS);
-  void runAutoGitPullIfDue();
 }
 
 /**
@@ -676,7 +388,6 @@ function defaultNewBoardIniText(displayName, slug) {
   return `[board]
 name = ${safeName}
 slug = ${slug}
-pull_frequency = 30
 
 [columns.1]
 title = To Do
@@ -927,37 +638,19 @@ const archiveStaleInFlight = new Map();
 
 /**
  * @param {string} slug
- * @param {{ commitMode?: "debounce" | "immediate" }} [opts]
  */
-async function runArchiveStaleClosedForSlug(slug, opts = {}) {
-  const commitMode = opts.commitMode ?? "debounce";
+async function runArchiveStaleClosedForSlug(slug) {
   let p = archiveStaleInFlight.get(slug);
   if (p) return p;
 
   p = (async () => {
     const { archiveClosedAfterDays, coldStorageArchiveAfterMonths } =
       await readMillraceCatalogRetentionSettings();
-    const nBoard = await archiveStaleClosedTaskFiles(
-      slug,
-      archiveClosedAfterDays
-    );
-    const nCold = await moveStaleArchiveFilesToColdStorage(
+    await archiveStaleClosedTaskFiles(slug, archiveClosedAfterDays);
+    await moveStaleArchiveFilesToColdStorage(
       slug,
       coldStorageArchiveAfterMonths
     );
-    if (nBoard + nCold > 0) {
-      const summary =
-        nBoard > 0 && nCold > 0
-          ? "archive old closed tasks and cold-storage"
-          : nCold > 0
-            ? "move old archive to cold-storage"
-            : "archive old closed tasks";
-      if (commitMode === "immediate") {
-        await commitTasksDirOnce(summary);
-      } else {
-        queueTasksGitCommit(summary);
-      }
-    }
   })().finally(() => {
     archiveStaleInFlight.delete(slug);
   });
@@ -967,74 +660,19 @@ async function runArchiveStaleClosedForSlug(slug, opts = {}) {
 }
 
 /**
- * When Git is enabled: skip archiving if there are local commits to push/sync.
- * Otherwise: `git pull` → archive (immediate auto-commit when enabled) → `git push`.
- * Without `.git`, archiving runs as before (no pull/push).
- * @param {string} slug
- */
-async function pullArchiveThenMaybePushForSlug(slug) {
-  if (!existsSync(path.join(DATA_ROOT, ".git"))) {
-    await runArchiveStaleClosedForSlug(slug);
-    return;
-  }
-  if (await hasLocalCommitsToSync()) {
-    return;
-  }
-  const opts = {
-    cwd: DATA_ROOT,
-    env: gitChildEnv(),
-    maxBuffer: 10 * 1024 * 1024,
-  };
-  await runGitSerialized(async () => {
-    try {
-      await execFileAsync("git", ["pull", "--no-edit"], opts);
-      await recordSuccessfulGitPull();
-    } catch (e) {
-      const detail = formatGitExecError("git pull", e);
-      const low = detail.toLowerCase();
-      const noUpstream =
-        low.includes("no tracking information") ||
-        low.includes("there is no tracking information") ||
-        low.includes("has no upstream branch");
-      if (noUpstream) {
-        console.error(
-          "[flow] archive: no upstream — archiving without pull/push"
-        );
-        await runArchiveStaleClosedForSlug(slug);
-        return;
-      }
-      console.error("[flow] archive: skipped after failed git pull —", detail);
-      return;
-    }
-    await runArchiveStaleClosedForSlug(slug, { commitMode: "immediate" });
-    if (!FLOW_GIT_AUTO_COMMIT) return;
-    try {
-      await execFileAsync("git", ["push"], opts);
-      await clearFirstUnsyncedCommitAt();
-      console.error("[flow] archive: pull, archive, push ok");
-    } catch (e) {
-      console.error(
-        "[flow] archive: git push failed after archive —",
-        formatGitExecError("git push", e)
-      );
-    }
-  });
-}
-
-/**
- * Pull, archive stale closed cards, and maybe push — once per board at process start.
+ * Archive stale closed cards and cold-storage moves — once per board at process start.
  * Avoids doing this on every column / completed-cards request (parallel column loads
- * were each queuing a full serialized git cycle and made the board feel slow).
+ * were each queuing work and made the board feel slow).
  */
-async function runStartupPullArchivePushForCatalogSlugs() {
+async function runStartupArchiveStaleForCatalogSlugs() {
   try {
     const catalog = await loadBoardCatalog();
     const slugs = [...new Set(catalog.map((e) => e.slug))];
     for (const slug of slugs) {
-      await pullArchiveThenMaybePushForSlug(slug);
+      await runArchiveStaleClosedForSlug(slug);
     }
   } catch (e) {
-    console.error("[flow] startup pull/archive:", e);
+    console.error("[flow] startup archive:", e);
   }
 }
 
@@ -1197,7 +835,6 @@ app.post("/api/board", async (req, res) => {
     const boardRoot = path.join(tasksDir, slug);
     await ensureDir(boardRoot);
 
-    queueTasksGitCommit("create board");
     res.json({
       ok: true,
       slug,
@@ -1274,7 +911,7 @@ function multisetsEqual(a, b) {
 
 /**
  * Same column & swimlane titles (incl. counts / duplicates) — only order or non-placement
- * fields (WIP, is_done, pull_frequency, etc.) changed. Cards use titles, so no INI updates.
+ * fields (WIP, is_done, etc.) changed. Cards use titles, so no INI updates.
  * @param {import("./assets/js/boardModel.js").BoardModel} oldModel
  * @param {import("./assets/js/boardModel.js").BoardModel} newModel
  */
@@ -1378,7 +1015,7 @@ app.put("/api/board-definition", async (req, res) => {
     }
 
     await fs.writeFile(boardPath, t.replace(/^\uFEFF/, ""), "utf8");
-    queueTasksGitCommit("edit board definition");
+
 
     res.json({ ok: true });
   } catch (e) {
@@ -1461,7 +1098,7 @@ app.delete("/api/board-definition", async (req, res) => {
       /* no catalog file — single-file setups already blocked by catalog length */
     }
 
-    queueTasksGitCommit("delete board definition");
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2623,7 +2260,7 @@ app.put("/api/card", async (req, res) => {
 
     if (newOwner) await writeLocalUserIni(newOwner);
 
-    queueTasksGitCommit("edit card");
+
 
     res.json({ ok: true });
   } catch (e) {
@@ -2651,7 +2288,7 @@ app.delete("/api/card", async (req, res) => {
     }
 
     await fs.unlink(fullPath);
-    queueTasksGitCommit("delete card");
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -2730,7 +2367,7 @@ app.post("/api/cards", async (req, res) => {
 
     if (newOwner) await writeLocalUserIni(newOwner);
 
-    queueTasksGitCommit("create card");
+
 
     res.json({ id, filename, path: path.join("tasks", slug, filename) });
   } catch (e) {
@@ -2838,7 +2475,7 @@ app.post("/api/cards/move", async (req, res) => {
       await fs.unlink(srcPath);
     }
 
-    queueTasksGitCommit("move card");
+
 
     res.json({
       ok: true,
@@ -2930,7 +2567,7 @@ app.post("/api/cards/reorder", async (req, res) => {
       await fs.writeFile(fullPath, serializeFullCardIni(item, links), "utf8");
     }
 
-    queueTasksGitCommit("reorder cards");
+
 
     res.json({ ok: true });
   } catch (e) {
@@ -2980,11 +2617,9 @@ app.post("/api/git/sync", async (_req, res) => {
           opts
         );
         const pullLog = String(pullResult.stdout ?? "").trim();
-        await recordSuccessfulGitPull();
         try {
           const pushResult = await execFileAsync("git", ["push"], opts);
           const pushLog = String(pushResult.stdout ?? "").trim();
-          await clearFirstUnsyncedCommitAt();
           return { kind: "ok", pullLog, pushLog };
         } catch (e) {
           return { kind: "pushFail", err: e };
@@ -3032,24 +2667,17 @@ app.get("/api/local-user", async (_req, res) => {
       .toLowerCase();
     const chartsGranularity =
       cg === "monthly" || cg === "weekly" ? cg : "";
-    const commitAtRaw =
-      sections.flow?.first_unsynced_commit_at ??
-      sections.flow?.firstUnsyncedCommitAt ??
-      "";
-    const firstUnsyncedCommitAt = String(commitAtRaw).trim();
     const mineRaw = sections.user?.mine ?? sections.user?.Mine ?? "";
     res.json({
       owner: String(raw).trim(),
       mine: String(mineRaw).trim(),
       chartsGranularity,
-      firstUnsyncedCommitAt,
     });
   } catch {
     res.json({
       owner: "",
       mine: "",
       chartsGranularity: "",
-      firstUnsyncedCommitAt: "",
     });
   }
 });
@@ -3119,18 +2747,12 @@ app.patch("/api/local-user", async (req, res) => {
       .toLowerCase();
     const chartsGranularity =
       cg === "monthly" || cg === "weekly" ? cg : "";
-    const commitAtRaw =
-      out.flow?.first_unsynced_commit_at ??
-      out.flow?.firstUnsyncedCommitAt ??
-      "";
-    const firstUnsyncedCommitAt = String(commitAtRaw).trim();
 
     res.json({
       ok: true,
       owner,
       mine,
       chartsGranularity,
-      firstUnsyncedCommitAt,
     });
   } catch (e) {
     console.error(e);
@@ -3162,19 +2784,7 @@ async function onListen() {
   console.error(
     `Millrace ${where} (data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
-  if (FLOW_GIT_AUTO_COMMIT) {
-    console.error(
-      `[flow] FLOW_GIT_AUTO_COMMIT enabled → commits under tasks/ after changes (${FLOW_GIT_COMMIT_DELAY_MS}ms debounce)`
-    );
-    if (!existsSync(path.join(DATA_ROOT, ".git"))) {
-      console.error(
-        `[flow] FLOW_GIT_AUTO_COMMIT: warning — no .git at data root (${DATA_ROOT}); auto-commit will do nothing`
-      );
-    }
-  }
-  await migrateLegacyGitPullStateIfPresent();
-  await runStartupPullArchivePushForCatalogSlugs();
-  startAutoGitPullScheduler();
+  await runStartupArchiveStaleForCatalogSlugs();
 }
 
 if (HOST != null && HOST !== "") {
