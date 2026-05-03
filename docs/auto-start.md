@@ -55,9 +55,9 @@ pm2 status
 
 Example output from the `status` command:
 
-│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
-├----┼--------------------┼----------┼------┼-----------┼----------┼----------┤
-│ 0  │ millrace-fenton    │ fork     │ 0    │ online    │ 0%       │ 69.6mb   |
+| id | name            | mode | ↺ | status | cpu | memory |
+| -- | --------------- | ---- | - | ------ | --- | ------ |
+| 0  | millrace-fenton | fork | 0 | online | 0%  | 69.6mb |
 
 ## Removing auto-start
 
