@@ -32,7 +32,7 @@ function defaultBoards() {
 }
 
 /**
- * Board list from `GET /api/flow` (catalog in `tasks/flow.ini`).
+ * Board list from `GET /api/flow` (catalog in `tasks/.millrace.ini`, section `[millrace]`).
  * @returns {Promise<BoardCatalogEntry[]>}
  */
 async function fetchBoardCatalog() {

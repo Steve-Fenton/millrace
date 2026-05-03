@@ -34,9 +34,23 @@ import { parseTaskCardIni, parseTaskCardIniFull } from "./assets/js/taskCardMode
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
+/** Catalog of board INIs under `tasks/` (dotfile, distinct from `*.ini` boards). */
+const BOARD_CATALOG_INI_BASENAME = ".millrace.ini";
+/** Section in that file listing board INI basenames. Legacy section name: `flow`. */
+const BOARD_CATALOG_SECTION = "millrace";
+const LEGACY_BOARD_CATALOG_SECTION = "flow";
+
+/**
+ * @param {string} name section name from `[name]`
+ */
+function isBoardCatalogIniSection(name) {
+  const n = String(name ?? "").toLowerCase();
+  return n === BOARD_CATALOG_SECTION || n === LEGACY_BOARD_CATALOG_SECTION;
+}
+
 /**
  * Repo root for tasks/ — prefers FLOW_ROOT, else a directory that contains tasks/board.ini
- * or tasks/flow.ini (script dir then cwd). If neither exists, uses cwd so installs under
+ * or tasks/.millrace.ini (script dir then cwd). If neither exists, uses cwd so installs under
  * node_modules never become the data root by default.
  */
 function findDataRoot() {
@@ -47,7 +61,7 @@ function findDataRoot() {
     const tasks = path.join(base, "tasks");
     if (
       existsSync(path.join(tasks, "board.ini")) ||
-      existsSync(path.join(tasks, "flow.ini"))
+      existsSync(path.join(tasks, BOARD_CATALOG_INI_BASENAME))
     ) {
       return base;
     }
@@ -56,6 +70,10 @@ function findDataRoot() {
 }
 
 const DATA_ROOT = findDataRoot();
+
+function boardCatalogIniPath() {
+  return path.join(DATA_ROOT, "tasks", BOARD_CATALOG_INI_BASENAME);
+}
 
 /** Closed items with `closed` older than this many days are moved to `tasks/{slug}/archive/`. `0` disables. */
 const ARCHIVE_CLOSED_AFTER_DAYS = (() => {
@@ -511,25 +529,28 @@ async function resolveCardFilePath(slug, col, filename) {
 }
 
 async function readBoardCatalogIniBasenames() {
-  const flowPath = path.join(DATA_ROOT, "tasks", "flow.ini");
+  const catalogPath = boardCatalogIniPath();
   const defaultList = ["board.ini"];
   try {
-    const text = await fs.readFile(flowPath, "utf8");
+    const text = await fs.readFile(catalogPath, "utf8");
     const sections = parseIni(text.replace(/^\uFEFF/, ""));
-    const raw = sections.flow?.boards ?? "";
+    const raw =
+      sections[BOARD_CATALOG_SECTION]?.boards ??
+      sections[LEGACY_BOARD_CATALOG_SECTION]?.boards ??
+      "";
     const parts = String(raw)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     if (parts.length > 0) return parts;
   } catch {
-    /* missing or unreadable flow.ini */
+    /* missing or unreadable board catalog INI */
   }
   return defaultList;
 }
 
 /**
- * Boards from `tasks/flow.ini` with parsed slug and display name.
+ * Boards from `tasks/.millrace.ini` (`[millrace]` / legacy `[flow]` `boards =`) with parsed slug and display name.
  * @returns {Promise<{ file: string, slug: string, name: string }[]>}
  */
 async function loadBoardCatalog() {
@@ -547,7 +568,7 @@ async function loadBoardCatalog() {
       const name = m.board.name?.trim() || slug || "Board";
       out.push({ file: base, slug, name });
     } catch {
-      console.warn(`[flow] flow.ini lists ${base} but it could not be read`);
+      console.warn(`[flow] board catalog lists ${base} but it could not be read`);
     }
   }
   if (out.length === 0) {
@@ -594,48 +615,52 @@ title = Default
 }
 
 /**
- * Append `newBoardIniBasename` to tasks/flow.ini (create flow.ini if missing).
+ * Append `newBoardIniBasename` to `tasks/.millrace.ini` (create if missing).
  * @param {string} newBoardIniBasename e.g. "acme.ini"
  */
 async function appendBoardCatalogEntry(newBoardIniBasename) {
-  const tasksDir = path.join(DATA_ROOT, "tasks");
-  const flowPath = path.join(tasksDir, "flow.ini");
+  const catalogPath = boardCatalogIniPath();
   const want = path.basename(String(newBoardIniBasename ?? "").trim());
   if (!/^[\w.-]+\.ini$/i.test(want)) {
     throw new Error("Invalid board INI filename.");
   }
 
-  let flowText = "";
+  let catalogText = "";
   try {
-    flowText = await fs.readFile(flowPath, "utf8");
+    catalogText = await fs.readFile(catalogPath, "utf8");
   } catch {
-    /* missing flow.ini */
+    /* missing catalog */
   }
 
-  if (!flowText.trim()) {
+  if (!catalogText.trim()) {
     const catalog = await loadBoardCatalog();
     /** @type {string[]} */
     const files = catalog.map((c) => c.file).filter(Boolean);
     if (!files.includes(want)) files.push(want);
-    const body = `; Boards listed here are INI files under tasks/ (comma-separated, in order).\n[flow]\nboards = ${files.join(", ")}\n`;
-    await fs.writeFile(flowPath, body, "utf8");
+    const body = `; Boards listed here are INI files under tasks/ (comma-separated, in order).\n[${BOARD_CATALOG_SECTION}]\nboards = ${files.join(", ")}\n`;
+    await fs.writeFile(catalogPath, body, "utf8");
     return;
   }
 
-  const lines = flowText.split(/\r?\n/);
+  const lines = catalogText.split(/\r?\n/);
   /** @type {string[]} */
   const out = [];
-  let inRootIniSection = false;
+  let inCatalogSection = false;
   let updatedBoards = false;
   for (const line of lines) {
     const trimmed = line.trim();
     const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
     if (secMatch) {
-      inRootIniSection = secMatch[1].toLowerCase() === "flow";
+      if (isBoardCatalogIniSection(secMatch[1])) {
+        inCatalogSection = true;
+        out.push(`[${BOARD_CATALOG_SECTION}]`);
+        continue;
+      }
+      inCatalogSection = false;
       out.push(line);
       continue;
     }
-    if (inRootIniSection && /^boards\s*=/i.test(trimmed)) {
+    if (inCatalogSection && /^boards\s*=/i.test(trimmed)) {
       const eq = line.indexOf("=");
       const val = eq >= 0 ? line.slice(eq + 1).trim() : "";
       const parts = val
@@ -654,9 +679,9 @@ async function appendBoardCatalogEntry(newBoardIniBasename) {
     const catalog = await loadBoardCatalog();
     const files = catalog.map((c) => c.file).filter(Boolean);
     if (!files.includes(want)) files.push(want);
-    out.push("", "[flow]", `boards = ${files.join(", ")}`);
+    out.push("", `[${BOARD_CATALOG_SECTION}]`, `boards = ${files.join(", ")}`);
   }
-  await fs.writeFile(flowPath, out.join("\n"), "utf8");
+  await fs.writeFile(catalogPath, out.join("\n"), "utf8");
 }
 
 /**
@@ -939,7 +964,7 @@ app.get("/api/flow", async (_req, res) => {
     res.json({ boards });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Failed to read flow.ini." });
+    res.status(500).json({ message: "Failed to read board catalog (.millrace.ini)." });
   }
 });
 
@@ -1229,22 +1254,27 @@ app.delete("/api/board-definition", async (req, res) => {
       throw e;
     }
 
-    const flowPath = path.join(DATA_ROOT, "tasks", "flow.ini");
+    const catalogPath = boardCatalogIniPath();
     try {
-      const flowText = await fs.readFile(flowPath, "utf8");
-      const lines = flowText.split(/\r?\n/);
+      const catalogText = await fs.readFile(catalogPath, "utf8");
+      const lines = catalogText.split(/\r?\n/);
       /** @type {string[]} */
       const out = [];
-      let inRootIniSection = false;
+      let inCatalogSection = false;
       for (const line of lines) {
         const trimmed = line.trim();
         const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
         if (secMatch) {
-          inRootIniSection = secMatch[1].toLowerCase() === "flow";
+          if (isBoardCatalogIniSection(secMatch[1])) {
+            inCatalogSection = true;
+            out.push(`[${BOARD_CATALOG_SECTION}]`);
+            continue;
+          }
+          inCatalogSection = false;
           out.push(line);
           continue;
         }
-        if (inRootIniSection && /^boards\s*=/i.test(trimmed)) {
+        if (inCatalogSection && /^boards\s*=/i.test(trimmed)) {
           const eq = line.indexOf("=");
           const val = eq >= 0 ? line.slice(eq + 1).trim() : "";
           const parts = val
@@ -1254,7 +1284,7 @@ app.delete("/api/board-definition", async (req, res) => {
             .filter((p) => p !== hit.file);
           if (parts.length === 0) {
             res.status(400).json({
-              message: "Refusing to leave flow.ini with an empty boards list.",
+              message: "Refusing to leave the board catalog with an empty boards list.",
             });
             return;
           }
@@ -1264,9 +1294,9 @@ app.delete("/api/board-definition", async (req, res) => {
         }
         out.push(line);
       }
-      await fs.writeFile(flowPath, out.join("\n"), "utf8");
+      await fs.writeFile(catalogPath, out.join("\n"), "utf8");
     } catch {
-      /* no flow.ini — single-file setups already blocked by catalog length */
+      /* no catalog file — single-file setups already blocked by catalog length */
     }
 
     queueTasksGitCommit("delete board definition");
@@ -2857,14 +2887,14 @@ const HOST = process.env.HOST;
 
 async function onListen() {
   const boardPath = path.join(DATA_ROOT, "tasks", "board.ini");
-  const flowPath = path.join(DATA_ROOT, "tasks", "flow.ini");
-  const boardOk = existsSync(boardPath) || existsSync(flowPath);
+  const catalogPath = boardCatalogIniPath();
+  const boardOk = existsSync(boardPath) || existsSync(catalogPath);
   const where =
     HOST != null && HOST !== ""
       ? `http://${HOST}:${PORT}/`
       : `http://localhost:${PORT}/`;
   console.error(
-    `Millrace ${where}(data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${flowPath}`})`
+    `Millrace ${where}(data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
   if (FLOW_GIT_AUTO_COMMIT) {
     console.error(

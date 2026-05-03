@@ -46,7 +46,7 @@ tasks/localuser.ini
 After you [install millrace in your project](#using-millrace-in-your-project):
 
 1. Add a script in your **`package.json`**, for example **`"millrace": "millrace"`** (or **`"millrace": "millrace 8888"`** to set the port via argv instead of **`PORT`**). You can still use a shorter alias such as **`"mr": "millrace"`** if you prefer.
-2. Run **`pnpm millrace`** or **`npm run millrace`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/flow.ini`** (that directory becomes the data root for INIs and for **Git**).
+2. Run **`pnpm millrace`** or **`npm run millrace`** from the **root of the project** that contains **`tasks/board.ini`** or **`tasks/.millrace.ini`** (that directory becomes the data root for INIs and for **Git**).
 
 The published tarball includes the server and web UI only (no sample **`tasks/`** tree). The UI is served from the package; **`tasks/`** and **`.git`** are read from your **`FLOW_ROOT`** / resolved project root, so **Sync**, auto-commit, and history run against **your** clone.
 
@@ -63,7 +63,7 @@ Open **http://localhost:8888/** in your browser (or the URL printed in the termi
 | --- | --- |
 | **`PORT`** | HTTP port (default **8888**). |
 | **`HOST`** | If set, the server binds to this host; otherwise it listens on all interfaces. |
-| **`FLOW_ROOT`** | Absolute path to the repo root whose **`tasks/`** directory is used. If unset, the server looks for **`tasks/board.ini`** or **`tasks/flow.ini`** under the directory containing **`server.js`**, then under the **current working directory**; if neither exists, it uses **`process.cwd()`** (so an install under **`node_modules`** is never the default data root). |
+| **`FLOW_ROOT`** | Absolute path to the repo root whose **`tasks/`** directory is used. If unset, the server looks for **`tasks/board.ini`** or **`tasks/.millrace.ini`** under the directory containing **`server.js`**, then under the **current working directory**; if neither exists, it uses **`process.cwd()`** (so an install under **`node_modules`** is never the default data root). |
 | **`FLOW_GIT_AUTO_COMMIT`** | If **`1`**, **`true`**, or **`yes`**, the server runs **`git add tasks`** and **`git commit`** after task files change (card create/edit/move/reorder). **Off by default** — export it in the same shell before **`pnpm start`** (e.g. **`FLOW_GIT_AUTO_COMMIT=1 pnpm start`**). Requires a **`.git`** directory at **`FLOW_ROOT`**, **`git`** on **`PATH`**, and Git **user.name** / **user.email** when there is nothing configured yet. Check the server terminal for **`FLOW_GIT_AUTO_COMMIT:`** lines after edits (success, skipped, or git errors). |
 | **`FLOW_GIT_COMMIT_DELAY_MS`** | Debounce delay before committing (default **1500** ms) so rapid API calls produce one commit — wait at least this long after a move before checking **`git log`**. Use **`0`** to commit as soon as the timer fires after each queued change (still debounced per event loop batch). |
 | **`FLOW_ARCHIVE_CLOSED_AFTER_DAYS`** | Cards with a **`closed`** timestamp older than this many days are moved from **`tasks/{slug}/`** into **`tasks/{slug}/archive/`** whenever column cards are loaded (default **14**). Set **`0`** to disable automatic archiving. |

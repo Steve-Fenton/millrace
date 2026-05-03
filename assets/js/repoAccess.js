@@ -32,7 +32,7 @@ async function errorBodyMessage(res) {
 }
 
 /**
- * @param {string} [boardSlug] — which board definition (`tasks/flow.ini`); default `board`
+ * @param {string} [boardSlug] — which board definition (`tasks/.millrace.ini` catalog); default `board`
  * @returns {Promise<string>} raw board definition INI text
  */
 /**
