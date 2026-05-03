@@ -40,6 +40,7 @@ import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
 } from "./flowSearchClearField.js";
+import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
 
 const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M7 3v8M3 7h8"/></svg>`;
 
@@ -506,7 +507,7 @@ function renderBoard(
 
   const syncBtn = document.createElement("button");
   syncBtn.type = "button";
-  syncBtn.className = "board-sync-btn";
+  syncBtn.className = "board-sync-btn board-sync-btn--git";
   syncBtn.textContent = "Sync";
   const syncTitleBase =
     "Pull from origin, resolve merge conflicts if needed, commit pending task changes, then push (runs on the machine hosting Millrace)";
@@ -700,7 +701,7 @@ function renderBoard(
             a.href = href;
             a.target = "_blank";
             a.rel = "noopener noreferrer";
-            a.textContent = label;
+            fillCardLinkWithNewTabIcon(a, label);
             a.draggable = false;
             a.addEventListener("click", (e) => e.stopPropagation());
             linkWrap.append(a);

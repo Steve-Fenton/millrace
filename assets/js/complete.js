@@ -25,6 +25,7 @@ import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
 } from "./flowSearchClearField.js";
+import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
@@ -451,7 +452,7 @@ function renderCompleteShell(
         a.href = href;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
-        a.textContent = label;
+        fillCardLinkWithNewTabIcon(a, label);
         a.addEventListener("click", (e) => e.stopPropagation());
         linkWrap.append(a);
       }
