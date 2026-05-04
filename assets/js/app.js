@@ -314,6 +314,83 @@ function positionDropMarker(list, clientY, mode) {
 }
 
 /**
+ * Fixed clone of the Kanban grid header row; shown when the in-flow header scrolls above the viewport.
+ * @param {HTMLElement} root
+ * @param {HTMLElement} kanbanScroll
+ * @param {HTMLElement} kanban
+ * @param {HTMLElement} corner
+ */
+function attachKanbanHeaderDock(root, kanbanScroll, kanban, corner) {
+  const headerDockRow = document.createElement("div");
+  headerDockRow.className = `${kanban.className} kanban-header-dock-row`.trim();
+  headerDockRow.style.gridTemplateColumns = kanban.style.gridTemplateColumns;
+  headerDockRow.style.gridTemplateRows = "auto";
+  headerDockRow.appendChild(corner.cloneNode(true));
+  kanban.querySelectorAll(":scope > .column-head").forEach((h) => {
+    headerDockRow.appendChild(h.cloneNode(true));
+  });
+
+  const headerDock = document.createElement("div");
+  headerDock.className = "kanban-header-dock";
+  headerDock.setAttribute("aria-hidden", "true");
+
+  const clip = document.createElement("div");
+  clip.className = "kanban-header-dock-clip";
+
+  const inner = document.createElement("div");
+  inner.className = "kanban-header-dock-inner";
+  inner.append(headerDockRow);
+  clip.append(inner);
+  headerDock.append(clip);
+  root.append(headerDock);
+
+  function syncLayout() {
+    if (!kanbanScroll.isConnected) return;
+    const sr = kanbanScroll.getBoundingClientRect();
+    clip.style.left = `${sr.left}px`;
+    clip.style.width = `${sr.width}px`;
+    inner.style.width = `${Math.max(kanban.scrollWidth, sr.width)}px`;
+    inner.style.transform = `translate3d(${-kanbanScroll.scrollLeft}px, 0, 0)`;
+  }
+
+  let dockVisible = false;
+
+  kanbanScroll.addEventListener(
+    "scroll",
+    () => {
+      if (dockVisible) syncLayout();
+    },
+    { passive: true }
+  );
+
+  function onWindowMove() {
+    if (dockVisible) syncLayout();
+  }
+  window.addEventListener("resize", onWindowMove);
+  window.addEventListener("scroll", onWindowMove, { passive: true });
+
+  const ro = new ResizeObserver(() => {
+    if (dockVisible) syncLayout();
+  });
+  ro.observe(kanbanScroll);
+  ro.observe(kanban);
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      const e = entries[0];
+      const rect = e.boundingClientRect;
+      const show = !e.isIntersecting && rect.top < 0;
+      if (show === dockVisible) return;
+      dockVisible = show;
+      headerDock.classList.toggle("kanban-header-dock--visible", show);
+      if (show) requestAnimationFrame(syncLayout);
+    },
+    { threshold: [0, 1] }
+  );
+  io.observe(corner);
+}
+
+/**
  * @param {Map<number, Array<{ filename?: string, title?: string, owner?: string, swimlane?: string, links?: { text?: string, url?: string }[] }>>} cardsByColumn
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  */
@@ -952,6 +1029,7 @@ function renderBoard(
   kanbanScroll.className = "board-kanban-scroll";
   kanbanScroll.append(kanban);
   root.append(top, kanbanScroll);
+  attachKanbanHeaderDock(root, kanbanScroll, kanban, corner);
   return root;
 }
 

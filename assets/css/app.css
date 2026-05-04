@@ -85,6 +85,41 @@ body {
   min-width: min-content;
 }
 
+/* Fixed duplicate of the Kanban column header row when the real header scrolls out of view */
+.kanban-header-dock {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+.kanban-header-dock--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.kanban-header-dock-clip {
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
+}
+
+.kanban-header-dock-inner {
+  will-change: transform;
+}
+
+.kanban-header-dock-row {
+  min-width: min-content;
+}
+
 .board-top {
   display: grid;
   align-items: center;
