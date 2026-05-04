@@ -27,6 +27,7 @@ import {
 } from "./flowSearchClearField.js";
 import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
 import { resolveCardSwimlaneIndex } from "./swimlaneResolve.js";
+import { escapeHtml } from "./escapeHtml.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
@@ -35,14 +36,6 @@ const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" 
 
 /** @type {{ mode: "all" | "mine" | "owner"; owner: string }} */
 let ownerFilter = { mode: "all", owner: "" };
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * Plain-text date for table cells (use with textContent).

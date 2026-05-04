@@ -9,19 +9,12 @@ import {
   readLocalUserIni,
   updateCard,
 } from "./repoAccess.js";
+import { escapeHtml } from "./escapeHtml.js";
 
 function el(html) {
   const t = document.createElement("template");
   t.innerHTML = html.trim();
   return t.content.firstElementChild;
-}
-
-function escapeHtml(s) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /**

@@ -12,18 +12,11 @@ import {
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
 } from "./flowBoardPicker.js";
+import { escapeHtml } from "./escapeHtml.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 
 /** @typedef {"weekly" | "monthly"} Granularity */
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * @param {string} boardSlug

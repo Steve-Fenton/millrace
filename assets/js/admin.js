@@ -6,18 +6,11 @@ import {
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
 } from "./flowBoardPicker.js";
+import { escapeHtml } from "./escapeHtml.js";
 
 const ADMIN_BOARD_CREATED_FLASH_KEY = "flow:admin-board-created-flash";
 
 const EDIT_BOARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /**
  * @param {{ boards: { slug: string, name: string, file?: string }[], activeSlug: string }} selection
