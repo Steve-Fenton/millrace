@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "start": "node server.js 7713",
-    "test": "c8 -n 'assets/js/**/*.js' -r text -r html cucumber-js"
+    "test": "c8 -n 'assets/js/**/*.js' -r text -r html cucumber-js",
+    "test:cucumber": "cucumber-js"
   },
   "engines": {
     "node": ">=18"
