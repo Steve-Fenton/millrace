@@ -962,6 +962,43 @@ function escapeHtml(s) {
 }
 
 /**
+ * Remember window and horizontal kanban scroll so replacing the board DOM does not jump the viewport.
+ * @param {HTMLElement} mount
+ * @returns {{ winX: number, winY: number, kanbanLeft: number }}
+ */
+function captureBoardViewScroll(mount) {
+  const kanban = mount.querySelector(".board-kanban-scroll");
+  return {
+    winX: window.scrollX,
+    winY: window.scrollY,
+    kanbanLeft: kanban ? kanban.scrollLeft : 0,
+  };
+}
+
+/**
+ * @param {{ winX: number, winY: number, kanbanLeft: number }} saved
+ * @param {HTMLElement} mount
+ */
+function restoreBoardViewScroll(saved, mount) {
+  window.scrollTo(saved.winX, saved.winY);
+  const kanban = mount.querySelector(".board-kanban-scroll");
+  if (kanban) kanban.scrollLeft = saved.kanbanLeft;
+}
+
+/**
+ * Restore after layout so scroll positions apply to the new board shell.
+ * @param {{ winX: number, winY: number, kanbanLeft: number }} saved
+ * @param {HTMLElement} mount
+ */
+function scheduleRestoreBoardViewScroll(saved, mount) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      restoreBoardViewScroll(saved, mount);
+    });
+  });
+}
+
+/**
  * @param {boolean} fullReload Fetch board and cards; false = re-render from cache (owner filter).
  */
 async function loadApp(fullReload = true) {
@@ -979,6 +1016,7 @@ async function loadApp(fullReload = true) {
       boardCache.mineEmail,
       ownerFilter
     );
+    const scrollSnapshot = captureBoardViewScroll(mount);
     const shell = mount.querySelector(".board-shell");
     const next = renderBoard(
       boardCache.model,
@@ -989,9 +1027,11 @@ async function loadApp(fullReload = true) {
       boardCache.pendingSync
     );
     if (shell) shell.replaceWith(next);
+    scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
     return;
   }
 
+  const scrollSnapshot = captureBoardViewScroll(mount);
   mount.innerHTML = `<div class="app-loading">Loading board…</div>`;
 
   try {
@@ -1002,6 +1042,7 @@ async function loadApp(fullReload = true) {
 
     if (model.columns.length === 0) {
       mount.innerHTML = `<div class="app-error">No columns found in board.ini.</div>`;
+      scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
       return;
     }
 
@@ -1049,9 +1090,11 @@ async function loadApp(fullReload = true) {
         pendingSync
       )
     );
+    scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     mount.innerHTML = `<div class="app-error">Could not load board: ${escapeHtml(msg)}</div>`;
+    scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
   }
 }
 
