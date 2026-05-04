@@ -2,6 +2,7 @@ import { createLinksEditor } from "./cardLinksUi.js";
 import { showFlowAlert, showFlowConfirm } from "./flowDialogs.js";
 import { createOwnerField } from "./flowOwnerField.js";
 import {
+  createCard,
   deleteCard,
   fetchCard,
   fetchCardGitHistory,
@@ -177,8 +178,8 @@ function formatCardTimestampDisplay(raw) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneTitle?: string, boardUsers?: import("./boardModel.js").BoardUserDef[] }} ctx
- * @returns {Promise<boolean>} true if saved
+ * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./boardModel.js").BoardUserDef[] }} ctx
+ * @returns {Promise<boolean>} true if saved, deleted, or duplicated (board refresh)
  */
 export async function openCardEditorDialog(ctx) {
   /** @type {{ title?: string, description?: string, owner?: string, created?: string, closed?: string, links?: { text?: string, url?: string }[] }} */
@@ -200,14 +201,24 @@ export async function openCardEditorDialog(ctx) {
     <div class="flow-modal flow-modal--edit-card" role="dialog" aria-modal="true" aria-labelledby="flow-edit-card-title">
       <div class="flow-modal-header flow-modal-header--edit-card">
         <h2 id="flow-edit-card-title" class="flow-modal-title">Edit card</h2>
-        <button
-          type="button"
-          class="flow-btn flow-btn-icon flow-btn-history-icon"
-          aria-label="Git commit history for this card"
-          title="Git history"
-        >
-          <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-        </button>
+        <div class="flow-edit-card-header-actions">
+          <button
+            type="button"
+            class="flow-btn flow-btn-icon flow-btn-duplicate-card-icon"
+            aria-label="Duplicate card in this column and swimlane"
+            title="Duplicate card"
+          >
+            <svg class="flow-duplicate-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="8" r="3"/><path d="M10 9.5 13 12"/><circle cx="16" cy="15" r="5.25"/><path d="M16 12.25v5.5M13.25 15h5.5" stroke-width="1.5"/></svg>
+          </button>
+          <button
+            type="button"
+            class="flow-btn flow-btn-icon flow-btn-history-icon"
+            aria-label="Git commit history for this card"
+            title="Git history"
+          >
+            <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          </button>
+        </div>
       </div>
       <p class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
       <form class="flow-modal-form">
@@ -325,6 +336,46 @@ export async function openCardEditorDialog(ctx) {
     });
 
     modal.querySelector(".flow-cancel").addEventListener("click", () => finish(false));
+
+    modal.querySelector(".flow-btn-duplicate-card-icon")?.addEventListener("click", () => {
+      void (async () => {
+        const baseTitle = String(titleInput.value || "").trim();
+        if (!baseTitle) {
+          await showFlowAlert("Add a title before duplicating this card.", {
+            title: "Duplicate card",
+          });
+          return;
+        }
+        const laneNum = Number(ctx.swimlaneIndex);
+        if (!Number.isFinite(laneNum) || laneNum < 0) {
+          await showFlowAlert(
+            "Missing swimlane for this card; reopen from the board.",
+            { title: "Duplicate card" }
+          );
+          return;
+        }
+        const newTitle = `${baseTitle} (copy)`;
+        const description = String(descInput.value || "");
+        const owner = ownerField.getValue();
+        const links = linksEditor.getLinks();
+        try {
+          await createCard({
+            boardSlug: ctx.boardSlug,
+            columnIndex: ctx.columnIndex,
+            swimlaneIndex: laneNum,
+            title: newTitle,
+            description,
+            owner,
+            links,
+          });
+          document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+          finish(true);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          await showFlowAlert(msg, { title: "Could not duplicate card" });
+        }
+      })();
+    });
 
     modal.querySelector(".flow-btn-delete-icon")?.addEventListener("click", () => {
       void (async () => {

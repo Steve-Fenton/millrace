@@ -1819,6 +1819,13 @@ a.column-done-truncation-link:focus-visible {
   margin-bottom: 0.35rem;
 }
 
+.flow-edit-card-header-actions {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
 .flow-modal-header--edit-card .flow-modal-title {
   margin: 0;
   flex: 1;
@@ -1856,7 +1863,8 @@ a.column-done-truncation-link:focus-visible {
   outline-offset: 2px;
 }
 
-.flow-history-icon-svg {
+.flow-history-icon-svg,
+.flow-duplicate-icon-svg {
   display: block;
 }
 

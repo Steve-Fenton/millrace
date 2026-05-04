@@ -669,6 +669,7 @@ function renderBoard(
               columnIndex: col.index,
               filename: fn,
               columnTitle: col.title,
+              swimlaneIndex: Number(lane.index),
               swimlaneTitle: lane.title || undefined,
               boardUsers: model.users,
             });

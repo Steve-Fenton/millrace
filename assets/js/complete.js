@@ -26,6 +26,7 @@ import {
   wrapSearchInputWithClear,
 } from "./flowSearchClearField.js";
 import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
+import { resolveCardSwimlaneIndex } from "./swimlaneResolve.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
@@ -413,6 +414,10 @@ function renderCompleteShell(
           columnIndex: Number(colIdx),
           filename: fn,
           columnTitle: col?.title ?? `Column ${colIdx}`,
+          swimlaneIndex: resolveCardSwimlaneIndex(
+            /** @type {string | undefined} */ (card.swimlane),
+            model.swimlanes ?? []
+          ),
           boardUsers: model.users,
         });
       });
