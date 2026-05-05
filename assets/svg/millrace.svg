@@ -54,6 +54,6 @@
   <!-- millrace (M = wheel) -->
   <text x="232" y="207" font-family="Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" letter-spacing="-2" fill="#38bdf8" opacity="0.9" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:140px;font-weight:700;text-anchor:start;dominant-baseline:auto">millrace</text>
   <!-- i-dot matches channel (#075985); tuned for Georgia Bold 140px at x=232,y=207 -->
-  <circle cx="396" cy="112" r="15" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
+  <circle cx="396" cy="112" r="16" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
 
 </svg>
