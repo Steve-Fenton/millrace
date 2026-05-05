@@ -429,6 +429,7 @@ export async function moveCard(payload) {
   if (!res.ok) {
     throw new Error(await errorBodyMessage(res));
   }
+  emitPendingSync();
   return res.json();
 }
 

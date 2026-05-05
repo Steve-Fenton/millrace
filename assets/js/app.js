@@ -2,6 +2,7 @@ import { openAddCardDialog } from "./addCardDialog.js";
 import { openCardEditorDialog } from "./cardEditorDialog.js";
 import {
   boardOwnerEmailsForFilter,
+  boardSyncModeIsAutomatic,
   ownerDisplayLabel,
   parseBoardIni,
 } from "./boardModel.js";
@@ -49,6 +50,9 @@ const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" 
 
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
 const DONE_COLUMN_DISPLAY_MAX = 5;
+
+/** Coalesce rapid task writes before auto-sync (`sync_mode = automatic`). */
+const AUTO_SYNC_DEBOUNCE_MS = 900;
 
 /** @type {{ mode: 'all' | 'mine' | 'owner', owner: string }} */
 let ownerFilter = { mode: "all", owner: "" };
@@ -122,6 +126,51 @@ let boardCache = {
 
 /** Set on full board load; used when re-rendering after owner filter only. */
 let gitRepoAvailable = false;
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let autoSyncDebounceTimer = null;
+let boardGitSyncInFlight = false;
+
+function clearPendingAutoSyncDebounce() {
+  if (autoSyncDebounceTimer != null) {
+    clearTimeout(autoSyncDebounceTimer);
+    autoSyncDebounceTimer = null;
+  }
+}
+
+/**
+ * Pull/commit/push via the same flow as the Sync button (conflict UI when needed).
+ */
+async function performBoardGitSync() {
+  if (!gitRepoAvailable) return;
+  if (boardGitSyncInFlight) return;
+  const syncBtn = document.querySelector(".board-sync-btn");
+  if (syncBtn?.disabled) return;
+
+  clearPendingAutoSyncDebounce();
+  boardGitSyncInFlight = true;
+  const prevText = syncBtn?.textContent ?? "Sync";
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.textContent = "Syncing…";
+    syncBtn.classList.remove("board-sync-btn--pulse");
+  }
+  try {
+    await runGitSyncWithConflictFlow();
+    boardCache.pendingSync = false;
+    document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await showFlowAlert(msg, { title: "Sync failed" });
+  } finally {
+    boardGitSyncInFlight = false;
+    if (syncBtn) {
+      syncBtn.disabled = !gitRepoAvailable;
+      syncBtn.textContent = prevText;
+    }
+    applyPendingSyncPulseToBoardShell();
+  }
+}
 
 function applyPendingSyncPulseToBoardShell() {
   const btn = document.querySelector(".board-sync-btn");
@@ -598,23 +647,7 @@ function renderBoard(
 
   syncBtn.addEventListener("click", () => {
     if (syncBtn.disabled) return;
-    syncBtn.disabled = true;
-    const prev = syncBtn.textContent;
-    syncBtn.textContent = "Syncing…";
-    void (async () => {
-      try {
-        await runGitSyncWithConflictFlow();
-        boardCache.pendingSync = false;
-        document.dispatchEvent(new CustomEvent("flow:refresh-board"));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        await showFlowAlert(msg, { title: "Sync failed" });
-      } finally {
-        syncBtn.disabled = !gitSyncOk;
-        syncBtn.textContent = prev;
-        applyPendingSyncPulseToBoardShell();
-      }
-    })();
+    void performBoardGitSync();
   });
 
   topActions.append(filterWrap, searchWrap, syncBtn, badge, navMenu);
@@ -1175,6 +1208,7 @@ async function main() {
 
   document.addEventListener("flow:active-board-changed", () => {
     boardCardSearch = "";
+    clearPendingAutoSyncDebounce();
     void loadApp(true);
   });
 
@@ -1186,6 +1220,17 @@ async function main() {
       const syncTitleBase =
         "Pull from origin, resolve merge conflicts if needed, commit pending task changes, then push (runs on the machine hosting Millrace)";
       btn.title = `${syncTitleBase} Unsaved task changes are not on the remote yet — sync when ready.`;
+    }
+    if (
+      gitRepoAvailable &&
+      boardCache.model &&
+      boardSyncModeIsAutomatic(boardCache.model.board)
+    ) {
+      clearPendingAutoSyncDebounce();
+      autoSyncDebounceTimer = setTimeout(() => {
+        autoSyncDebounceTimer = null;
+        void performBoardGitSync();
+      }, AUTO_SYNC_DEBOUNCE_MS);
     }
   });
 }

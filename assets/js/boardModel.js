@@ -190,6 +190,16 @@ export function parseBoardIni(iniText) {
 }
 
 /**
+ * `[board] sync_mode` — default automatic unless explicitly `manual`.
+ * @param {BoardMeta | undefined} board
+ * @returns {boolean}
+ */
+export function boardSyncModeIsAutomatic(board) {
+  const raw = String(board?.sync_mode ?? "").trim().toLowerCase();
+  return raw !== "manual";
+}
+
+/**
  * Kanban boards require exactly one column with `is_done` (Done in the editor).
  * @param {BoardModel} model
  * @returns {string | null} Error message, or null if valid.
