@@ -2,7 +2,7 @@
 
 A millrace channels water to and from a water wheel. It has a narrow fast current with plenty of power. You control the flow of water to the wheel using the head race, and the water flows away from the wheel along the tail race.
 
-The ability to control the flow of water along the millrace is crucial. The goal is an optimal flow that efficiently turns the water wheel. When it comes to mills, that's the backshot wheel (the water enters at the top of the wheel, in the opposite direction to the tail race flow), but for knowledge work it's Kanban with strategic <abbr title="work in process">WIP</abbr> limits.
+The ability to control the flow of water along the millrace is crucial. The goal is an optimal flow that efficiently turns the water wheel. When it comes to mills, that's the backshot wheel (the water enters at the top of the wheel, in the opposite direction to the flow of the tail race), but for knowledge work it's Kanban with strategic <abbr title="work in process">WIP</abbr> limits.
 
 ![Millrace](assets/svg/millrace.svg)
 
@@ -11,6 +11,8 @@ Millrace is an lightweight git-friendly work management tool designed for optima
 Because it doesn't try to be a project plan, resource schedule, or Gantt chart, Millrace is the backshot wheel of the *project management tools* category. And it's ideal for software teams as it lives in a Git repository.
 
 Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You create a git repository for you work, add the Millrace package from npm, and run the app to visuallly manage work, while git does all the hard work tracking changes in high-fidelity.
+
+This isn't a watefall. It's engineering.
 
 [Read the documentation](docs/index.md).
 
