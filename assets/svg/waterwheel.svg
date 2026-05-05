@@ -1,19 +1,8 @@
-<svg width="100%" viewBox="-48 0 776 300" role="img" xmlns="http://www.w3.org/2000/svg">
-  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Millrace wordmark with water wheel</title>
-  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">The word &quot;millrace&quot; with the letter M replaced by a spinning water wheel. The millrace follows the western arc outside the wheel, then runs horizontally past the wordmark.</desc>
-  <defs>
-    <!-- Accent: app.css (#38bdf8). Channel/arc: darker accent sky-800 (#075985). Hub dot: #0369a1 -->
-    <mask id="imagine-text-gaps-kd530b" maskUnits="userSpaceOnUse"><rect x="-48" y="0" width="776" height="300" fill="white"/><rect x="105" y="77" width="560" height="163" fill="black" rx="2"/></mask>
-  </defs>
+<svg width="100%" viewBox="10 50 196 200" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Water wheel</title>
+  <desc>A stylized water wheel with spokes and paddles.</desc>
 
-  <!-- Channel behind wheel + text (paint order); opaque strokes so arc/bottom overlap doesn’t stack alpha -->
-  <g id="millrace-channel" aria-hidden="true">
-    <path d="M 146.574603 61 A 97 97 0 0 0 59.492269 234 L 636 234" fill="none" stroke="#075985" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:24px;stroke-linecap:round;stroke-linejoin:round;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <path d="M 146.574603 61 A 97 97 0 0 0 59.492269 234" fill="none" stroke="#075985" stroke-width="14" stroke-dasharray="12 6" stroke-linecap="round" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:14px;stroke-dasharray:12px, 6px;stroke-linecap:round;stroke-linejoin:miter;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <line x1="59.492269" y1="234" x2="636" y2="234" stroke="#075985" stroke-width="14" stroke-dasharray="12 6" stroke-linecap="round" mask="url(#imagine-text-gaps-kd530b)" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:14px;stroke-dasharray:12px, 6px;stroke-linecap:round;stroke-linejoin:miter;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-  </g>
-
-  <!-- ═══ WATER WHEEL centred at 108,150 r=90 ═══ -->
+  <!-- WATER WHEEL centred at 108,150 r=90 -->
   <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
     <circle cx="108" cy="150" r="90" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.3" style="fill:none;stroke:rgb(56, 189, 248);color:rgb(255, 255, 255);stroke-width:4px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.3;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
     <circle cx="108" cy="150" r="85" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.4" style="fill:none;stroke:rgb(56, 189, 248);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.4;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
@@ -50,8 +39,5 @@
     <circle cx="108" cy="150" r="11" fill="#38bdf8" opacity="0.85" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.85;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
     <circle cx="108" cy="150" r="5" fill="#0369a1" style="fill:rgb(3, 105, 161);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
   </g>
-
-  <!-- millrace (M = wheel) -->
-  <text x="118" y="207" font-family="Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" letter-spacing="-2" fill="#38bdf8" opacity="0.9" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:140px;font-weight:700;text-anchor:start;dominant-baseline:auto">millrace</text>
 
 </svg>

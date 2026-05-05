@@ -154,6 +154,7 @@ body {
 }
 
 .millrace-brand {
+  --millrace-brand-size: clamp(2.75rem, 5.5vmin, 3.5rem);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -179,10 +180,67 @@ body {
   outline-offset: 2px;
 }
 
+/* Waterwheel → wordmark: expand width to millrace.svg aspect (viewBox 968×300) */
+.millrace-brand__track {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  height: var(--millrace-brand-size);
+  width: var(--millrace-brand-size);
+  overflow: hidden;
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.millrace-brand:is(:hover, :focus-visible) .millrace-brand__track {
+  width: calc(var(--millrace-brand-size) * 968 / 300);
+}
+
 .millrace-brand__svg {
   display: block;
-  width: 2.2rem;
-  height: 2.2rem;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.millrace-brand__svg--wheel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--millrace-brand-size);
+  height: var(--millrace-brand-size);
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  transition: opacity 0.28s ease;
+}
+
+.millrace-brand__svg--mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  opacity: 0;
+  transition: opacity 0.32s ease 0.1s;
+}
+
+.millrace-brand:is(:hover, :focus-visible) .millrace-brand__svg--wheel {
+  opacity: 0;
+  transition-delay: 0.04s;
+}
+
+.millrace-brand:is(:hover, :focus-visible) .millrace-brand__svg--mark {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .millrace-brand__track {
+    transition: none;
+  }
+
+  .millrace-brand__svg--wheel,
+  .millrace-brand__svg--mark {
+    transition: none;
+  }
 }
 
 .board-owner-filter {
