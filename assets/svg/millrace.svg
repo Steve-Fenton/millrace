@@ -1,9 +1,9 @@
-<svg width="100%" viewBox="-48 0 968 300" role="img" xmlns="http://www.w3.org/2000/svg">
+<svg width="100%" viewBox="-8 40 933 215" role="img" xmlns="http://www.w3.org/2000/svg">
   <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Millrace wordmark with water wheel</title>
   <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">The word &quot;millrace&quot; with the letter M replaced by a spinning water wheel. The millrace follows the western arc outside the wheel, then runs horizontally past the wordmark.</desc>
   <defs>
     <!-- Accent: app.css (#38bdf8). Channel/arc: darker accent sky-800 (#075985). Hub dot: #0369a1 -->
-    <mask id="imagine-text-gaps-kd530b" maskUnits="userSpaceOnUse"><rect x="-48" y="0" width="968" height="300" fill="white"/><rect x="218" y="77" width="662" height="163" fill="black" rx="2"/></mask>
+    <mask id="imagine-text-gaps-kd530b" maskUnits="userSpaceOnUse"><rect x="-8" y="40" width="933" height="215" fill="white"/><rect x="218" y="77" width="662" height="163" fill="black" rx="2"/></mask>
   </defs>
 
   <!-- Channel behind wheel + text (paint order); opaque strokes so arc/bottom overlap doesn’t stack alpha -->
@@ -54,6 +54,6 @@
   <!-- millrace (M = wheel) -->
   <text x="232" y="207" font-family="Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" letter-spacing="-2" fill="#38bdf8" opacity="0.9" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:140px;font-weight:700;text-anchor:start;dominant-baseline:auto">millrace</text>
   <!-- i-dot matches channel (#075985); tuned for Georgia Bold 140px at x=232,y=207 -->
-  <circle cx="396" cy="113" r="14" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
+  <circle cx="396" cy="112" r="14" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
 
 </svg>

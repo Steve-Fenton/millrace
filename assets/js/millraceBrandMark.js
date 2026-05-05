@@ -18,6 +18,6 @@ export function createMillraceBrandMark() {
     "aria-label",
     "Millrace on GitHub (opens in a new tab)"
   );
-  a.innerHTML = `<span class="millrace-brand__track"><img class="millrace-brand__svg millrace-brand__svg--wheel" src="${WATERWHEEL_SVG_URL}" width="32" height="32" alt="" decoding="async" aria-hidden="true" /><img class="millrace-brand__svg millrace-brand__svg--mark" src="${MILLRACE_WORDMARK_SVG_URL}" width="968" height="300" alt="" decoding="async" aria-hidden="true" /></span>`;
+  a.innerHTML = `<span class="millrace-brand__track"><img class="millrace-brand__svg millrace-brand__svg--wheel" src="${WATERWHEEL_SVG_URL}" width="32" height="32" alt="" decoding="async" aria-hidden="true" /><img class="millrace-brand__svg millrace-brand__svg--mark" src="${MILLRACE_WORDMARK_SVG_URL}" width="933" height="215" alt="" decoding="async" aria-hidden="true" /></span>`;
   return a;
 }

@@ -180,7 +180,7 @@ body {
   outline-offset: 2px;
 }
 
-/* Waterwheel → wordmark: expand width to millrace.svg aspect (viewBox 968×300) */
+/* Waterwheel → wordmark: expand width to millrace.svg aspect (viewBox 933×215) */
 .millrace-brand__track {
   position: relative;
   display: block;
@@ -192,7 +192,7 @@ body {
 }
 
 .millrace-brand:is(:hover, :focus-visible) .millrace-brand__track {
-  width: calc(var(--millrace-brand-size) * 968 / 300);
+  width: calc(var(--millrace-brand-size) * 933 / 215);
 }
 
 .millrace-brand__svg {
