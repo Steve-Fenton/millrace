@@ -4,7 +4,7 @@ import { parseIni } from "./parseIni.js";
  * @typedef {{ index: number, title: string, isDone?: boolean, wipLimit?: number }} ColumnDef
  * @typedef {{ index: number, title: string }} SwimlaneDef
  * @typedef {{ index: number, email: string, name: string, active?: boolean }} BoardUserDef
- * @typedef {{ name?: string, slug?: string }} BoardMeta
+ * @typedef {{ name?: string, slug?: string, sync_mode?: string, update_frequency?: string }} BoardMeta
  * @typedef {{ board: BoardMeta, columns: ColumnDef[], swimlanes: SwimlaneDef[], users: BoardUserDef[] }} BoardModel
  */
 
