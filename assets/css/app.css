@@ -121,6 +121,7 @@ body {
 }
 
 .board-top {
+  --board-top-item-height: 2.25rem;
   display: grid;
   align-items: center;
   gap: 0.75rem 1rem;
@@ -313,8 +314,8 @@ body {
   right: 0.12rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--board-top-item-height, 2.25rem);
+  height: var(--board-top-item-height, 2.25rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -354,6 +355,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: var(--board-top-item-height, 2.25rem);
+  height: var(--board-top-item-height, 2.25rem);
   padding: 0;
 }
 
@@ -544,13 +547,18 @@ body {
 }
 
 .board-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--board-top-item-height, 2.25rem);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  line-height: 1;
   color: var(--accent);
   background: var(--accent-dim);
-  padding: 0.35rem 0.65rem;
+  padding: 0 0.65rem;
   border-radius: 999px;
   border: 1px solid rgba(56, 189, 248, 0.25);
   white-space: nowrap;
@@ -560,7 +568,7 @@ body {
   font: inherit;
   font-size: 0.82rem;
   font-weight: 600;
-  height: 2.25rem;
+  height: var(--board-top-item-height, 2.25rem);
   padding: 0.4rem 0.85rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -798,8 +806,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--board-top-item-height, 2.25rem);
+  height: var(--board-top-item-height, 2.25rem);
   padding: 0;
   margin: 0;
   font: inherit;
