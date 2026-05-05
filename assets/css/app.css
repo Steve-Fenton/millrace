@@ -130,26 +130,12 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.board-top:has(.board-top-middle) {
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
-}
-
 .board-top-left {
   min-width: 0;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1.25rem;
-}
-
-.board-top-middle {
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
   gap: 0.75rem 1.25rem;
 }
 
@@ -369,8 +355,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0;
-  min-width: 2.24rem;
-  min-height: 2.24rem;
+  min-width: 2.23rem;
+  min-height: 2.23rem;
 }
 
 .board-card-search-btn--icon.flow-btn-primary,
@@ -551,9 +537,11 @@ body {
 
 .board-top-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.65rem;
   flex-shrink: 0;
+  min-width: 0;
 }
 
 .board-badge {

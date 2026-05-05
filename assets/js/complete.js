@@ -137,9 +137,6 @@ function renderCompleteShell(
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
 
-  const topMiddle = document.createElement("div");
-  topMiddle.className = "board-top-middle";
-
   const brand = createMillraceBrandMark();
 
   const titleOrPicker = createBoardTitlePicker(
@@ -320,7 +317,6 @@ function renderCompleteShell(
     }
   });
   searchWrap.append(searchLabel, searchFieldWrap, searchBtn, deepLabel);
-  topMiddle.append(filterWrap, searchWrap);
   topLeft.append(brand, titleOrPicker);
 
   const topActions = document.createElement("div");
@@ -332,8 +328,8 @@ function renderCompleteShell(
 
   const navMenu = createFlowNavMenu({ current: "completed" });
 
-  topActions.append(badge, navMenu);
-  top.append(topLeft, topMiddle, topActions);
+  topActions.append(filterWrap, searchWrap, badge, navMenu);
+  top.append(topLeft, topActions);
 
   const scroll = document.createElement("div");
   scroll.className = "complete-list-wrap";

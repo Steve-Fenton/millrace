@@ -423,9 +423,6 @@ function renderBoard(
   const topLeft = document.createElement("div");
   topLeft.className = "board-top-left";
 
-  const topMiddle = document.createElement("div");
-  topMiddle.className = "board-top-middle";
-
   const brand = createMillraceBrandMark();
 
   const titleOrPicker = createBoardTitlePicker(
@@ -571,7 +568,6 @@ function renderBoard(
   });
   searchWrap.append(searchLabel, searchFieldWrap, searchBtn);
 
-  topMiddle.append(filterWrap, searchWrap);
   topLeft.append(brand, titleOrPicker);
 
   const topActions = document.createElement("div");
@@ -621,8 +617,8 @@ function renderBoard(
     })();
   });
 
-  topActions.append(syncBtn, badge, navMenu);
-  top.append(topLeft, topMiddle, topActions);
+  topActions.append(filterWrap, searchWrap, syncBtn, badge, navMenu);
+  top.append(topLeft, topActions);
 
   const kanban = document.createElement("div");
   kanban.className = "kanban";
