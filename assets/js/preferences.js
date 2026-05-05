@@ -12,10 +12,13 @@ import { escapeHtml } from "./escapeHtml.js";
  */
 function renderPreferencesForm(initial) {
   const form = document.createElement("form");
-  form.className = "flow-modal-form preferences-form";
+  form.className = "preferences-form";
+
+  const grid = document.createElement("div");
+  grid.className = "preferences-grid";
 
   const syncLabel = document.createElement("label");
-  syncLabel.className = "flow-field";
+  syncLabel.className = "flow-field preferences-field";
   const syncSpan = document.createElement("span");
   syncSpan.className = "flow-field-label";
   syncSpan.textContent = "Sync mode";
@@ -35,15 +38,17 @@ function renderPreferencesForm(initial) {
   syncSelect.value = initial.syncMode;
   syncLabel.append(syncSpan, syncSelect);
 
+  grid.append(syncLabel);
+
   const actions = document.createElement("div");
-  actions.className = "flow-modal-actions";
+  actions.className = "preferences-form-actions";
   const saveBtn = document.createElement("button");
   saveBtn.type = "submit";
   saveBtn.className = "flow-btn flow-btn-primary";
   saveBtn.textContent = "Save";
   actions.append(saveBtn);
 
-  form.append(syncLabel, actions);
+  form.append(grid, actions);
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -73,7 +78,7 @@ function renderPreferencesForm(initial) {
  */
 function renderPreferencesShell(form) {
   const root = document.createElement("div");
-  root.className = "board-shell admin-shell";
+  root.className = "board-shell admin-shell preferences-shell";
 
   const top = document.createElement("div");
   top.className = "board-top";
@@ -97,13 +102,20 @@ function renderPreferencesShell(form) {
 
   const body = document.createElement("div");
   body.className = "admin-body";
+
+  const panel = document.createElement("div");
+  panel.className = "preferences-panel";
+
   const secTitle = document.createElement("h2");
-  secTitle.className = "charts-section-title";
+  secTitle.className =
+    "charts-section-title preferences-panel__title";
   secTitle.textContent = "Local preferences";
   const blurb = document.createElement("p");
-  blurb.className = "flow-modal-context";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code> under <code class="flow-board-editor-file">[preferences]</code> (this page only edits that section).`;
-  body.append(secTitle, blurb, form);
+  blurb.className = "flow-modal-context preferences-panel__intro";
+  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code> under <code class="flow-board-editor-file">[preferences]</code>.`;
+
+  panel.append(secTitle, blurb, form);
+  body.append(panel);
   root.append(top, body);
   return root;
 }
