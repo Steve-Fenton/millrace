@@ -355,20 +355,19 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0;
-  min-width: 2.23rem;
-  min-height: 2.23rem;
 }
 
 .board-card-search-btn--icon.flow-btn-primary,
 .complete-search-btn--icon.flow-btn-primary {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: var(--elevated);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .board-card-search-btn--icon.flow-btn-primary:hover,
 .complete-search-btn--icon.flow-btn-primary:hover {
-  filter: brightness(1.08);
+  background: var(--surface-hover);
+  border-color: rgba(56, 189, 248, 0.45);
 }
 
 .flow-search-submit-icon {
@@ -561,6 +560,7 @@ body {
   font: inherit;
   font-size: 0.82rem;
   font-weight: 600;
+  height: 2.25rem;
   padding: 0.4rem 0.85rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
