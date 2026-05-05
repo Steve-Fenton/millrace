@@ -13,14 +13,6 @@ export function serializeBoardIniFromModel(model) {
   if (name) lines.push(`name = ${name}`);
   const slug = String(b.slug ?? "").trim();
   if (slug) lines.push(`slug = ${slug}`);
-  const syncRaw = String(b.sync_mode ?? "").trim().toLowerCase();
-  const syncMode = syncRaw === "manual" ? "manual" : "automatic";
-  lines.push(`sync_mode = ${syncMode}`);
-  const ufRaw = b.update_frequency ?? b.updateFrequency;
-  const uf = Number(String(ufRaw ?? "").trim());
-  const updateFreq =
-    Number.isFinite(uf) && uf >= 1 ? Math.round(uf) : 5;
-  lines.push(`update_frequency = ${updateFreq}`);
   lines.push("");
   lines.push(
     "; Columns appear in list order by section index (columns.1, columns.2, …)."

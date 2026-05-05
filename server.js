@@ -141,6 +141,17 @@ async function readLocalUserIniSections() {
 }
 
 /**
+ * @param {Record<string, string> | undefined} pref `[preferences]` section
+ * @returns {"automatic" | "manual"}
+ */
+function syncModeFromPreferencesSection(pref) {
+  const raw = String(pref?.sync_mode ?? pref?.syncMode ?? "")
+    .trim()
+    .toLowerCase();
+  return raw === "manual" ? "manual" : "automatic";
+}
+
+/**
  * @param {Record<string, Record<string, string>>} sections
  */
 function serializeLocalUserIniFile(sections) {
@@ -165,7 +176,7 @@ function serializeLocalUserIniFile(sections) {
     }
     out.push("");
   }
-  const preferred = ["user", "flow"];
+  const preferred = ["user", "flow", "preferences"];
   const seen = new Set();
   for (const n of preferred) {
     if (!allNames.includes(n)) continue;
@@ -2928,6 +2939,7 @@ app.get("/api/local-user", async (_req, res) => {
       mine: String(mineRaw).trim(),
       chartsGranularity,
       pendingSync: pendingSyncFromSections(sections),
+      syncMode: syncModeFromPreferencesSection(sections.preferences ?? {}),
     });
   } catch {
     res.json({
@@ -2935,13 +2947,26 @@ app.get("/api/local-user", async (_req, res) => {
       mine: "",
       chartsGranularity: "",
       pendingSync: false,
+      syncMode: "automatic",
     });
+  }
+});
+
+app.get("/api/local-user/preferences", async (_req, res) => {
+  try {
+    const sections = await readLocalUserIniSections();
+    res.json({
+      syncMode: syncModeFromPreferencesSection(sections.preferences ?? {}),
+    });
+  } catch {
+    res.json({ syncMode: "automatic" });
   }
 });
 
 /**
  * Merge into `tasks/localuser.ini`: optional `chartsGranularity` ([flow]),
- * optional `mine` ([user] mine, empty string clears).
+ * optional `mine` ([user] mine, empty string clears),
+ * optional `syncMode` ([preferences] sync_mode).
  */
 app.patch("/api/local-user", async (req, res) => {
   try {
@@ -2949,11 +2974,21 @@ app.patch("/api/local-user", async (req, res) => {
     const chartsRaw =
       body.chartsGranularity ?? body.charts_granularity ?? undefined;
     const mineRaw = body.mine !== undefined ? body.mine : undefined;
+    const syncRaw =
+      body.syncMode !== undefined
+        ? body.syncMode
+        : body.sync_mode !== undefined
+          ? body.sync_mode
+          : undefined;
 
-    if (chartsRaw === undefined && mineRaw === undefined) {
+    if (
+      chartsRaw === undefined &&
+      mineRaw === undefined &&
+      syncRaw === undefined
+    ) {
       res.status(400).json({
         message:
-          "Expected JSON body with chartsGranularity (weekly or monthly) and/or mine (email).",
+          "Expected JSON body with chartsGranularity (weekly or monthly), mine (email), and/or syncMode (automatic or manual).",
       });
       return;
     }
@@ -2961,6 +2996,19 @@ app.patch("/api/local-user", async (req, res) => {
     const sections = await readLocalUserIniSections();
     sections.user = sections.user ?? {};
     sections.flow = sections.flow ?? {};
+
+    if (syncRaw !== undefined) {
+      const sm = String(syncRaw).trim().toLowerCase();
+      if (sm !== "automatic" && sm !== "manual") {
+        res.status(400).json({
+          message: "syncMode must be automatic or manual.",
+        });
+        return;
+      }
+      sections.preferences = sections.preferences ?? {};
+      sections.preferences.sync_mode = sm;
+      delete sections.preferences.syncMode;
+    }
 
     if (chartsRaw !== undefined) {
       const v = String(chartsRaw).trim().toLowerCase();
@@ -3011,7 +3059,42 @@ app.patch("/api/local-user", async (req, res) => {
       mine,
       chartsGranularity,
       pendingSync: pendingSyncFromSections(out),
+      syncMode: syncModeFromPreferencesSection(out.preferences ?? {}),
     });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Failed to update localuser.ini." });
+  }
+});
+
+app.patch("/api/local-user/preferences", async (req, res) => {
+  try {
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const syncRaw =
+      body.syncMode !== undefined
+        ? body.syncMode
+        : body.sync_mode !== undefined
+          ? body.sync_mode
+          : undefined;
+    if (syncRaw === undefined) {
+      res.status(400).json({
+        message: "Expected JSON body with syncMode (automatic or manual).",
+      });
+      return;
+    }
+    const sm = String(syncRaw).trim().toLowerCase();
+    if (sm !== "automatic" && sm !== "manual") {
+      res.status(400).json({
+        message: "syncMode must be automatic or manual.",
+      });
+      return;
+    }
+    const sections = await readLocalUserIniSections();
+    sections.preferences = sections.preferences ?? {};
+    sections.preferences.sync_mode = sm;
+    delete sections.preferences.syncMode;
+    await writeLocalUserIniSections(sections);
+    res.json({ ok: true, syncMode: sm });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Failed to update localuser.ini." });

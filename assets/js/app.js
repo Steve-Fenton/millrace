@@ -2,9 +2,9 @@ import { openAddCardDialog } from "./addCardDialog.js";
 import { openCardEditorDialog } from "./cardEditorDialog.js";
 import {
   boardOwnerEmailsForFilter,
-  boardSyncModeIsAutomatic,
   ownerDisplayLabel,
   parseBoardIni,
+  userPreferenceSyncModeIsAutomatic,
 } from "./boardModel.js";
 import {
   fetchBoardIni,
@@ -51,7 +51,7 @@ const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" 
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
 const DONE_COLUMN_DISPLAY_MAX = 5;
 
-/** Coalesce rapid task writes before auto-sync (`sync_mode = automatic`). */
+/** Coalesce rapid task writes before auto-sync (Preferences → automatic sync). */
 const AUTO_SYNC_DEBOUNCE_MS = 900;
 
 /** @type {{ mode: 'all' | 'mine' | 'owner', owner: string }} */
@@ -114,7 +114,7 @@ const emptyFlowCtx = () => ({
   activeSlug: "board",
 });
 
-/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean }} */
+/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean, syncMode: "automatic" | "manual" }} */
 let boardCache = {
   model: null,
   cardsByColumn: null,
@@ -122,6 +122,7 @@ let boardCache = {
   defaultCardOwner: "",
   flowCtx: null,
   pendingSync: false,
+  syncMode: "automatic",
 };
 
 /** Set on full board load; used when re-rendering after owner filter only. */
@@ -1168,6 +1169,7 @@ async function loadApp(fullReload = true) {
     const mineEmail = String(profile.mine ?? "").trim();
     const defaultCardOwner = String(profile.owner ?? "").trim();
     const pendingSync = Boolean(profile.pendingSync);
+    const syncMode = profile.syncMode === "manual" ? "manual" : "automatic";
 
     boardCache = {
       model,
@@ -1176,6 +1178,7 @@ async function loadApp(fullReload = true) {
       defaultCardOwner,
       flowCtx,
       pendingSync,
+      syncMode,
     };
 
     applyStoredOwnerFilter();
@@ -1223,8 +1226,7 @@ async function main() {
     }
     if (
       gitRepoAvailable &&
-      boardCache.model &&
-      boardSyncModeIsAutomatic(boardCache.model.board)
+      userPreferenceSyncModeIsAutomatic(boardCache.syncMode)
     ) {
       clearPendingAutoSyncDebounce();
       autoSyncDebounceTimer = setTimeout(() => {

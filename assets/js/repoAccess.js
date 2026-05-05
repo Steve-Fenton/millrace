@@ -241,7 +241,7 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
 }
 
 /**
- * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean }>}
+ * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean, syncMode: "automatic" | "manual" }>}
  */
 export async function fetchLocalUserProfile() {
   try {
@@ -252,14 +252,17 @@ export async function fetchLocalUserProfile() {
         mine: "",
         chartsGranularity: "",
         pendingSync: false,
+        syncMode: "automatic",
       };
     }
     const data = await res.json();
+    const sm = String(data.syncMode ?? "").trim().toLowerCase();
     return {
       owner: String(data.owner ?? "").trim(),
       mine: String(data.mine ?? "").trim(),
       chartsGranularity: String(data.chartsGranularity ?? "").trim(),
       pendingSync: Boolean(data.pendingSync),
+      syncMode: sm === "manual" ? "manual" : "automatic",
     };
   } catch {
     return {
@@ -267,7 +270,47 @@ export async function fetchLocalUserProfile() {
       mine: "",
       chartsGranularity: "",
       pendingSync: false,
+      syncMode: "automatic",
     };
+  }
+}
+
+/**
+ * `[preferences]` from tasks/localuser.ini only (for the preferences page).
+ * @returns {Promise<{ syncMode: "automatic" | "manual" }>}
+ */
+export async function fetchLocalUserPreferences() {
+  try {
+    const res = await fetch("/api/local-user/preferences", NO_STORE);
+    if (!res.ok) {
+      return { syncMode: "automatic" };
+    }
+    const data = await res.json();
+    const sm = String(data.syncMode ?? "").trim().toLowerCase();
+    return { syncMode: sm === "manual" ? "manual" : "automatic" };
+  } catch {
+    return { syncMode: "automatic" };
+  }
+}
+
+/**
+ * @param {{ syncMode: "automatic" | "manual" }} body
+ */
+export async function patchLocalUserPreferences(body) {
+  const syncMode = body.syncMode === "manual" ? "manual" : "automatic";
+  const res = await fetch("/api/local-user/preferences", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ syncMode }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
   }
 }
 

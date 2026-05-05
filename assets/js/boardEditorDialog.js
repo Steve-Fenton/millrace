@@ -172,18 +172,8 @@ async function openBoardGitHistoryNested(ctx) {
  * @param {{ title: string, wipLimit: string, isDone: boolean }[]} colRows
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
- * @param {"manual" | "automatic"} syncMode
- * @param {number} updateFrequencyMinutes
  */
-function buildModel(
-  initialModel,
-  boardName,
-  colRows,
-  swimRows,
-  userRows,
-  syncMode,
-  updateFrequencyMinutes
-) {
+function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
   const columns = colRows.map((r, i) => {
     const wip = r.wipLimit.trim();
     let wipLimit = undefined;
@@ -218,13 +208,15 @@ function buildModel(
   const rest = { ...ib };
   delete rest.pull_frequency;
   delete rest.pullFrequency;
+  delete rest.update_frequency;
+  delete rest.updateFrequency;
+  delete rest.sync_mode;
+  delete rest.syncMode;
   return {
     board: {
       ...rest,
       name: boardName.trim(),
       slug: String(ib.slug ?? "").trim(),
-      sync_mode: syncMode,
-      update_frequency: String(updateFrequencyMinutes),
     },
     columns,
     swimlanes,
@@ -304,17 +296,6 @@ export async function openBoardEditorDialog(ctx) {
           <span class="flow-field-label">Slug</span>
           <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Change slug by renaming the board file and tasks folder in the repo" />
         </label>
-        <label class="flow-field">
-          <span class="flow-field-label">Sync mode</span>
-          <select class="flow-input" name="syncMode" autocomplete="off">
-            <option value="automatic">Automatic</option>
-            <option value="manual">Manual</option>
-          </select>
-        </label>
-        <label class="flow-field">
-          <span class="flow-field-label">Update frequency (minutes)</span>
-          <input class="flow-input" name="updateFrequencyMinutes" type="number" min="1" step="1" autocomplete="off" />
-        </label>
         <div class="flow-board-editor-sortables"></div>
         <div class="flow-modal-actions flow-modal-actions--split">
           <button
@@ -340,21 +321,8 @@ export async function openBoardEditorDialog(ctx) {
   const form = modal.querySelector("form");
   const nameInput = modal.querySelector('input[name="boardName"]');
   const slugInput = modal.querySelector('input[name="boardSlug"]');
-  const syncSelect = modal.querySelector('select[name="syncMode"]');
-  const freqInput = modal.querySelector('input[name="updateFrequencyMinutes"]');
   nameInput.value = String(initialModel.board?.name ?? def.name ?? "").trim();
   slugInput.value = ctx.boardSlug;
-
-  const rawSync = String(initialModel.board?.sync_mode ?? "").trim().toLowerCase();
-  if (syncSelect) {
-    syncSelect.value = rawSync === "manual" ? "manual" : "automatic";
-  }
-  const rawFreq =
-    initialModel.board?.update_frequency ?? initialModel.board?.updateFrequency;
-  let freqMin = 5;
-  const freqN = Number(String(rawFreq ?? "").trim());
-  if (Number.isFinite(freqN) && freqN >= 1) freqMin = Math.round(freqN);
-  if (freqInput) freqInput.value = String(freqMin);
 
   const sortWrap = modal.querySelector(".flow-board-editor-sortables");
   const colEditor = createSortableColumnList(colSeeds.length ? colSeeds : [{ title: "Backlog", wipLimit: "", isDone: false }]);
@@ -427,23 +395,6 @@ export async function openBoardEditorDialog(ctx) {
         return;
       }
 
-      const syncMode =
-        syncSelect && String(syncSelect.value || "").trim() === "manual"
-          ? "manual"
-          : "automatic";
-      const freqRaw = Number(String(freqInput?.value ?? "").trim());
-      if (
-        !Number.isFinite(freqRaw) ||
-        !Number.isInteger(freqRaw) ||
-        freqRaw < 1
-      ) {
-        await showFlowAlert(
-          "Update frequency must be a whole number of minutes (at least 1).",
-          { title: "Edit board" }
-        );
-        return;
-      }
-
       const colRows = colEditor.getRows();
       if (colRows.length === 0) {
         await showFlowAlert("Add at least one column.", { title: "Edit board" });
@@ -495,9 +446,7 @@ export async function openBoardEditorDialog(ctx) {
         boardName,
         colRows,
         swimRows,
-        rawUserRows,
-        syncMode,
-        freqRaw
+        rawUserRows
       );
       const doneErr = validateExactlyOneDoneColumn(model);
       if (doneErr) {

@@ -16,7 +16,8 @@
     "assets",
     "admin",
     "charts",
-    "complete"
+    "complete",
+    "preferences"
   ],
   "scripts": {
     "start": "node server.js 7713",

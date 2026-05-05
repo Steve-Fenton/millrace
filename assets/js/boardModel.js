@@ -4,7 +4,7 @@ import { parseIni } from "./parseIni.js";
  * @typedef {{ index: number, title: string, isDone?: boolean, wipLimit?: number }} ColumnDef
  * @typedef {{ index: number, title: string }} SwimlaneDef
  * @typedef {{ index: number, email: string, name: string, active?: boolean }} BoardUserDef
- * @typedef {{ name?: string, slug?: string, sync_mode?: string, update_frequency?: string }} BoardMeta
+ * @typedef {{ name?: string, slug?: string }} BoardMeta
  * @typedef {{ board: BoardMeta, columns: ColumnDef[], swimlanes: SwimlaneDef[], users: BoardUserDef[] }} BoardModel
  */
 
@@ -190,12 +190,12 @@ export function parseBoardIni(iniText) {
 }
 
 /**
- * `[board] sync_mode` — default automatic unless explicitly `manual`.
- * @param {BoardMeta | undefined} board
+ * `tasks/localuser.ini` `[preferences] sync_mode` — default automatic unless explicitly `manual`.
+ * @param {string | undefined} syncMode
  * @returns {boolean}
  */
-export function boardSyncModeIsAutomatic(board) {
-  const raw = String(board?.sync_mode ?? "").trim().toLowerCase();
+export function userPreferenceSyncModeIsAutomatic(syncMode) {
+  const raw = String(syncMode ?? "").trim().toLowerCase();
   return raw !== "manual";
 }
 
