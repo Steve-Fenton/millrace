@@ -1,7 +1,7 @@
-import { createLinksEditor } from "./cardLinksUi.js";
-import { createOwnerField } from "./flowOwnerField.js";
-import { createCard, readLocalUserIni } from "./repoAccess.js";
-import { escapeHtml } from "./html/escape.js";
+import { createLinksEditor } from "../cardLinksUi.js";
+import { createOwnerField } from "../flowOwnerField.js";
+import { createCard, readLocalUserIni } from "../repoAccess.js";
+import { escapeHtml } from "../html/escape.js";
 
 function el(html) {
   const t = document.createElement("template");
@@ -10,7 +10,7 @@ function el(html) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./models/boardModel.js").BoardUserDef[] }} ctx
+ * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("../models/boardModel.js").BoardUserDef[] }} ctx
  * @returns {Promise<boolean>} true if a card file was written
  */
 export function openAddCardDialog(ctx) {

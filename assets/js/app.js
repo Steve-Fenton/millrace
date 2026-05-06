@@ -1,4 +1,4 @@
-import { openAddCardDialog } from "./addCardDialog.js";
+import { openAddCardDialog } from "./dialogs/card.js";
 import { openCardEditorDialog } from "./cardEditorDialog.js";
 import {
   boardOwnerEmailsForFilter,
