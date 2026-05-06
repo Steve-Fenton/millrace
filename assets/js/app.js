@@ -5,7 +5,7 @@ import {
   ownerDisplayLabel,
   parseBoardIni,
   userPreferenceSyncModeIsAutomatic,
-} from "./boardModel.js";
+} from "./models/boardModel.js";
 import {
   fetchBoardIni,
   fetchColumnCards,
@@ -199,7 +199,7 @@ function collectDistinctOwners(cardsByColumn) {
 
 /**
  * Filter dropdown keys: board `[users.N]` emails when configured, else distinct owners on cards.
- * @param {import("./boardModel.js").BoardModel} model
+ * @param {import("./models/boardModel.js").BoardModel} model
  * @param {Map<number, object[]>} cardsByColumn
  */
 function ownerFilterKeys(model, cardsByColumn) {
@@ -236,7 +236,7 @@ function filenamesInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
  * @param {string} mineEmail
  * @param {{ mode: string, owner: string }} ownerFilter
  * @param {string} cardSearch
- * @param {import("./boardModel.js").BoardModel} model
+ * @param {import("./models/boardModel.js").BoardModel} model
  */
 function filenamesInCellMatchingUiFilters(
   cardsByColumn,

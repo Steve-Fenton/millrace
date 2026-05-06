@@ -11,7 +11,7 @@ import {
   sectionsToBoardModel,
   userPreferenceSyncModeIsAutomatic,
   validateExactlyOneDoneColumn,
-} from "../../assets/js/boardModel.js";
+} from "../../assets/js/models/boardModel.js";
 
 Given("the ownerDisplayLabel input JSON is:", function (docString) {
   const o = JSON.parse(docString.trim());

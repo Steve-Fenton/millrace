@@ -1,7 +1,7 @@
 /**
  * Serialize a parsed board model back to tasks/*.ini text (board + columns + swimlanes + users).
  * Column and swimlane indices are 1..n in list order.
- * @param {import("../boardModel.js").BoardModel} model
+ * @param {import("../models/boardModel.js").BoardModel} model
  * @returns {string}
  */
 export function serializeBoardIniFromModel(model) {

@@ -5,7 +5,7 @@ import {
   boardOwnerEmailsForFilter,
   ownerDisplayLabel,
   parseBoardIni,
-} from "./boardModel.js";
+} from "./models/boardModel.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,

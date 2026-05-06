@@ -1,4 +1,4 @@
-import { ownerDisplayLabel } from "./boardModel.js";
+import { ownerDisplayLabel } from "./models/boardModel.js";
 
 /**
  * @param {string | undefined} q
@@ -10,7 +10,7 @@ export function normalizeSearchQuery(q) {
 /**
  * @param {object} card
  * @param {string} queryLower normalized lowercase query; empty matches all
- * @param {import("./boardModel.js").BoardUserDef[] | undefined} users
+ * @param {import("./models/boardModel.js").BoardUserDef[] | undefined} users
  */
 export function cardMatchesSearch(card, queryLower, users) {
   if (!queryLower) return true;
@@ -36,7 +36,7 @@ export function cardMatchesSearch(card, queryLower, users) {
 /**
  * @param {object[]} cards
  * @param {string} query raw search string
- * @param {import("./boardModel.js").BoardUserDef[] | undefined} users
+ * @param {import("./models/boardModel.js").BoardUserDef[] | undefined} users
  */
 export function filterCardsBySearch(cards, query, users) {
   const q = normalizeSearchQuery(query);

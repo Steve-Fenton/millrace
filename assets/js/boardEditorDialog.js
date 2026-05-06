@@ -1,4 +1,4 @@
-import { parseBoardIni, validateExactlyOneDoneColumn } from "./boardModel.js";
+import { parseBoardIni, validateExactlyOneDoneColumn } from "./models/boardModel.js";
 import { serializeBoardIniFromModel } from "./ini/boardIni.js";
 import {
   createSortableBoardUserList,
@@ -168,7 +168,7 @@ async function openBoardGitHistoryNested(ctx) {
 }
 
 /**
- * @param {import("./boardModel.js").BoardModel} initialModel
+ * @param {import("./models/boardModel.js").BoardModel} initialModel
  * @param {{ title: string, wipLimit: string, isDone: boolean }[]} colRows
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
@@ -181,7 +181,7 @@ function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
       const n = Number(wip);
       if (Number.isFinite(n) && n >= 0) wipLimit = n;
     }
-    /** @type {import("./boardModel.js").ColumnDef} */
+    /** @type {import("./models/boardModel.js").ColumnDef} */
     const c = {
       index: i + 1,
       title: r.title.trim() || `Column ${i + 1}`,
@@ -194,7 +194,7 @@ function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
     index: i + 1,
     title: r.title.trim() || `Lane ${i + 1}`,
   }));
-  /** @type {import("./boardModel.js").BoardUserDef[]} */
+  /** @type {import("./models/boardModel.js").BoardUserDef[]} */
   const users = [];
   let userIdx = 1;
   for (const r of userRows) {

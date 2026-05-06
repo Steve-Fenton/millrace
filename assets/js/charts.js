@@ -1,6 +1,6 @@
 import { createFlowNavMenu } from "./flowNavMenu.js";
 import { createMillraceBrandMark } from "./millraceBrandMark.js";
-import { parseBoardIni } from "./boardModel.js";
+import { parseBoardIni } from "./models/boardModel.js";
 import {
   fetchBoardIni,
   fetchLocalUserProfile,

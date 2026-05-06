@@ -10,7 +10,7 @@ function el(html) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./boardModel.js").BoardUserDef[] }} ctx
+ * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./models/boardModel.js").BoardUserDef[] }} ctx
  * @returns {Promise<boolean>} true if a card file was written
  */
 export function openAddCardDialog(ctx) {

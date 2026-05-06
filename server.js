@@ -24,7 +24,7 @@ import {
   canAssignCardOwner,
   parseBoardIni,
   validateExactlyOneDoneColumn,
-} from "./assets/js/boardModel.js";
+} from "./assets/js/models/boardModel.js";
 import {
   defaultSwimlaneIndex,
   resolveCardSwimlaneIndex,
@@ -1039,7 +1039,7 @@ async function walkBoardTaskIniPaths(slug) {
 }
 
 /**
- * @param {import("./assets/js/boardModel.js").BoardModel} model
+ * @param {import("./assets/js/models/boardModel.js").BoardModel} model
  * @param {"columns" | "swimlanes"} kind
  */
 function boardTitleMultiset(model, kind) {
@@ -1071,8 +1071,8 @@ function multisetsEqual(a, b) {
 /**
  * Same column & swimlane titles (incl. counts / duplicates) — only order or non-placement
  * fields (WIP, is_done, etc.) changed. Cards use titles, so no INI updates.
- * @param {import("./assets/js/boardModel.js").BoardModel} oldModel
- * @param {import("./assets/js/boardModel.js").BoardModel} newModel
+ * @param {import("./assets/js/models/boardModel.js").BoardModel} oldModel
+ * @param {import("./assets/js/models/boardModel.js").BoardModel} newModel
  */
 function isPureColumnSwimlaneReorderForTasks(oldModel, newModel) {
   const oc = boardTitleMultiset(oldModel, "columns");
@@ -1090,7 +1090,7 @@ function isPureColumnSwimlaneReorderForTasks(oldModel, newModel) {
  * numeric id), not by old board slot index — so inserting or reordering columns does not
  * reassign cards to whatever title occupied the same index.
  * @param {string} slug
- * @param {import("./assets/js/boardModel.js").BoardModel} newModel
+ * @param {import("./assets/js/models/boardModel.js").BoardModel} newModel
  */
 async function syncTaskFilesToNewBoardModel(slug, newModel) {
   const paths = await walkBoardTaskIniPaths(slug);

@@ -171,7 +171,7 @@ function formatCardTimestampDisplay(raw) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./boardModel.js").BoardUserDef[] }} ctx
+ * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./models/boardModel.js").BoardUserDef[] }} ctx
  * @returns {Promise<boolean>} true if saved, deleted, or duplicated (board refresh)
  */
 export async function openCardEditorDialog(ctx) {
