@@ -84,6 +84,30 @@ Given("the full card item JSON is:", function (docString) {
   this.fullCardItem = JSON.parse(docString.trim());
 });
 
+Given(
+  "the full card item has an own property with undefined value",
+  function () {
+    this.fullCardItem = { id: "u1", note: undefined };
+  }
+);
+
+Given(
+  "the full card item has a description getter that yields undefined then multiline text",
+  function () {
+    let first = true;
+    this.fullCardItem = {
+      id: "g1",
+      get description() {
+        if (first) {
+          first = false;
+          return undefined;
+        }
+        return "second-pass\nbody";
+      },
+    };
+  }
+);
+
 Given("the full card links JSON is:", function (docString) {
   this.fullCardLinks = JSON.parse(docString.trim());
 });

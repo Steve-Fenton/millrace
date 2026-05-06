@@ -36,7 +36,7 @@ export function columnNameForIniItem(columns, columnIndex) {
     return t || `Column ${primary.index}`;
   }
   const defIdx = defaultColumnIndex(list);
-  const fallback = list.find((x) => x.index === defIdx) ?? list[0];
+  const fallback = list.find((x) => x.index === defIdx);
   if (!fallback) return String(columnIndex);
   const t = String(fallback.title ?? "").trim();
   return t || `Column ${fallback.index}`;
@@ -61,8 +61,7 @@ export function swimlaneNameForIniItem(swimlanes, swimlaneIndex) {
     const t = String(primary.title ?? "").trim();
     return t || `Lane ${primary.index}`;
   }
-  const fallback = list.find((x) => x.index === defIdx) ?? list[0];
-  if (!fallback) return undefined;
+  const fallback = list.find((x) => x.index === defIdx);
   const t = String(fallback.title ?? "").trim();
   return t || `Lane ${fallback.index}`;
 }
@@ -172,8 +171,7 @@ export function serializeFullCardIni(item, links) {
     if (k === "description") {
       appendDescription(v);
     } else {
-      const out = scalarKeys.has(k) ? scalarLine(v) : String(v);
-      lines.push(`${k} = ${out}`);
+      lines.push(`${k} = ${scalarLine(v)}`);
     }
   }
 

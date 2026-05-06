@@ -84,6 +84,42 @@ Feature: cardIni
       3
       """
 
+  Scenario: columnNameForIniItem fallback uses Column n when the default column title is blank
+    Given the columns array JSON is:
+      """
+      [{"index":4,"title":"  "}]
+      """
+    And the column index is 99
+    When I compute columnNameForIniItem
+    Then the string result should be:
+      """
+      Column 4
+      """
+
+  Scenario: columnNameForIniItem fallback maps null or omitted titles through nullish coalescing
+    Given the columns array JSON is:
+      """
+      [{"index":6,"title":null}]
+      """
+    And the column index is 100
+    When I compute columnNameForIniItem
+    Then the string result should be:
+      """
+      Column 6
+      """
+
+  Scenario: columnNameForIniItem fallback treats missing title like null for coalescing
+    Given the columns array JSON is:
+      """
+      [{"index":8}]
+      """
+    And the column index is 50
+    When I compute columnNameForIniItem
+    Then the string result should be:
+      """
+      Column 8
+      """
+
   Scenario: swimlaneNameForIniItem is undefined when there are no swimlanes
     Given the swimlanes array JSON is:
       """
@@ -129,6 +165,51 @@ Feature: cardIni
       Lane 1
       """
 
+  Scenario: swimlaneNameForIniItem maps null primary title through nullish coalescing
+    Given the swimlanes array JSON is:
+      """
+      [{"index":2,"title":null}]
+      """
+    And the swimlane index is 2
+    When I compute swimlaneNameForIniItem
+    Then the string result should be:
+      """
+      Lane 2
+      """
+
+  Scenario: swimlaneNameForIniItem treats missing title like null for coalescing
+    Given the swimlanes array JSON is:
+      """
+      [{"index":3}]
+      """
+    And the swimlane index is 3
+    When I compute swimlaneNameForIniItem
+    Then the string result should be:
+      """
+      Lane 3
+      """
+
+  Scenario: swimlaneNameForIniItem treats non-array swimlanes as empty
+    Given the swimlanes array JSON is:
+      """
+      null
+      """
+    And the swimlane index is 2
+    When I compute swimlaneNameForIniItem
+    Then the swimlane name result is undefined
+
+  Scenario: swimlaneNameForIniItem falls back with Lane n when the default lane title is blank
+    Given the swimlanes array JSON is:
+      """
+      [{"index":5,"title":null}]
+      """
+    And the swimlane index is 9
+    When I compute swimlaneNameForIniItem
+    Then the string result should be:
+      """
+      Lane 5
+      """
+
   Scenario: serializeFullCardIni writes multiline description link sections and sorted extra keys
     Given the full card item JSON is:
       """
@@ -155,6 +236,78 @@ Feature: cardIni
       [link.1]
       text = L
       url = http://l
+
+      """
+
+  Scenario: serializeCardIni stringifies null description and owner
+    Given the serializeCardIni fields JSON is:
+      """
+      {"id":"n","title":"t","columnIndex":1,"description":null,"owner":null,"columns":[{"index":1,"title":"C"}],"swimlanes":[]}
+      """
+    When I serialize with serializeCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = n
+      title = t
+      description = 
+      owner = 
+      column = C
+      created = 2024-01-15T10:20:30.000Z
+
+      """
+
+  Scenario: serializeFullCardIni handles null title and description for scalarLine and appendDescription
+    Given the full card item JSON is:
+      """
+      {"id":"1","title":null,"description":null}
+      """
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = 1
+      title = 
+      description = 
+
+      """
+
+  Scenario: serializeFullCardIni skips empty swimlane column and sort_order in the ordered pass then emits them from the rest loop
+    Given the full card item JSON is:
+      """
+      {"id":"x","title":"y","swimlane":"","column":"","sort_order":"  "}
+      """
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = x
+      title = y
+      column = 
+      sort_order = 
+      swimlane = 
+
+      """
+
+  Scenario: serializeFullCardIni skips rest keys whose value is undefined
+    Given the full card item has an own property with undefined value
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = u1
 
       """
 
@@ -192,6 +345,22 @@ Feature: cardIni
       [item]
       aaa = 1
       bbb = 2
+
+      """
+
+  Scenario: serializeFullCardIni appends multiline description via the rest loop when the ordered pass skips it
+    Given the full card item has a description getter that yields undefined then multiline text
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = g1
+      description = second-pass
+          body
 
       """
 
