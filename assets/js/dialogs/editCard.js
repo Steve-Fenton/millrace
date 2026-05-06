@@ -1,4 +1,4 @@
-import { createLinksEditor } from "../cardLinksUi.js";
+import { createLinksEditor } from "../ui/cardLinks.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createOwnerField } from "../flowOwnerField.js";
 import {

@@ -4,7 +4,7 @@ import {
   createSortableBoardUserList,
   createSortableColumnList,
   createSortableSwimlaneList,
-} from "../boardOrderedRowsEditor.js";
+} from "../ui/boardOrderedRowsEditor.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import {
   deleteBoardDefinition,

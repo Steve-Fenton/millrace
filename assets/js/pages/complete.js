@@ -25,7 +25,7 @@ import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
 } from "../flowSearchClearField.js";
-import { fillCardLinkWithNewTabIcon } from "../cardLinkOpenNewTab.js";
+import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
 import { escapeHtml } from "../html/escape.js";
 

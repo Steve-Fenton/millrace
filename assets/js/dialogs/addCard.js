@@ -1,4 +1,4 @@
-import { createLinksEditor } from "../cardLinksUi.js";
+import { createLinksEditor } from "../ui/cardLinks.js";
 import { createOwnerField } from "../flowOwnerField.js";
 import { createCard, readLocalUserIni } from "../repoAccess.js";
 import { el } from "../html/element.js";
