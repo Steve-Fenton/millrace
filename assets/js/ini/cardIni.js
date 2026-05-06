@@ -24,7 +24,7 @@ export function normalizeLinksForIni(links) {
 
 /**
  * Column title to store in `[item] column = …` (stable across board.ini re-indexing when titles match).
- * If `columnIndex` is missing from the board, uses the first column’s title.
+ * If `columnIndex` is missing from the board, uses the first column's title.
  * @param {Array<{ index: number, title: string }>} columns
  * @param {number} columnIndex
  */

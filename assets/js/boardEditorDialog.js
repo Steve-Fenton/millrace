@@ -1,5 +1,5 @@
 import { parseBoardIni, validateExactlyOneDoneColumn } from "./boardModel.js";
-import { serializeBoardIniFromModel } from "./boardIniSerialize.js";
+import { serializeBoardIniFromModel } from "./ini/boardIni.js";
 import {
   createSortableBoardUserList,
   createSortableColumnList,

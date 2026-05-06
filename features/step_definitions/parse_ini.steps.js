@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
-import { parseIni } from "../../assets/js/parseIni.js";
+import { parseIni } from "../../assets/js/ini/parseIni.js";
 
 Given("the INI text is:", function (docString) {
   this.iniText = docString;

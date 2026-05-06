@@ -1,4 +1,4 @@
-import { parseIni } from "./parseIni.js";
+import { parseIni } from "./ini/parseIni.js";
 
 /**
  * @typedef {{ text: string, url: string }} TaskLink

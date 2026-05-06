@@ -6,7 +6,7 @@ import {
   serializeCardIni,
   serializeFullCardIni,
   swimlaneNameForIniItem,
-} from "../../assets/js/cardIni.js";
+} from "../../assets/js/ini/cardIni.js";
 
 const FIXED_CREATED_ISO = "2024-01-15T10:20:30.000Z";
 

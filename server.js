@@ -17,8 +17,8 @@ import {
   serializeCardIni,
   serializeFullCardIni,
   swimlaneNameForIniItem,
-} from "./assets/js/cardIni.js";
-import { resolveCardColumnIndex } from "./assets/js/columnResolve.js";
+} from "./assets/js/ini/cardIni.js";
+import { resolveCardColumnIndex } from "./assets/js/ini/columnResolve.js";
 import {
   boardOwnerEmailsForFilter,
   canAssignCardOwner,
@@ -28,8 +28,8 @@ import {
 import {
   defaultSwimlaneIndex,
   resolveCardSwimlaneIndex,
-} from "./assets/js/swimlaneResolve.js";
-import { parseIni } from "./assets/js/parseIni.js";
+} from "./assets/js/ini/swimlaneResolve.js";
+import { parseIni } from "./assets/js/ini/parseIni.js";
 import { summarizeCardIniDiff } from "./assets/js/cardHistoryDiff.js";
 import { parseTaskCardIni, parseTaskCardIniFull } from "./assets/js/taskCardModel.js";
 

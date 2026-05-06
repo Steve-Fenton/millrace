@@ -1,4 +1,4 @@
-import { parseIni } from "./parseIni.js";
+import { parseIni } from "./ini/parseIni.js";
 
 /**
  * @typedef {{ index: number, title: string, isDone?: boolean, wipLimit?: number }} ColumnDef

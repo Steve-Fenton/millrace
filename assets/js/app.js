@@ -26,7 +26,7 @@ import {
   readStoredOwnerFilter,
   filterCardsByOwner as filterCardsByOwnerWithFilter,
 } from "./flowOwnerFilter.js";
-import { resolveCardSwimlaneIndex } from "./swimlaneResolve.js";
+import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import { boardSlugFrom } from "./flowBoardSlug.js";
 import {
   createBoardTitlePicker,

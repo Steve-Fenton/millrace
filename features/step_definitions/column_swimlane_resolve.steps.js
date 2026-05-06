@@ -3,11 +3,11 @@ import { Given, Then, When } from "@cucumber/cucumber";
 import {
   defaultColumnIndex,
   resolveCardColumnIndex,
-} from "../../assets/js/columnResolve.js";
+} from "../../assets/js/ini/columnResolve.js";
 import {
   defaultSwimlaneIndex,
   resolveCardSwimlaneIndex,
-} from "../../assets/js/swimlaneResolve.js";
+} from "../../assets/js/ini/swimlaneResolve.js";
 
 Given("the defaultColumnIndex columns JSON is:", function (docString) {
   this.columnsForDefaultCol = JSON.parse(docString.trim());

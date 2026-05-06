@@ -26,7 +26,7 @@ import {
   wrapSearchInputWithClear,
 } from "./flowSearchClearField.js";
 import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
-import { resolveCardSwimlaneIndex } from "./swimlaneResolve.js";
+import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import { escapeHtml } from "./escapeHtml.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
