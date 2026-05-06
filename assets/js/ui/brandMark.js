@@ -1,7 +1,7 @@
 const MILLRACE_REPO_URL = "https://github.com/Steve-Fenton/millrace";
 
-const WATERWHEEL_SVG_URL = new URL("../svg/waterwheel.svg", import.meta.url).href;
-const MILLRACE_WORDMARK_SVG_URL = new URL("../svg/millrace.svg", import.meta.url).href;
+const WATERWHEEL_SVG_URL = new URL("../../svg/waterwheel.svg", import.meta.url).href;
+const MILLRACE_WORDMARK_SVG_URL = new URL("../../svg/millrace.svg", import.meta.url).href;
 
 /**
  * Water-mill mark for the shell header. Links to the Millrace GitHub repository.

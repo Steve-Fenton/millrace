@@ -1,6 +1,6 @@
 import { openBoardEditorDialog } from "./boardEditorDialog.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
-import { createMillraceBrandMark } from "./millraceBrandMark.js";
+import { createMillraceBrandMark } from "./ui/brandMark.js";
 import { createBoardDefinition } from "./repoAccess.js";
 import {
   resolveActiveBoardSelection,

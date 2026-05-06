@@ -18,7 +18,7 @@ import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
 import { showFlowAlert } from "./flowDialogs.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
-import { createMillraceBrandMark } from "./millraceBrandMark.js";
+import { createMillraceBrandMark } from "./ui/brandMark.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,
