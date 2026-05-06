@@ -12,13 +12,8 @@ import {
   fetchBoardDefinitionGitHistory,
   updateBoardDefinition,
 } from "./repoAccess.js";
+import { el } from "./html/element.js";
 import { escapeHtml } from "./html/escape.js";
-
-function el(html) {
-  const t = document.createElement("template");
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
-}
 
 /** @param {string | undefined} raw */
 function formatTs(raw) {

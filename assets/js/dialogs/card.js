@@ -1,13 +1,8 @@
 import { createLinksEditor } from "../cardLinksUi.js";
 import { createOwnerField } from "../flowOwnerField.js";
 import { createCard, readLocalUserIni } from "../repoAccess.js";
+import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
-
-function el(html) {
-  const t = document.createElement("template");
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
-}
 
 /**
  * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("../models/boardModel.js").BoardUserDef[] }} ctx
