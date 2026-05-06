@@ -1,4 +1,4 @@
-import { openBoardEditorDialog } from "./boardEditorDialog.js";
+import { openBoardEditorDialog } from "./dialogs/editBoard.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
 import { createBoardDefinition } from "./repoAccess.js";
