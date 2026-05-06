@@ -1,33 +1,33 @@
-import { openCardEditorDialog } from "./dialogs/editCard.js";
-import { createFlowNavMenu } from "./flowNavMenu.js";
-import { createMillraceBrandMark } from "./ui/brandMark.js";
+import { openCardEditorDialog } from "../dialogs/editCard.js";
+import { createFlowNavMenu } from "../flowNavMenu.js";
+import { createMillraceBrandMark } from "../ui/brandMark.js";
 import {
   boardOwnerEmailsForFilter,
   ownerDisplayLabel,
   parseBoardIni,
-} from "./models/boardModel.js";
+} from "../models/boardModel.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,
   persistOwnerFilter,
   readStoredOwnerFilter,
-} from "./flowOwnerFilter.js";
-import { showFlowAlert } from "./ui/showMessage.js";
-import { ensureMineEmailConfigured } from "./flowMineEmail.js";
-import { fetchBoardIni, fetchLocalUserProfile } from "./repoAccess.js";
-import { boardSlugFrom } from "./html/slug.js";
+} from "../flowOwnerFilter.js";
+import { showFlowAlert } from "../ui/showMessage.js";
+import { ensureMineEmailConfigured } from "../flowMineEmail.js";
+import { fetchBoardIni, fetchLocalUserProfile } from "../repoAccess.js";
+import { boardSlugFrom } from "../html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "./flowBoardPicker.js";
+} from "../flowBoardPicker.js";
 import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
-} from "./flowSearchClearField.js";
-import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
-import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
-import { escapeHtml } from "./html/escape.js";
+} from "../flowSearchClearField.js";
+import { fillCardLinkWithNewTabIcon } from "../cardLinkOpenNewTab.js";
+import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
+import { escapeHtml } from "../html/escape.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;

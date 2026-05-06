@@ -16,4 +16,24 @@ This isn't a watefall. It's engineering.
 
 [Read the documentation](docs/index.md).
 
+# App design
 
+## `server.js`
+
+The API for the application.
+
+## `assets/js`
+
+Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `repoAccess.js`, and `flow*.js`).
+
+- **`dialogs/`**: Modal flows for creating or editing boards and task cards (DOM, validation, and API calls).
+- **`git/`**: Helpers around Git merge-conflict markers (detecting hunks, choosing a side), not a full Git client.
+- **`html/`**: Low-level helpers: escape text for HTML, derive URL-safe slugs, parse markup strings into DOM nodes.
+- **`ini/`**: INI parsing plus board/card helpers (sections, columns, swimlanes).
+- **`models/`**: Structured board and task-card models derived from parsed INI text.
+- **`pages/`**: Page entry bundles wired from each route’s `index.html` (admin, charts, completed work, preferences).
+- **`ui/`**: Shared presentation pieces: header brand mark and styled modal alerts, confirms, and email prompts (replacing `alert` / `confirm`).
+
+## features
+
+Logic tests.

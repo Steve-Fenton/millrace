@@ -1,18 +1,18 @@
-import { createFlowNavMenu } from "./flowNavMenu.js";
-import { createMillraceBrandMark } from "./ui/brandMark.js";
-import { parseBoardIni } from "./models/boardModel.js";
+import { createFlowNavMenu } from "../flowNavMenu.js";
+import { createMillraceBrandMark } from "../ui/brandMark.js";
+import { parseBoardIni } from "../models/boardModel.js";
 import {
   fetchBoardIni,
   fetchLocalUserProfile,
   patchLocalUserChartsGranularity,
-} from "./repoAccess.js";
-import { boardSlugFrom } from "./html/slug.js";
+} from "../repoAccess.js";
+import { boardSlugFrom } from "../html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "./flowBoardPicker.js";
-import { escapeHtml } from "./html/escape.js";
+} from "../flowBoardPicker.js";
+import { escapeHtml } from "../html/escape.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 
