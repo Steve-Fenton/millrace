@@ -3,8 +3,8 @@ import {
   getFirstConflictHunk,
   hasConflictMarkerLines,
   replaceFirstConflictHunk,
-} from "./git/conflictMerge.js";
-import { showFlowAlert } from "./ui/showMessage.js";
+} from "../git/conflictMerge.js";
+import { showFlowAlert } from "../ui/showMessage.js";
 
 /** @param {string} [s] @param {number} [max] */
 function shortRef(s, max = 40) {

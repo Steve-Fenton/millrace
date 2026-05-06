@@ -2,10 +2,10 @@ import {
   boardActiveUsersSortedForUi,
   boardUserEntryForEmail,
   ownerDisplayLabel,
-} from "./models/boardModel.js";
+} from "../models/boardModel.js";
 
 /**
- * @param {import("./models/boardModel.js").BoardUserDef[] | undefined} boardUsers
+ * @param {import("../models/boardModel.js").BoardUserDef[] | undefined} boardUsers
  * @param {string} initialEmail
  * @returns {{ root: HTMLElement, getValue: () => string, focus: () => void }}
  */

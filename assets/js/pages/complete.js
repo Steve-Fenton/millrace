@@ -11,7 +11,7 @@ import {
   ownerFilterToSelectValue,
   persistOwnerFilter,
   readStoredOwnerFilter,
-} from "../flowOwnerFilter.js";
+} from "../ui/filterByOwner.js";
 import { showFlowAlert } from "../ui/showMessage.js";
 import { ensureMineEmailConfigured } from "../ui/setupMineOwner.js";
 import { fetchBoardIni, fetchLocalUserProfile } from "../client.js";
@@ -24,7 +24,7 @@ import {
 import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
-} from "../flowSearchClearField.js";
+} from "../ui/clearFilter.js";
 import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
 import { escapeHtml } from "../html/escape.js";

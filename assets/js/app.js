@@ -14,7 +14,7 @@ import {
   moveCard,
   reorderCards,
 } from "./client.js";
-import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
+import { runGitSyncWithConflictFlow } from "./git/gitSyncFlow.js";
 import { showFlowAlert } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./ui/setupMineOwner.js";
 import { createFlowNavMenu } from "./ui/menu.js";
@@ -25,7 +25,7 @@ import {
   persistOwnerFilter as persistOwnerFilterStorage,
   readStoredOwnerFilter,
   filterCardsByOwner as filterCardsByOwnerWithFilter,
-} from "./flowOwnerFilter.js";
+} from "./ui/filterByOwner.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import { boardSlugFrom } from "./html/slug.js";
 import {
@@ -40,7 +40,7 @@ import {
 import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
-} from "./flowSearchClearField.js";
+} from "./ui/clearFilter.js";
 import { fillCardLinkWithNewTabIcon } from "./ui/cardLinkOpenNewTab.js";
 import { escapeHtml } from "./html/escape.js";
 

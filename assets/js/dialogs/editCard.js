@@ -1,6 +1,6 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
-import { createOwnerField } from "../flowOwnerField.js";
+import { createOwnerField } from "../ui/selectOwner.js";
 import {
   createCard,
   deleteCard,
