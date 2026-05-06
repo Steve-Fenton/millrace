@@ -31,7 +31,7 @@ import {
 } from "./assets/js/ini/swimlaneResolve.js";
 import { parseIni } from "./assets/js/ini/parseIni.js";
 import { summarizeCardIniDiff } from "./assets/js/cardHistoryDiff.js";
-import { parseTaskCardIni, parseTaskCardIniFull } from "./assets/js/taskCardModel.js";
+import { parseTaskCardIni, parseTaskCardIniFull } from "./assets/js/models/taskModel.js";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 

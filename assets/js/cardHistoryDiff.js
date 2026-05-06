@@ -1,4 +1,4 @@
-import { parseTaskCardIniFull } from "./taskCardModel.js";
+import { parseTaskCardIniFull } from "./models/taskModel.js";
 
 const DISPLAY_MAX = 64;
 

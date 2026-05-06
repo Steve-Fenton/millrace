@@ -1,4 +1,4 @@
-Feature: taskCardModel
+Feature: task model (INI)
   Section extraction, [item] body parsing, and full task card INI parsing.
 
   Scenario: extractSectionLines returns empty array when the section is missing

@@ -5,7 +5,7 @@ import {
   parseItemSectionLines,
   parseTaskCardIni,
   parseTaskCardIniFull,
-} from "../../assets/js/taskCardModel.js";
+} from "../../assets/js/models/taskModel.js";
 
 function baselineTaskCard() {
   return {
