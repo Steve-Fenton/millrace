@@ -1,5 +1,5 @@
 import { openCardEditorDialog } from "../dialogs/editCard.js";
-import { createFlowNavMenu } from "../flowNavMenu.js";
+import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import {
   boardOwnerEmailsForFilter,
@@ -13,7 +13,7 @@ import {
   readStoredOwnerFilter,
 } from "../flowOwnerFilter.js";
 import { showFlowAlert } from "../ui/showMessage.js";
-import { ensureMineEmailConfigured } from "../flowMineEmail.js";
+import { ensureMineEmailConfigured } from "../ui/setupMineOwner.js";
 import { fetchBoardIni, fetchLocalUserProfile } from "../client.js";
 import { boardSlugFrom } from "../html/slug.js";
 import {

@@ -1,4 +1,4 @@
-import { createFlowNavMenu } from "../flowNavMenu.js";
+import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import {
   fetchLocalUserPreferences,

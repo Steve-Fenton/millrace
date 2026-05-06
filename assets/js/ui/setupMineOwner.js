@@ -1,5 +1,5 @@
-import { showFlowAlert, showFlowPrompt } from "./ui/showMessage.js";
-import { patchLocalUserMine } from "./client.js";
+import { showFlowAlert, showFlowPrompt } from "./showMessage.js";
+import { patchLocalUserMine } from "../client.js";
 
 /**
  * Prompt for `[user] mine` and persist. Returns null if cancelled or invalid.
@@ -8,7 +8,7 @@ import { patchLocalUserMine } from "./client.js";
  */
 export async function ensureMineEmailConfigured(defaultHint = "") {
   const entered = await showFlowPrompt(
-    "Enter the email you use as card owner so Mine can match your cards.",
+    "Enter your email to enable the Mine filter.",
     {
       title: "Mine filter",
       placeholder: "you@company.com",

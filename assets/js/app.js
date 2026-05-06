@@ -16,8 +16,8 @@ import {
 } from "./client.js";
 import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
 import { showFlowAlert } from "./ui/showMessage.js";
-import { ensureMineEmailConfigured } from "./flowMineEmail.js";
-import { createFlowNavMenu } from "./flowNavMenu.js";
+import { ensureMineEmailConfigured } from "./ui/setupMineOwner.js";
+import { createFlowNavMenu } from "./ui/menu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
 import {
   normalizeOwnerFilter,
@@ -36,7 +36,7 @@ import {
 import {
   filterCardsBySearch,
   normalizeSearchQuery,
-} from "./flowCardSearch.js";
+} from "./ui/taskSearch.js";
 import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
