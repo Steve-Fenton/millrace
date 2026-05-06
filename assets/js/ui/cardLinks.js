@@ -75,6 +75,7 @@ export function createLinksEditor(initialLinks) {
       if (!host) return;
       if (!String(textIn.value).trim()) {
         textIn.value = host;
+        requestAnimationFrame(() => textIn.select());
       }
     }
 
