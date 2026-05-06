@@ -1,6 +1,41 @@
 /**
- * On-page modal prompts matching `.flow-modal` styling (no `window.alert` / `confirm`).
+ * On-page modal prompts matching `.flow-modal` styling (no `window.alert` / `confirm`),
+ * plus a lightweight toast for non-blocking feedback.
  */
+
+/** @type {HTMLElement | null} */
+let toastEl = null;
+/** @type {number} */
+let toastTimer = 0;
+
+/**
+ * Brief non-blocking message (fixed near bottom of the viewport).
+ * @param {string} message
+ * @param {{ durationMs?: number }} [opts]
+ */
+export function showFlowToast(message, opts = {}) {
+  const durationMs =
+    typeof opts.durationMs === "number" && opts.durationMs >= 0
+      ? opts.durationMs
+      : 4500;
+  const text = String(message ?? "").trim();
+  if (!text) return;
+
+  if (!toastEl) {
+    toastEl = document.createElement("div");
+    toastEl.className = "flow-toast";
+    toastEl.setAttribute("role", "status");
+    toastEl.setAttribute("aria-live", "polite");
+    document.body.append(toastEl);
+  }
+  toastEl.textContent = text;
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastEl?.remove();
+    toastEl = null;
+    toastTimer = 0;
+  }, durationMs);
+}
 
 function backdropEl() {
   const b = document.createElement("div");

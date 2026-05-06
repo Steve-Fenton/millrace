@@ -4,11 +4,11 @@ import {
   fetchLocalUserPreferences,
   patchLocalUserPreferences,
 } from "../client.js";
-import { showFlowAlert } from "../ui/showMessage.js";
+import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 import { escapeHtml } from "../html/escape.js";
 
 /**
- * @param {{ syncMode: "automatic" | "manual" }} initial
+ * @param {{ syncMode: "automatic" | "manual", mine: string, owner: string }} initial
  */
 function renderPreferencesForm(initial) {
   const form = document.createElement("form");
@@ -16,6 +16,36 @@ function renderPreferencesForm(initial) {
 
   const grid = document.createElement("div");
   grid.className = "preferences-grid";
+
+  const mineLabel = document.createElement("label");
+  mineLabel.className = "flow-field preferences-field";
+  const mineSpan = document.createElement("span");
+  mineSpan.className = "flow-field-label";
+  mineSpan.textContent = "Mine";
+  const mineInput = document.createElement("input");
+  mineInput.type = "text";
+  mineInput.className = "flow-input";
+  mineInput.name = "mine";
+  mineInput.autocomplete = "email";
+  mineInput.placeholder = "you@company.com";
+  mineInput.setAttribute("aria-label", "Mine filter email");
+  mineInput.value = initial.mine;
+  mineLabel.append(mineSpan, mineInput);
+
+  const ownerLabel = document.createElement("label");
+  ownerLabel.className = "flow-field preferences-field";
+  const ownerSpan = document.createElement("span");
+  ownerSpan.className = "flow-field-label";
+  ownerSpan.textContent = "Default owner";
+  const ownerInput = document.createElement("input");
+  ownerInput.type = "text";
+  ownerInput.className = "flow-input";
+  ownerInput.name = "owner";
+  ownerInput.autocomplete = "email";
+  ownerInput.placeholder = "Prefilled when adding cards";
+  ownerInput.setAttribute("aria-label", "Default card owner email");
+  ownerInput.value = initial.owner;
+  ownerLabel.append(ownerSpan, ownerInput);
 
   const syncLabel = document.createElement("label");
   syncLabel.className = "flow-field preferences-field";
@@ -38,7 +68,7 @@ function renderPreferencesForm(initial) {
   syncSelect.value = initial.syncMode;
   syncLabel.append(syncSpan, syncSelect);
 
-  grid.append(syncLabel);
+  grid.append(mineLabel, ownerLabel, syncLabel);
 
   const actions = document.createElement("div");
   actions.className = "preferences-form-actions";
@@ -59,8 +89,13 @@ function renderPreferencesForm(initial) {
     void (async () => {
       saveBtn.disabled = true;
       try {
-        await patchLocalUserPreferences({ syncMode: v });
+        await patchLocalUserPreferences({
+          syncMode: v,
+          mine: String(mineInput.value ?? ""),
+          owner: String(ownerInput.value ?? ""),
+        });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+        showFlowToast("Preferences saved.");
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await showFlowAlert(msg, { title: "Could not save preferences" });
@@ -112,7 +147,7 @@ function renderPreferencesShell(form) {
   secTitle.textContent = "Local preferences";
   const blurb = document.createElement("p");
   blurb.className = "flow-modal-context preferences-panel__intro";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code> under <code class="flow-board-editor-file">[preferences]</code>.`;
+  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code>: <code class="flow-board-editor-file">[user]</code> (Mine and default owner), <code class="flow-board-editor-file">[preferences]</code> (sync mode).`;
 
   panel.append(secTitle, blurb, form);
   body.append(panel);

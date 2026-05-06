@@ -276,32 +276,49 @@ export async function fetchLocalUserProfile() {
 }
 
 /**
- * `[preferences]` from tasks/localuser.ini only (for the preferences page).
- * @returns {Promise<{ syncMode: "automatic" | "manual" }>}
+ * `[preferences]` and `[user]` mine/owner from tasks/localuser.ini (preferences page).
+ * @returns {Promise<{ syncMode: "automatic" | "manual", mine: string, owner: string }>}
  */
 export async function fetchLocalUserPreferences() {
   try {
     const res = await fetch("/api/local-user/preferences", NO_STORE);
     if (!res.ok) {
-      return { syncMode: "automatic" };
+      return { syncMode: "automatic", mine: "", owner: "" };
     }
     const data = await res.json();
     const sm = String(data.syncMode ?? "").trim().toLowerCase();
-    return { syncMode: sm === "manual" ? "manual" : "automatic" };
+    return {
+      syncMode: sm === "manual" ? "manual" : "automatic",
+      mine: String(data.mine ?? "").trim(),
+      owner: String(data.owner ?? "").trim(),
+    };
   } catch {
-    return { syncMode: "automatic" };
+    return { syncMode: "automatic", mine: "", owner: "" };
   }
 }
 
 /**
- * @param {{ syncMode: "automatic" | "manual" }} body
+ * @param {{ syncMode?: "automatic" | "manual", mine?: string, owner?: string }} body
  */
 export async function patchLocalUserPreferences(body) {
-  const syncMode = body.syncMode === "manual" ? "manual" : "automatic";
+  /** @type {Record<string, string>} */
+  const payload = {};
+  if (body.syncMode !== undefined) {
+    payload.syncMode = body.syncMode === "manual" ? "manual" : "automatic";
+  }
+  if (body.mine !== undefined) {
+    payload.mine = String(body.mine ?? "").trim();
+  }
+  if (body.owner !== undefined) {
+    payload.owner = String(body.owner ?? "").trim();
+  }
+  if (Object.keys(payload).length === 0) {
+    throw new Error("Nothing to save");
+  }
   const res = await fetch("/api/local-user/preferences", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ syncMode }),
+    body: JSON.stringify(payload),
     ...NO_STORE,
   });
   const data = await res.json().catch(() => ({}));

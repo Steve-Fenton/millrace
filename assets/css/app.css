@@ -1155,6 +1155,26 @@ body {
   gap: 0.5rem;
 }
 
+/* Non-blocking toast from showMessage.js `showFlowToast` */
+.flow-toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 990;
+  max-width: min(28rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--elevated);
+  color: #86efac;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
 .admin-add-board {
   align-self: flex-start;
   width: min(28rem, 100%);
