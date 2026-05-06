@@ -1,7 +1,7 @@
 import { createLinksEditor } from "./cardLinksUi.js";
 import { createOwnerField } from "./flowOwnerField.js";
 import { createCard, readLocalUserIni } from "./repoAccess.js";
-import { escapeHtml } from "./escapeHtml.js";
+import { escapeHtml } from "./html/escape.js";
 
 function el(html) {
   const t = document.createElement("template");

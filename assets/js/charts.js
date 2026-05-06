@@ -6,13 +6,13 @@ import {
   fetchLocalUserProfile,
   patchLocalUserChartsGranularity,
 } from "./repoAccess.js";
-import { boardSlugFrom } from "./flowBoardSlug.js";
+import { boardSlugFrom } from "./html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
 } from "./flowBoardPicker.js";
-import { escapeHtml } from "./escapeHtml.js";
+import { escapeHtml } from "./html/escape.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 

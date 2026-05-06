@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
-import { escapeHtml } from "../../assets/js/escapeHtml.js";
+import { escapeHtml } from "../../assets/js/html/escape.js";
 
 /** Expand table cell macros (see escape_html.feature). */
 function expandMacros(s) {

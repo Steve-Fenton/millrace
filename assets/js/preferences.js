@@ -5,7 +5,7 @@ import {
   patchLocalUserPreferences,
 } from "./repoAccess.js";
 import { showFlowAlert } from "./flowDialogs.js";
-import { escapeHtml } from "./escapeHtml.js";
+import { escapeHtml } from "./html/escape.js";
 
 /**
  * @param {{ syncMode: "automatic" | "manual" }} initial

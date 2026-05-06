@@ -9,7 +9,7 @@ import {
   readLocalUserIni,
   updateCard,
 } from "./repoAccess.js";
-import { escapeHtml } from "./escapeHtml.js";
+import { escapeHtml } from "./html/escape.js";
 
 function el(html) {
   const t = document.createElement("template");

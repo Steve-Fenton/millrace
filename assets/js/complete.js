@@ -15,7 +15,7 @@ import {
 import { showFlowAlert } from "./flowDialogs.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { fetchBoardIni, fetchLocalUserProfile } from "./repoAccess.js";
-import { boardSlugFrom } from "./flowBoardSlug.js";
+import { boardSlugFrom } from "./html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
@@ -27,7 +27,7 @@ import {
 } from "./flowSearchClearField.js";
 import { fillCardLinkWithNewTabIcon } from "./cardLinkOpenNewTab.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
-import { escapeHtml } from "./escapeHtml.js";
+import { escapeHtml } from "./html/escape.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
