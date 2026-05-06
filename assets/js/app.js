@@ -1,5 +1,5 @@
-import { openAddCardDialog } from "./dialogs/card.js";
-import { openCardEditorDialog } from "./cardEditorDialog.js";
+import { openAddCardDialog } from "./dialogs/addCard.js";
+import { openCardEditorDialog } from "./dialogs/editCard.js";
 import {
   boardOwnerEmailsForFilter,
   ownerDisplayLabel,
@@ -15,7 +15,7 @@ import {
   reorderCards,
 } from "./repoAccess.js";
 import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
-import { showFlowAlert } from "./flowDialogs.js";
+import { showFlowAlert } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";

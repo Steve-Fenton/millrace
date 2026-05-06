@@ -1,5 +1,5 @@
 import { openGitConflictResolutionScreen } from "./gitConflictScreen.js";
-import { showFlowAlert } from "./flowDialogs.js";
+import { showFlowAlert } from "./ui/showMessage.js";
 import { gitSyncRequest } from "./repoAccess.js";
 
 const MAX_SYNC_ROUNDS = 12;

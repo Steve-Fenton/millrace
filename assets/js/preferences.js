@@ -4,7 +4,7 @@ import {
   fetchLocalUserPreferences,
   patchLocalUserPreferences,
 } from "./repoAccess.js";
-import { showFlowAlert } from "./flowDialogs.js";
+import { showFlowAlert } from "./ui/showMessage.js";
 import { escapeHtml } from "./html/escape.js";
 
 /**

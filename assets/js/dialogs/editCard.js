@@ -1,6 +1,6 @@
-import { createLinksEditor } from "./cardLinksUi.js";
-import { showFlowAlert, showFlowConfirm } from "./flowDialogs.js";
-import { createOwnerField } from "./flowOwnerField.js";
+import { createLinksEditor } from "../cardLinksUi.js";
+import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
+import { createOwnerField } from "../flowOwnerField.js";
 import {
   createCard,
   deleteCard,
@@ -8,9 +8,9 @@ import {
   fetchCardGitHistory,
   readLocalUserIni,
   updateCard,
-} from "./repoAccess.js";
-import { el } from "./html/element.js";
-import { escapeHtml } from "./html/escape.js";
+} from "../repoAccess.js";
+import { el } from "../html/element.js";
+import { escapeHtml } from "../html/escape.js";
 
 /**
  * @param {{ boardSlug: string, columnIndex: number, filename: string }} ctx
@@ -166,7 +166,7 @@ function formatCardTimestampDisplay(raw) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("./models/boardModel.js").BoardUserDef[] }} ctx
+ * @param {{ boardSlug: string, columnIndex: number, filename: string, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("../models/boardModel.js").BoardUserDef[] }} ctx
  * @returns {Promise<boolean>} true if saved, deleted, or duplicated (board refresh)
  */
 export async function openCardEditorDialog(ctx) {

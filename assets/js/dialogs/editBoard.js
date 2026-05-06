@@ -5,7 +5,7 @@ import {
   createSortableColumnList,
   createSortableSwimlaneList,
 } from "../boardOrderedRowsEditor.js";
-import { showFlowAlert, showFlowConfirm } from "../flowDialogs.js";
+import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import {
   deleteBoardDefinition,
   fetchBoardDefinition,

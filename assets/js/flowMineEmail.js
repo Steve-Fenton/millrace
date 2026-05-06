@@ -1,4 +1,4 @@
-import { showFlowAlert, showFlowPrompt } from "./flowDialogs.js";
+import { showFlowAlert, showFlowPrompt } from "./ui/showMessage.js";
 import { patchLocalUserMine } from "./repoAccess.js";
 
 /**

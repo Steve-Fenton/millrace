@@ -1,4 +1,4 @@
-import { openCardEditorDialog } from "./cardEditorDialog.js";
+import { openCardEditorDialog } from "./dialogs/editCard.js";
 import { createFlowNavMenu } from "./flowNavMenu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
 import {
@@ -12,7 +12,7 @@ import {
   persistOwnerFilter,
   readStoredOwnerFilter,
 } from "./flowOwnerFilter.js";
-import { showFlowAlert } from "./flowDialogs.js";
+import { showFlowAlert } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
 import { fetchBoardIni, fetchLocalUserProfile } from "./repoAccess.js";
 import { boardSlugFrom } from "./html/slug.js";
