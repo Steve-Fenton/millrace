@@ -3,7 +3,7 @@ import {
   getFirstConflictHunk,
   hasConflictMarkerLines,
   replaceFirstConflictHunk,
-} from "./gitConflictMerge.js";
+} from "./git/conflictMerge.js";
 import { showFlowAlert } from "./flowDialogs.js";
 
 /** @param {string} [s] @param {number} [max] */
