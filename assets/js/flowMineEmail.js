@@ -1,5 +1,5 @@
 import { showFlowAlert, showFlowPrompt } from "./ui/showMessage.js";
-import { patchLocalUserMine } from "./repoAccess.js";
+import { patchLocalUserMine } from "./client.js";
 
 /**
  * Prompt for `[user] mine` and persist. Returns null if cancelled or invalid.

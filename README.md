@@ -24,7 +24,7 @@ The API for the application.
 
 ## `assets/js`
 
-Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `repoAccess.js`, and `flow*.js`).
+Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `client.js`, and `flow*.js`).
 
 - **`dialogs/`**: Modal flows for creating or editing boards and task cards (DOM, validation, and API calls).
 - **`git/`**: Helpers around Git merge-conflict markers (detecting hunks, choosing a side), not a full Git client.

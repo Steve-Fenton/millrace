@@ -1,11 +1,11 @@
 import { openBoardEditorDialog } from "../dialogs/editBoard.js";
 import { createFlowNavMenu } from "../flowNavMenu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
-import { createBoardDefinition } from "../repoAccess.js";
+import { createBoardDefinition } from "../client.js";
 import {
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "../flowBoardPicker.js";
+} from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
 
 const ADMIN_BOARD_CREATED_FLASH_KEY = "flow:admin-board-created-flash";

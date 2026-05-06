@@ -5,13 +5,13 @@ import {
   fetchBoardIni,
   fetchLocalUserProfile,
   patchLocalUserChartsGranularity,
-} from "../repoAccess.js";
+} from "../client.js";
 import { boardSlugFrom } from "../html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "../flowBoardPicker.js";
+} from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });

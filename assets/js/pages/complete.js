@@ -14,13 +14,13 @@ import {
 } from "../flowOwnerFilter.js";
 import { showFlowAlert } from "../ui/showMessage.js";
 import { ensureMineEmailConfigured } from "../flowMineEmail.js";
-import { fetchBoardIni, fetchLocalUserProfile } from "../repoAccess.js";
+import { fetchBoardIni, fetchLocalUserProfile } from "../client.js";
 import { boardSlugFrom } from "../html/slug.js";
 import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "../flowBoardPicker.js";
+} from "../ui/boardSelector.js";
 import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,

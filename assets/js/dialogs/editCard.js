@@ -8,7 +8,7 @@ import {
   fetchCardGitHistory,
   readLocalUserIni,
   updateCard,
-} from "../repoAccess.js";
+} from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
 

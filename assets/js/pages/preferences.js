@@ -3,7 +3,7 @@ import { createMillraceBrandMark } from "../ui/brandMark.js";
 import {
   fetchLocalUserPreferences,
   patchLocalUserPreferences,
-} from "../repoAccess.js";
+} from "../client.js";
 import { showFlowAlert } from "../ui/showMessage.js";
 import { escapeHtml } from "../html/escape.js";
 

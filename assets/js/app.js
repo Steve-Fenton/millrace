@@ -13,7 +13,7 @@ import {
   fetchLocalUserProfile,
   moveCard,
   reorderCards,
-} from "./repoAccess.js";
+} from "./client.js";
 import { runGitSyncWithConflictFlow } from "./gitSyncFlow.js";
 import { showFlowAlert } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./flowMineEmail.js";
@@ -32,7 +32,7 @@ import {
   createBoardTitlePicker,
   resolveActiveBoardSelection,
   writeStoredActiveBoardSlug,
-} from "./flowBoardPicker.js";
+} from "./ui/boardSelector.js";
 import {
   filterCardsBySearch,
   normalizeSearchQuery,

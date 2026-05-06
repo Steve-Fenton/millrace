@@ -1,6 +1,6 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
 import { createOwnerField } from "../flowOwnerField.js";
-import { createCard, readLocalUserIni } from "../repoAccess.js";
+import { createCard, readLocalUserIni } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
 
