@@ -60,6 +60,7 @@ The charts are carefully designed to increase informational value. You'll notice
 - **Create, open, edit, and delete** cards from the UI
 - **Owner filter**: All, **Mine**, or a specific task owner
 - **Search** to find tasks
+- **Markdown** formatting for card descriptions (limited, see [supported markdown](markdown.md))
 
 ### Views
 
