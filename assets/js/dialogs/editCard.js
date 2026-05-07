@@ -292,6 +292,25 @@ export async function openCardEditorDialog(ctx) {
   );
   ownerField.root.insertAdjacentElement("afterend", linksEditor.root);
 
+  function normalizeLinks(links) {
+    if (!Array.isArray(links)) return [];
+    return links.map((l) => ({
+      text: String(l?.text ?? "").trim(),
+      url: String(l?.url ?? "").trim(),
+    }));
+  }
+
+  function snapshotDraft() {
+    return JSON.stringify({
+      title: String(titleInput.value ?? "").trim(),
+      description: String(descInput.value ?? ""),
+      owner: ownerField.getValue(),
+      links: normalizeLinks(linksEditor.getLinks()),
+    });
+  }
+
+  let initialDraftSnapshot = snapshotDraft();
+
   titleInput.focus();
   titleInput.select();
 
@@ -301,7 +320,11 @@ export async function openCardEditorDialog(ctx) {
     const trimmed = String(saved).trim();
     if (!trimmed) return;
     if (!String(initial.owner ?? "").trim()) {
+      const ownerBefore = ownerField.getValue();
       ownerField.applyLocalDefault(trimmed);
+      if (ownerField.getValue() !== ownerBefore) {
+        initialDraftSnapshot = snapshotDraft();
+      }
     }
   })();
 
@@ -315,15 +338,86 @@ export async function openCardEditorDialog(ctx) {
     function finish(ok) {
       if (settled) return;
       settled = true;
+      document.removeEventListener("keydown", onEsc);
       backdrop.remove();
       resolve(ok);
     }
 
+    function hasUnsavedChanges() {
+      return snapshotDraft() !== initialDraftSnapshot;
+    }
+
+    async function saveDraft() {
+      const fd = new FormData(form);
+      const title = String(fd.get("title") || "").trim();
+      if (!title) {
+        await showFlowAlert("Title is required.", { title: "Edit card" });
+        return false;
+      }
+
+      const description = String(fd.get("description") || "");
+      const owner = ownerField.getValue();
+
+      try {
+        await updateCard({
+          boardSlug: ctx.boardSlug,
+          columnIndex: ctx.columnIndex,
+          filename: ctx.filename,
+          title,
+          description,
+          owner,
+          links: linksEditor.getLinks(),
+        });
+        document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+        finish(true);
+        return true;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await showFlowAlert(msg, { title: "Could not save card" });
+        return false;
+      }
+    }
+
+    let closeInProgress = false;
+    async function requestClose() {
+      if (settled || closeInProgress) return;
+      if (!hasUnsavedChanges()) {
+        finish(false);
+        return;
+      }
+      closeInProgress = true;
+      const shouldSave = await showFlowConfirm(
+        "You have unsaved changes. Save before closing?",
+        {
+          title: "Unsaved changes",
+          confirmLabel: "Save",
+          cancelLabel: "Discard",
+          allowEscapeDismiss: false,
+          allowBackdropDismiss: false,
+        }
+      );
+      closeInProgress = false;
+      if (settled) return;
+      if (shouldSave) {
+        await saveDraft();
+        return;
+      }
+      finish(false);
+    }
+
+    function onEsc(ev) {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      void requestClose();
+    }
+
     backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) finish(false);
+      if (e.target === backdrop) void requestClose();
     });
 
-    modal.querySelector(".flow-cancel").addEventListener("click", () => finish(false));
+    modal.querySelector(".flow-cancel").addEventListener("click", () => {
+      void requestClose();
+    });
 
     modal.querySelector(".flow-btn-duplicate-card-icon")?.addEventListener("click", () => {
       void (async () => {
@@ -392,45 +486,11 @@ export async function openCardEditorDialog(ctx) {
       })();
     });
 
-    document.addEventListener(
-      "keydown",
-      function onEsc(ev) {
-        if (ev.key === "Escape") {
-          document.removeEventListener("keydown", onEsc);
-          finish(false);
-        }
-      },
-      { once: true }
-    );
+    document.addEventListener("keydown", onEsc);
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const fd = new FormData(form);
-      const title = String(fd.get("title") || "").trim();
-      if (!title) {
-        await showFlowAlert("Title is required.", { title: "Edit card" });
-        return;
-      }
-
-      const description = String(fd.get("description") || "");
-      const owner = ownerField.getValue();
-
-      try {
-        await updateCard({
-          boardSlug: ctx.boardSlug,
-          columnIndex: ctx.columnIndex,
-          filename: ctx.filename,
-          title,
-          description,
-          owner,
-          links: linksEditor.getLinks(),
-        });
-        document.dispatchEvent(new CustomEvent("flow:refresh-board"));
-        finish(true);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        await showFlowAlert(msg, { title: "Could not save card" });
-      }
+      await saveDraft();
     });
   });
 }

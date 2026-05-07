@@ -326,6 +326,27 @@ export async function openBoardEditorDialog(ctx) {
   const userEditor = createSortableBoardUserList(userSeeds);
   sortWrap.append(colEditor.root, swimEditor.root, userEditor.root);
 
+  function snapshotDraft() {
+    return JSON.stringify({
+      boardName: String(nameInput.value ?? "").trim(),
+      columns: colEditor.getRows().map((r) => ({
+        title: String(r.title ?? "").trim(),
+        wipLimit: String(r.wipLimit ?? "").trim(),
+        isDone: Boolean(r.isDone),
+      })),
+      swimlanes: swimEditor.getRows().map((r) => ({
+        title: String(r.title ?? "").trim(),
+      })),
+      users: userEditor.getRows().map((r) => ({
+        email: String(r.email ?? "").trim(),
+        name: String(r.name ?? "").trim(),
+        active: r.active !== false,
+      })),
+    });
+  }
+
+  const initialDraftSnapshot = snapshotDraft();
+
   nameInput.focus();
   nameInput.select();
 
@@ -339,15 +360,138 @@ export async function openBoardEditorDialog(ctx) {
     function finish(ok) {
       if (settled) return;
       settled = true;
+      document.removeEventListener("keydown", onEsc);
       backdrop.remove();
       resolve(ok);
     }
 
+    function hasUnsavedChanges() {
+      return snapshotDraft() !== initialDraftSnapshot;
+    }
+
+    async function saveDraft() {
+      const boardName = String(nameInput.value || "").trim();
+      if (!boardName) {
+        await showFlowAlert("Board name is required.", { title: "Edit board" });
+        return false;
+      }
+
+      const colRows = colEditor.getRows();
+      if (colRows.length === 0) {
+        await showFlowAlert("Add at least one column.", { title: "Edit board" });
+        return false;
+      }
+      for (const r of colRows) {
+        if (!String(r.title ?? "").trim()) {
+          await showFlowAlert("Each column must have a title.", {
+            title: "Edit board",
+          });
+          return false;
+        }
+      }
+
+      const swimRows = swimEditor.getRows();
+      const rawUserRows = userEditor.getRows();
+      const seenEmails = new Set();
+      for (const r of rawUserRows) {
+        const em = String(r.email ?? "").trim();
+        const nm = String(r.name ?? "").trim();
+        if (!em && !nm) continue;
+        if (!em) {
+          await showFlowAlert(
+            "Each board user row needs an email (or clear the display name on that row).",
+            { title: "Edit board" }
+          );
+          return false;
+        }
+        if (!em.includes("@")) {
+          await showFlowAlert(
+            `Invalid email for board user: ${em}`,
+            { title: "Edit board" }
+          );
+          return false;
+        }
+        const low = em.toLowerCase();
+        if (seenEmails.has(low)) {
+          await showFlowAlert(
+            `Duplicate board user email: ${em}`,
+            { title: "Edit board" }
+          );
+          return false;
+        }
+        seenEmails.add(low);
+      }
+
+      const model = buildModel(
+        initialModel,
+        boardName,
+        colRows,
+        swimRows,
+        rawUserRows
+      );
+      const doneErr = validateExactlyOneDoneColumn(model);
+      if (doneErr) {
+        await showFlowAlert(doneErr, { title: "Edit board" });
+        return false;
+      }
+      const text = serializeBoardIniFromModel(model);
+
+      try {
+        await updateBoardDefinition({
+          boardSlug: ctx.boardSlug,
+          text,
+        });
+        document.dispatchEvent(new CustomEvent("flow:admin-refresh"));
+        document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+        finish(true);
+        return true;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await showFlowAlert(msg, { title: "Could not save board" });
+        return false;
+      }
+    }
+
+    let closeInProgress = false;
+    async function requestClose() {
+      if (settled || closeInProgress) return;
+      if (!hasUnsavedChanges()) {
+        finish(false);
+        return;
+      }
+      closeInProgress = true;
+      const shouldSave = await showFlowConfirm(
+        "You have unsaved changes. Save before closing?",
+        {
+          title: "Unsaved changes",
+          confirmLabel: "Save",
+          cancelLabel: "Discard",
+          allowEscapeDismiss: false,
+          allowBackdropDismiss: false,
+        }
+      );
+      closeInProgress = false;
+      if (settled) return;
+      if (shouldSave) {
+        await saveDraft();
+        return;
+      }
+      finish(false);
+    }
+
+    function onEsc(ev) {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      void requestClose();
+    }
+
     backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) finish(false);
+      if (e.target === backdrop) void requestClose();
     });
 
-    modal.querySelector(".flow-cancel").addEventListener("click", () => finish(false));
+    modal.querySelector(".flow-cancel").addEventListener("click", () => {
+      void requestClose();
+    });
 
     modal.querySelector(".flow-btn-delete-icon")?.addEventListener("click", () => {
       void (async () => {
@@ -372,97 +516,11 @@ export async function openBoardEditorDialog(ctx) {
       })();
     });
 
-    document.addEventListener(
-      "keydown",
-      function onEsc(ev) {
-        if (ev.key === "Escape") {
-          document.removeEventListener("keydown", onEsc);
-          finish(false);
-        }
-      },
-      { once: true }
-    );
+    document.addEventListener("keydown", onEsc);
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const boardName = String(nameInput.value || "").trim();
-      if (!boardName) {
-        await showFlowAlert("Board name is required.", { title: "Edit board" });
-        return;
-      }
-
-      const colRows = colEditor.getRows();
-      if (colRows.length === 0) {
-        await showFlowAlert("Add at least one column.", { title: "Edit board" });
-        return;
-      }
-      for (const r of colRows) {
-        if (!String(r.title ?? "").trim()) {
-          await showFlowAlert("Each column must have a title.", {
-            title: "Edit board",
-          });
-          return;
-        }
-      }
-
-      const swimRows = swimEditor.getRows();
-      const rawUserRows = userEditor.getRows();
-      const seenEmails = new Set();
-      for (const r of rawUserRows) {
-        const em = String(r.email ?? "").trim();
-        const nm = String(r.name ?? "").trim();
-        if (!em && !nm) continue;
-        if (!em) {
-          await showFlowAlert(
-            "Each board user row needs an email (or clear the display name on that row).",
-            { title: "Edit board" }
-          );
-          return;
-        }
-        if (!em.includes("@")) {
-          await showFlowAlert(
-            `Invalid email for board user: ${em}`,
-            { title: "Edit board" }
-          );
-          return;
-        }
-        const low = em.toLowerCase();
-        if (seenEmails.has(low)) {
-          await showFlowAlert(
-            `Duplicate board user email: ${em}`,
-            { title: "Edit board" }
-          );
-          return;
-        }
-        seenEmails.add(low);
-      }
-
-      const model = buildModel(
-        initialModel,
-        boardName,
-        colRows,
-        swimRows,
-        rawUserRows
-      );
-      const doneErr = validateExactlyOneDoneColumn(model);
-      if (doneErr) {
-        await showFlowAlert(doneErr, { title: "Edit board" });
-        return;
-      }
-      const text = serializeBoardIniFromModel(model);
-
-      try {
-        await updateBoardDefinition({
-          boardSlug: ctx.boardSlug,
-          text,
-        });
-        document.dispatchEvent(new CustomEvent("flow:admin-refresh"));
-        document.dispatchEvent(new CustomEvent("flow:refresh-board"));
-        finish(true);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        await showFlowAlert(msg, { title: "Could not save board" });
-      }
+      await saveDraft();
     });
   });
 }

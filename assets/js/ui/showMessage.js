@@ -110,7 +110,14 @@ export function showFlowAlert(message, opts = {}) {
 
 /**
  * @param {string} message
- * @param {{ title?: string, confirmLabel?: string, cancelLabel?: string, destructive?: boolean }} [opts]
+ * @param {{
+ *   title?: string,
+ *   confirmLabel?: string,
+ *   cancelLabel?: string,
+ *   destructive?: boolean,
+ *   allowEscapeDismiss?: boolean,
+ *   allowBackdropDismiss?: boolean
+ * }} [opts]
  * @returns {Promise<boolean>} true if confirmed
  */
 export function showFlowConfirm(message, opts = {}) {
@@ -118,6 +125,8 @@ export function showFlowConfirm(message, opts = {}) {
   const confirmLabel = opts.confirmLabel ?? "OK";
   const cancelLabel = opts.cancelLabel ?? "Cancel";
   const destructive = Boolean(opts.destructive);
+  const allowEscapeDismiss = opts.allowEscapeDismiss !== false;
+  const allowBackdropDismiss = opts.allowBackdropDismiss !== false;
 
   return new Promise((resolve) => {
     const backdrop = backdropEl();
@@ -166,6 +175,7 @@ export function showFlowConfirm(message, opts = {}) {
     }
 
     function onKey(ev) {
+      if (!allowEscapeDismiss) return;
       if (ev.key === "Escape") {
         ev.preventDefault();
         ev.stopPropagation();
@@ -176,6 +186,7 @@ export function showFlowConfirm(message, opts = {}) {
     cancelBtn.addEventListener("click", () => finish(false));
     confirmBtn.addEventListener("click", () => finish(true));
     backdrop.addEventListener("click", (e) => {
+      if (!allowBackdropDismiss) return;
       if (e.target === backdrop) finish(false);
     });
     document.addEventListener("keydown", onKey, { capture: true });
