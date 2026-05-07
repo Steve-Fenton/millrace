@@ -411,8 +411,14 @@ export async function openCardEditorDialog(ctx) {
       void requestClose();
     }
 
+    let backdropPointerDown = false;
+    backdrop.addEventListener("pointerdown", (e) => {
+      backdropPointerDown = e.target === backdrop;
+    });
     backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) void requestClose();
+      const isFullBackdropClick = backdropPointerDown && e.target === backdrop;
+      backdropPointerDown = false;
+      if (isFullBackdropClick) void requestClose();
     });
 
     modal.querySelector(".flow-cancel").addEventListener("click", () => {
