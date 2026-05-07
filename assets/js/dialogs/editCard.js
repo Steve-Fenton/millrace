@@ -1,4 +1,5 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
+import { renderLimitedMarkdown } from "../ui/limitedMarkdown.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createOwnerField } from "../ui/selectOwner.js";
 import {
@@ -277,6 +278,13 @@ export async function openCardEditorDialog(ctx) {
   const form = modal.querySelector("form");
   const titleInput = modal.querySelector('input[name="title"]');
   const descInput = modal.querySelector('textarea[name="description"]');
+  const descField = descInput.closest(".flow-field");
+  const descPreview = document.createElement("div");
+  descPreview.className = "flow-description-preview";
+  descPreview.tabIndex = 0;
+  descPreview.setAttribute("role", "button");
+  descPreview.setAttribute("aria-label", "Edit description");
+  descField?.append(descPreview);
 
   titleInput.value = String(initial.title ?? "").trim();
   descInput.value = String(initial.description ?? "");
@@ -291,6 +299,39 @@ export async function openCardEditorDialog(ctx) {
     Array.isArray(initial.links) ? initial.links : []
   );
   ownerField.root.insertAdjacentElement("afterend", linksEditor.root);
+
+  let showingDescriptionPreview = false;
+  function refreshDescriptionPreview() {
+    renderLimitedMarkdown(descPreview, descInput.value);
+  }
+  function showDescriptionPreview() {
+    if (showingDescriptionPreview) return;
+    showingDescriptionPreview = true;
+    descInput.hidden = true;
+    refreshDescriptionPreview();
+    descPreview.hidden = false;
+  }
+  function showDescriptionEditor() {
+    if (!showingDescriptionPreview) return;
+    showingDescriptionPreview = false;
+    descPreview.hidden = true;
+    descInput.hidden = false;
+    descInput.focus();
+    const len = descInput.value.length;
+    descInput.setSelectionRange(len, len);
+  }
+
+  refreshDescriptionPreview();
+  showDescriptionPreview();
+  descPreview.addEventListener("click", showDescriptionEditor);
+  descPreview.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    ev.preventDefault();
+    showDescriptionEditor();
+  });
+  descInput.addEventListener("blur", () => {
+    showDescriptionPreview();
+  });
 
   function normalizeLinks(links) {
     if (!Array.isArray(links)) return [];
