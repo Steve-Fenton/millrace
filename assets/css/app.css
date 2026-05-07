@@ -2195,6 +2195,16 @@ a.column-done-truncation-link:focus-visible {
   word-break: break-word;
 }
 
+.flow-description-preview a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.flow-description-preview a:hover {
+  color: #7dd3fc;
+}
+
 .flow-description-preview .flow-md-empty {
   margin: 0;
   color: var(--text-muted);

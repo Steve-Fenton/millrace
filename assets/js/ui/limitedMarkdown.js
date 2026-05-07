@@ -1,6 +1,7 @@
 /**
  * Render a restricted markdown subset into `target`.
  * Supported blocks: headings (#..###), ordered/unordered lists, paragraphs.
+ * Supported inline: **bold**, *italic*, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
  * @param {HTMLElement} target
@@ -44,7 +45,7 @@ export function renderLimitedMarkdown(target, source) {
       const level = headingMatch[1].length;
       const heading = document.createElement(`h${level}`);
       heading.className = `flow-md-heading flow-md-heading-${level}`;
-      heading.textContent = headingMatch[2];
+      appendInlineMarkdown(heading, headingMatch[2]);
       frag.append(heading);
       continue;
     }
@@ -52,7 +53,7 @@ export function renderLimitedMarkdown(target, source) {
     const orderedMatch = /^\d+\.\s+(.+)$/.exec(trimmed);
     if (orderedMatch) {
       const li = document.createElement("li");
-      li.textContent = orderedMatch[1];
+      appendInlineMarkdown(li, orderedMatch[1]);
       ensureList("ol").append(li);
       continue;
     }
@@ -60,7 +61,7 @@ export function renderLimitedMarkdown(target, source) {
     const unorderedMatch = /^[-*]\s+(.+)$/.exec(trimmed);
     if (unorderedMatch) {
       const li = document.createElement("li");
-      li.textContent = unorderedMatch[1];
+      appendInlineMarkdown(li, unorderedMatch[1]);
       ensureList("ul").append(li);
       continue;
     }
@@ -68,7 +69,7 @@ export function renderLimitedMarkdown(target, source) {
     closeList();
     const p = document.createElement("p");
     p.className = "flow-md-paragraph";
-    p.textContent = trimmed;
+    appendInlineMarkdown(p, trimmed);
     frag.append(p);
   }
 
@@ -80,4 +81,94 @@ export function renderLimitedMarkdown(target, source) {
   }
 
   target.replaceChildren(frag);
+}
+
+/**
+ * @param {string} raw
+ * @returns {string}
+ */
+function safeLinkHref(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+    return u.href;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Append limited inline markdown into `parent`.
+ * @param {HTMLElement} parent
+ * @param {string} raw
+ */
+function appendInlineMarkdown(parent, raw) {
+  const text = String(raw ?? "");
+  let i = 0;
+
+  while (i < text.length) {
+    if (text.startsWith("**", i)) {
+      const end = text.indexOf("**", i + 2);
+      if (end > i + 2) {
+        const strong = document.createElement("strong");
+        appendInlineMarkdown(strong, text.slice(i + 2, end));
+        parent.append(strong);
+        i = end + 2;
+        continue;
+      }
+    }
+
+    if (text[i] === "*") {
+      const end = text.indexOf("*", i + 1);
+      if (end > i + 1) {
+        const em = document.createElement("em");
+        appendInlineMarkdown(em, text.slice(i + 1, end));
+        parent.append(em);
+        i = end + 1;
+        continue;
+      }
+    }
+
+    if (text[i] === "[") {
+      const closeLabel = text.indexOf("]", i + 1);
+      if (closeLabel > i + 1 && text[closeLabel + 1] === "(") {
+        const closeUrl = text.indexOf(")", closeLabel + 2);
+        if (closeUrl > closeLabel + 2) {
+          const label = text.slice(i + 1, closeLabel);
+          const href = safeLinkHref(text.slice(closeLabel + 2, closeUrl));
+          if (href) {
+            const a = document.createElement("a");
+            a.href = href;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            appendInlineMarkdown(a, label);
+            parent.append(a);
+            i = closeUrl + 1;
+            continue;
+          }
+        }
+      }
+    }
+
+    const next = findNextInlineTokenStart(text, i + 1);
+    parent.append(document.createTextNode(text.slice(i, next)));
+    i = next;
+  }
+}
+
+/**
+ * @param {string} text
+ * @param {number} from
+ * @returns {number}
+ */
+function findNextInlineTokenStart(text, from) {
+  const nextBold = text.indexOf("**", from);
+  const nextStar = text.indexOf("*", from);
+  const nextLink = text.indexOf("[", from);
+  const idx = [nextBold, nextStar, nextLink]
+    .filter((v) => v >= 0)
+    .sort((a, b) => a - b)[0];
+  return idx == null ? text.length : idx;
 }
