@@ -36,4 +36,4 @@ Bundled browser modules. Route-specific entry scripts live under **`pages/`**; s
 
 ## features
 
-Logic tests.
+Gherkin-syntax tests with cucumber.js steps.

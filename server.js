@@ -50,11 +50,15 @@ function isBoardCatalogIniSection(name) {
 }
 
 /**
- * Repo root for tasks/ — prefers FLOW_ROOT, else a directory that contains tasks/board.ini
- * or tasks/.millrace.ini (script dir then cwd). If neither exists, uses cwd so installs under
- * node_modules never become the data root by default.
+ * Repo root for tasks/ — prefers `--data-root` CLI arg, then FLOW_ROOT, else a directory that
+ * contains tasks/board.ini or tasks/.millrace.ini (script dir then cwd). If neither exists, uses
+ * cwd so installs under node_modules never become the data root by default.
  */
 function findDataRoot() {
+  const cliDataRoot = cliOptionsFromArgv(process.argv).dataRoot;
+  if (cliDataRoot) {
+    return cliDataRoot;
+  }
   if (process.env.FLOW_ROOT) {
     return path.resolve(process.env.FLOW_ROOT);
   }
@@ -3168,10 +3172,47 @@ app.use(express.static(DATA_ROOT));
 app.use(express.static(SCRIPT_DIR));
 
 function portFromArgv(argv) {
-  const raw = argv[2];
-  if (raw == null || !/^\d+$/.test(raw)) return null;
-  const n = Number(raw);
-  return n >= 1 && n <= 65535 ? n : null;
+  return cliOptionsFromArgv(argv).port;
+}
+
+/**
+ * Parse startup args from `node server.js ...`.
+ * Supports a positional port and a data-root override:
+ * - node server.js 9999
+ * - node server.js --data-root /tmp/millrace-test
+ * - node server.js --data-root=/tmp/millrace-test 9999
+ *
+ * @param {string[]} argv
+ * @returns {{ port: number | null, dataRoot: string | null }}
+ */
+function cliOptionsFromArgv(argv) {
+  const args = Array.isArray(argv) ? argv.slice(2) : [];
+  let port = null;
+  let dataRoot = null;
+  for (let i = 0; i < args.length; i += 1) {
+    const raw = args[i];
+    if (!raw) continue;
+    if (raw === "--data-root") {
+      const next = args[i + 1];
+      if (next && !next.startsWith("-")) {
+        dataRoot = path.resolve(next);
+        i += 1;
+      }
+      continue;
+    }
+    if (raw.startsWith("--data-root=")) {
+      const value = raw.slice("--data-root=".length).trim();
+      if (value) dataRoot = path.resolve(value);
+      continue;
+    }
+    if (/^\d+$/.test(raw)) {
+      const n = Number(raw);
+      if (n >= 1 && n <= 65535) {
+        port = n;
+      }
+    }
+  }
+  return { port, dataRoot };
 }
 const PORT = portFromArgv(process.argv) ?? (Number(process.env.PORT) || 8888);
 const HOST = process.env.HOST;
