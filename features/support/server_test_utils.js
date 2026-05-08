@@ -87,6 +87,39 @@ export async function startServerForTest(opts) {
 /**
  * @param {import("node:child_process").ChildProcess | null | undefined} child
  */
+/**
+ * @param {string} url
+ * @param {{ method?: string, headers?: Record<string, string>, body?: unknown }} [options]
+ */
+export async function fetchJson(url, options = {}) {
+  const method = options.method ?? "GET";
+  /** @type {RequestInit} */
+  const init = {
+    method,
+    headers: { ...(options.headers ?? {}) },
+  };
+  if (
+    options.body !== undefined &&
+    method !== "GET" &&
+    method !== "HEAD"
+  ) {
+    init.headers = {
+      ...init.headers,
+      "content-type": "application/json",
+    };
+    init.body = JSON.stringify(options.body);
+  }
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let json = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+  return { res, json, text };
+}
+
 export function stopServer(child) {
   return new Promise((resolve) => {
     if (!child || child.exitCode != null || child.killed) {
