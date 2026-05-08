@@ -279,11 +279,41 @@ export async function openCardEditorDialog(ctx) {
   const titleInput = modal.querySelector('input[name="title"]');
   const descInput = modal.querySelector('textarea[name="description"]');
   const descField = descInput.closest(".flow-field");
+  const descriptionIdSuffix = Math.random().toString(36).slice(2, 8);
+  const descriptionTabListId = `flow-description-tabs-${descriptionIdSuffix}`;
+  const previewTabId = `flow-description-preview-tab-${descriptionIdSuffix}`;
+  const editTabId = `flow-description-edit-tab-${descriptionIdSuffix}`;
+  const previewPanelId = `flow-description-preview-panel-${descriptionIdSuffix}`;
+  const editPanelId = `flow-description-edit-panel-${descriptionIdSuffix}`;
+  const descTabs = document.createElement("div");
+  descTabs.className = "flow-description-tabs";
+  descTabs.id = descriptionTabListId;
+  descTabs.setAttribute("role", "tablist");
+  descTabs.setAttribute("aria-label", "Description mode");
+  const descPreviewTab = document.createElement("button");
+  descPreviewTab.type = "button";
+  descPreviewTab.className = "flow-description-tab";
+  descPreviewTab.id = previewTabId;
+  descPreviewTab.textContent = "Preview";
+  descPreviewTab.setAttribute("role", "tab");
+  descPreviewTab.setAttribute("aria-controls", previewPanelId);
+  const descEditTab = document.createElement("button");
+  descEditTab.type = "button";
+  descEditTab.className = "flow-description-tab";
+  descEditTab.id = editTabId;
+  descEditTab.textContent = "Edit";
+  descEditTab.setAttribute("role", "tab");
+  descEditTab.setAttribute("aria-controls", editPanelId);
+  descTabs.append(descPreviewTab, descEditTab);
+  descInput.insertAdjacentElement("beforebegin", descTabs);
+  descInput.id = editPanelId;
+  descInput.setAttribute("role", "tabpanel");
+  descInput.setAttribute("aria-labelledby", editTabId);
   const descPreview = document.createElement("div");
   descPreview.className = "flow-description-preview";
-  descPreview.tabIndex = 0;
-  descPreview.setAttribute("role", "button");
-  descPreview.setAttribute("aria-label", "Edit description");
+  descPreview.id = previewPanelId;
+  descPreview.setAttribute("role", "tabpanel");
+  descPreview.setAttribute("aria-labelledby", previewTabId);
   descField?.append(descPreview);
 
   titleInput.value = String(initial.title ?? "").trim();
@@ -300,37 +330,73 @@ export async function openCardEditorDialog(ctx) {
   );
   ownerField.root.insertAdjacentElement("afterend", linksEditor.root);
 
-  let showingDescriptionPreview = false;
+  /** @type {boolean | null} */
+  let showingDescriptionPreview = null;
   function refreshDescriptionPreview() {
     renderLimitedMarkdown(descPreview, descInput.value);
   }
-  function showDescriptionPreview() {
-    if (showingDescriptionPreview) return;
-    showingDescriptionPreview = true;
-    descInput.hidden = true;
-    refreshDescriptionPreview();
-    descPreview.hidden = false;
+  function syncDescriptionPreviewHeight(editorHeightPx) {
+    const resolvedHeight =
+      Number.isFinite(editorHeightPx) && editorHeightPx > 0
+        ? editorHeightPx
+        : descInput.offsetHeight;
+    if (!Number.isFinite(resolvedHeight) || resolvedHeight <= 0) return;
+    descPreview.style.minHeight = `${resolvedHeight}px`;
   }
-  function showDescriptionEditor() {
-    if (!showingDescriptionPreview) return;
-    showingDescriptionPreview = false;
-    descPreview.hidden = true;
-    descInput.hidden = false;
-    descInput.focus();
-    const len = descInput.value.length;
-    descInput.setSelectionRange(len, len);
+  function setDescriptionMode(mode, opts = {}) {
+    const nextIsPreview = mode === "preview";
+    if (showingDescriptionPreview === nextIsPreview) return;
+    const editorHeightBeforeToggle = descInput.offsetHeight;
+    showingDescriptionPreview = nextIsPreview;
+    descPreview.hidden = !nextIsPreview;
+    descInput.hidden = nextIsPreview;
+    descPreviewTab.classList.toggle(
+      "flow-description-tab--active",
+      nextIsPreview
+    );
+    descPreviewTab.setAttribute("aria-selected", String(nextIsPreview));
+    descPreviewTab.tabIndex = nextIsPreview ? 0 : -1;
+    descEditTab.classList.toggle("flow-description-tab--active", !nextIsPreview);
+    descEditTab.setAttribute("aria-selected", String(!nextIsPreview));
+    descEditTab.tabIndex = nextIsPreview ? -1 : 0;
+    if (nextIsPreview) {
+      syncDescriptionPreviewHeight(editorHeightBeforeToggle);
+      refreshDescriptionPreview();
+      return;
+    }
+    if (opts.focusEditor) {
+      descInput.focus();
+      const len = descInput.value.length;
+      descInput.setSelectionRange(len, len);
+    }
   }
 
   refreshDescriptionPreview();
-  showDescriptionPreview();
-  descPreview.addEventListener("click", showDescriptionEditor);
-  descPreview.addEventListener("keydown", (ev) => {
-    if (ev.key !== "Enter" && ev.key !== " ") return;
-    ev.preventDefault();
-    showDescriptionEditor();
+  setDescriptionMode("preview");
+  descPreviewTab.addEventListener("click", () => {
+    setDescriptionMode("preview");
   });
-  descInput.addEventListener("blur", () => {
-    showDescriptionPreview();
+  descEditTab.addEventListener("click", () => {
+    setDescriptionMode("edit", { focusEditor: true });
+  });
+  descTabs.addEventListener("keydown", (ev) => {
+    const tabOrder = [descPreviewTab, descEditTab];
+    const currentIndex = tabOrder.findIndex((tab) => tab === document.activeElement);
+    if (currentIndex < 0) return;
+    let targetIndex = -1;
+    if (ev.key === "ArrowRight") targetIndex = (currentIndex + 1) % tabOrder.length;
+    if (ev.key === "ArrowLeft") targetIndex = (currentIndex - 1 + tabOrder.length) % tabOrder.length;
+    if (ev.key === "Home") targetIndex = 0;
+    if (ev.key === "End") targetIndex = tabOrder.length - 1;
+    if (targetIndex < 0) return;
+    ev.preventDefault();
+    const nextTab = tabOrder[targetIndex];
+    nextTab.focus();
+    if (nextTab === descPreviewTab) {
+      setDescriptionMode("preview");
+      return;
+    }
+    setDescriptionMode("edit");
   });
 
   function normalizeLinks(links) {
