@@ -23,7 +23,7 @@
   "scripts": {
     "start": "node server.js 7713",
     "test": "c8 -n 'assets/js/**/*.js' -r text -r html cucumber-js",
-    "test:server": "npm run test:cucumber -- 'features/api_flow.feature'",
+    "test:server": "npm run test:cucumber -- features/server",
     "test:cucumber": "cucumber-js"
   },
   "engines": {

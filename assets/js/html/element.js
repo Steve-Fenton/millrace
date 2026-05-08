@@ -1,5 +1,5 @@
 /**
- * Parse trimmed HTML markup into a single root element.
+ * Parse HTML string into a single root element.
  * @param {string} html
  * @returns {Element | null}
  */
