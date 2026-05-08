@@ -1,21 +1,17 @@
 import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import { boardIniTest } from "../support/millrace_fixtures.js";
+import { millraceHttp } from "../support/integration_request.js";
 
 When("I save the default test board definition unchanged", async function () {
-  const url = `${this.flowApiBaseUrl}/api/board-definition`;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ boardSlug: "test", text: boardIniTest() }),
-  });
-  this.lastHttpStatus = res.status;
-  const text = await res.text();
-  try {
-    this.lastJson = text ? JSON.parse(text) : null;
-  } catch {
-    this.lastJson = { _raw: text };
-  }
+  const { status, json } = await millraceHttp(
+    this.flowApiAgent,
+    "PUT",
+    "/api/board-definition",
+    { boardSlug: "test", text: boardIniTest() }
+  );
+  this.lastHttpStatus = status;
+  this.lastJson = json;
 });
 
 Then(

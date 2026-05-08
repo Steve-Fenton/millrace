@@ -1,35 +1,26 @@
 import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
+import { millraceHttp } from "../support/integration_request.js";
 
 When(
   "I send a {word} request to {string} with JSON body:",
   async function (method, path, docString) {
-    const url = `${this.flowApiBaseUrl}${path}`;
-    const res = await fetch(url, {
-      method: String(method).toUpperCase(),
-      headers: { "content-type": "application/json" },
-      body: docString.trim(),
-    });
-    this.lastHttpStatus = res.status;
-    const text = await res.text();
-    try {
-      this.lastJson = text ? JSON.parse(text) : null;
-    } catch {
-      this.lastJson = { _raw: text };
-    }
+    const body = JSON.parse(docString.trim());
+    const { status, json } = await millraceHttp(
+      this.flowApiAgent,
+      method,
+      path,
+      body
+    );
+    this.lastHttpStatus = status;
+    this.lastJson = json;
   }
 );
 
 When("I send a {word} request to {string}", async function (method, path) {
-  const url = `${this.flowApiBaseUrl}${path}`;
-  const res = await fetch(url, { method: String(method).toUpperCase() });
-  this.lastHttpStatus = res.status;
-  const text = await res.text();
-  try {
-    this.lastJson = text ? JSON.parse(text) : null;
-  } catch {
-    this.lastJson = { _raw: text };
-  }
+  const { status, json } = await millraceHttp(this.flowApiAgent, method, path);
+  this.lastHttpStatus = status;
+  this.lastJson = json;
 });
 
 Then("the last JSON field {string} should be {string}", function (field, value) {

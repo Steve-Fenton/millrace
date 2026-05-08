@@ -92,7 +92,7 @@ export function parseItemSectionLines(lines) {
  * @param {string} line
  * @returns {string}
  */
-function stripDescriptionContinuation(line) {
+export function stripDescriptionContinuation(line) {
   const raw = String(line ?? "").trimEnd();
   if (raw.startsWith("\t")) return raw.slice(1);
   return raw.replace(/^ {1,4}/, "");

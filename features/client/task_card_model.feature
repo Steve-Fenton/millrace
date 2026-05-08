@@ -68,6 +68,17 @@ Feature: task model (INI)
       {"description":"line1\nline2","owner":"o"}
       """
 
+  Scenario: parseItemSectionLines strips a single leading tab from continuation lines
+    Given the item section lines array JSON is:
+      """
+      ["description = line1","\tline2","owner = o"]
+      """
+    When I parse the item section lines with parseItemSectionLines
+    Then the parsed item fields JSON should be:
+      """
+      {"description":"line1\nline2","owner":"o"}
+      """
+
   Scenario: parseItemSectionLines preserves indentation beyond the continuation marker
     Given the item section lines array JSON is:
       """
@@ -234,3 +245,6 @@ Feature: task model (INI)
       """
       {}
       """
+
+  Scenario: stripDescriptionContinuation handles nullish input and leading tabs
+    Then stripDescriptionContinuation should normalize nullish and tab-prefixed lines

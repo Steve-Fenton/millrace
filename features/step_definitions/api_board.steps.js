@@ -1,12 +1,12 @@
 import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
+import { millraceHttp } from "../support/integration_request.js";
 
 When("I request the board API for slug {string}", async function (slug) {
-  const res = await fetch(
-    `${this.flowApiBaseUrl}/api/board?boardSlug=${encodeURIComponent(slug)}`
-  );
-  this.boardApiStatus = res.status;
-  this.boardApiResponse = await res.json();
+  const path = `/api/board?boardSlug=${encodeURIComponent(slug)}`;
+  const { status, json } = await millraceHttp(this.flowApiAgent, "GET", path);
+  this.boardApiStatus = status;
+  this.boardApiResponse = json;
 });
 
 Then("the board API response status should be {int}", function (status) {

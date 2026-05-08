@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
+import { millraceHttp } from "../support/integration_request.js";
 import { startMillraceForProfile } from "../support/millrace_test_harness.js";
 
 Given("the flow API test data root is prepared", async function () {
@@ -7,9 +8,13 @@ Given("the flow API test data root is prepared", async function () {
 });
 
 When("I request the flow API catalog", async function () {
-  const res = await fetch(`${this.flowApiBaseUrl}/api/flow`);
-  this.flowApiStatus = res.status;
-  this.flowApiResponse = await res.json();
+  const { status, json } = await millraceHttp(
+    this.flowApiAgent,
+    "GET",
+    "/api/flow"
+  );
+  this.flowApiStatus = status;
+  this.flowApiResponse = json;
 });
 
 Then("the flow API boards JSON should be:", function (docString) {

@@ -74,10 +74,23 @@ function findDataRoot() {
   return process.cwd();
 }
 
-const DATA_ROOT = findDataRoot();
+let millraceDataRoot = findDataRoot();
+
+/** @returns {string} */
+function dataRoot() {
+  return millraceDataRoot;
+}
+
+/**
+ * Point Millrace at a directory for integration tests (before handling requests).
+ * @param {string} absPath
+ */
+export function setMillraceDataRootForTesting(absPath) {
+  millraceDataRoot = path.resolve(absPath);
+}
 
 function boardCatalogIniPath() {
-  return path.join(DATA_ROOT, "tasks", BOARD_CATALOG_INI_BASENAME);
+  return path.join(dataRoot(), "tasks", BOARD_CATALOG_INI_BASENAME);
 }
 
 /** Default when `tasks/.millrace.ini` omits `archive_closed_after_days` / `cold_storage_archive_after_months`. */
@@ -128,7 +141,11 @@ async function readMillraceCatalogRetentionSettings() {
 const MS_PER_MONTH = (365.25 / 12) * 24 * 60 * 60 * 1000;
 
 const LOCAL_USER_REL = path.join("tasks", "localuser.ini");
-const LOCAL_USER_PATH = path.join(DATA_ROOT, LOCAL_USER_REL);
+
+/** @returns {string} */
+function localUserPath() {
+  return path.join(dataRoot(), LOCAL_USER_REL);
+}
 
 const execFileAsync = promisify(execFile);
 
@@ -137,7 +154,7 @@ const execFileAsync = promisify(execFile);
  */
 async function readLocalUserIniSections() {
   try {
-    const text = await fs.readFile(LOCAL_USER_PATH, "utf8");
+    const text = await fs.readFile(localUserPath(), "utf8");
     return parseIni(text.replace(/^\uFEFF/, ""));
   } catch {
     return {};
@@ -202,17 +219,17 @@ function serializeLocalUserIniFile(sections) {
  */
 async function writeLocalUserIniSections(sections) {
   const text = serializeLocalUserIniFile(sections);
-  const tasksDir = path.join(DATA_ROOT, "tasks");
+  const tasksDir = path.join(dataRoot(), "tasks");
   await ensureDir(tasksDir);
   if (!text.trim()) {
     try {
-      await fs.unlink(LOCAL_USER_PATH);
+      await fs.unlink(localUserPath());
     } catch {
       /* absent or unreadable */
     }
     return;
   }
-  await fs.writeFile(LOCAL_USER_PATH, text, "utf8");
+  await fs.writeFile(localUserPath(), text, "utf8");
 }
 
 /** Non-interactive git (no editor / terminal prompt for pull merge messages / credentials). */
@@ -224,7 +241,7 @@ function gitChildEnv() {
   };
 }
 
-/** One git mutation at a time at `DATA_ROOT` (e.g. `/api/git/sync` vs log endpoints). */
+/** One git mutation at a time at the Millrace data root (e.g. `/api/git/sync` vs log endpoints). */
 let gitSerializedChain = Promise.resolve();
 
 /**
@@ -288,7 +305,7 @@ async function clearDataRootPendingSync() {
 }
 
 /**
- * Repo-relative path using `/`; rejects `..` and paths escaping `DATA_ROOT`.
+ * Repo-relative path using `/`; rejects `..` and paths escaping the Millrace data root.
  * @param {string} rel
  * @returns {string | null}
  */
@@ -297,8 +314,8 @@ function safeRepoRelativePath(rel) {
   if (!raw || raw.includes("..")) return null;
   const top = raw.split("/").filter(Boolean)[0] ?? "";
   if (top === ".git") return null;
-  const abs = path.resolve(DATA_ROOT, ...raw.split("/"));
-  const root = path.resolve(DATA_ROOT);
+  const abs = path.resolve(dataRoot(), ...raw.split("/"));
+  const root = path.resolve(dataRoot());
   if (abs !== root && !abs.startsWith(root + path.sep)) return null;
   const out = path.relative(root, abs);
   if (out.startsWith("..") || path.isAbsolute(out)) return null;
@@ -437,7 +454,7 @@ function safeCardIniFilename(name) {
  * @returns {Promise<string | null>} absolute path or null
  */
 async function resolveCardFilePath(slug, col, filename) {
-  const flat = path.join(DATA_ROOT, "tasks", slug, filename);
+  const flat = path.join(dataRoot(), "tasks", slug, filename);
   try {
     await fs.access(flat);
     return flat;
@@ -446,7 +463,7 @@ async function resolveCardFilePath(slug, col, filename) {
   }
 
   const primary = path.join(
-    DATA_ROOT,
+    dataRoot(),
     "tasks",
     slug,
     `columns.${col}`,
@@ -459,7 +476,7 @@ async function resolveCardFilePath(slug, col, filename) {
     /* continue */
   }
 
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   let dirents;
   try {
     dirents = await fs.readdir(boardRoot, { withFileTypes: true });
@@ -513,7 +530,7 @@ async function loadBoardCatalog() {
   for (const file of files) {
     const base = path.basename(String(file ?? "").trim());
     if (!/^[\w.-]+\.ini$/i.test(base)) continue;
-    const full = path.join(DATA_ROOT, "tasks", base);
+    const full = path.join(dataRoot(), "tasks", base);
     try {
       const iniText = await fs.readFile(full, "utf8");
       const m = parseBoardIni(iniText);
@@ -526,7 +543,7 @@ async function loadBoardCatalog() {
   }
   if (out.length === 0) {
     try {
-      const full = path.join(DATA_ROOT, "tasks", "board.ini");
+      const full = path.join(dataRoot(), "tasks", "board.ini");
       const iniText = await fs.readFile(full, "utf8");
       const m = parseBoardIni(iniText);
       const slug = boardSlugFromMeta(m.board);
@@ -642,7 +659,7 @@ async function appendBoardCatalogEntry(newBoardIniBasename) {
  */
 async function allocateNewBoardSlugAndFile(boardDisplayName) {
   const catalog = await loadBoardCatalog();
-  const tasksDir = path.join(DATA_ROOT, "tasks");
+  const tasksDir = path.join(dataRoot(), "tasks");
   const base = sanitizeSegment(boardDisplayName);
 
   for (let i = 0; i < 1000; i++) {
@@ -660,11 +677,11 @@ async function resolveBoardIniPathForSlug(slug) {
   const want = sanitizeSegment(slug);
   const catalog = await loadBoardCatalog();
   const hit = catalog.find((e) => e.slug === want);
-  if (hit) return path.join(DATA_ROOT, "tasks", hit.file);
-  const fallback = path.join(DATA_ROOT, "tasks", "board.ini");
+  if (hit) return path.join(dataRoot(), "tasks", hit.file);
+  const fallback = path.join(dataRoot(), "tasks", "board.ini");
   if (existsSync(fallback)) return fallback;
   if (catalog.length > 0) {
-    return path.join(DATA_ROOT, "tasks", catalog[0].file);
+    return path.join(dataRoot(), "tasks", catalog[0].file);
   }
   return fallback;
 }
@@ -708,7 +725,7 @@ function laneIndexFromBody(laneNum, swimlanesDef) {
  * @param {string} slug
  */
 async function readFlatBoardIniSummaries(slug) {
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   /** @type {{ filename: string, fullPath: string, parsed: object}[]} */
   const out = [];
   let dirents;
@@ -738,7 +755,7 @@ async function readFlatBoardIniSummaries(slug) {
 async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {
   if (maxAgeDays <= 0) return 0;
 
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   const archiveDir = path.join(boardRoot, "archive");
   const msCutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
 
@@ -917,7 +934,7 @@ async function writeLocalUserIni(owner) {
   await writeLocalUserIniSections(sections);
 }
 
-const app = express();
+export const app = express();
 app.use(express.json({ limit: "512kb" }));
 
 app.get("/api/flow", async (_req, res) => {
@@ -947,7 +964,7 @@ app.get("/api/board", async (req, res) => {
   } catch (e) {
     if (/** @type {NodeJS.ErrnoException} */ (e).code === "ENOENT") {
       res.status(404).json({
-        message: `Board definition not found (looked under ${DATA_ROOT}/tasks/).`,
+        message: `Board definition not found (looked under ${dataRoot()}/tasks/).`,
       });
       return;
     }
@@ -980,7 +997,7 @@ app.post("/api/board", async (req, res) => {
       return;
     }
 
-    const tasksDir = path.join(DATA_ROOT, "tasks");
+    const tasksDir = path.join(dataRoot(), "tasks");
     const boardIniPath = path.join(tasksDir, file);
     await fs.writeFile(boardIniPath, iniText, "utf8");
     try {
@@ -1019,7 +1036,7 @@ const BOARD_TASK_INI_RE = /^FLOW-[\w.-]+\.ini$/i;
  * @returns {Promise<string[]>} absolute paths
  */
 async function walkBoardTaskIniPaths(slug) {
-  const root = path.join(DATA_ROOT, "tasks", slug);
+  const root = path.join(dataRoot(), "tasks", slug);
   /** @type {string[]} */
   const out = [];
   async function walk(dir) {
@@ -1211,7 +1228,7 @@ app.delete("/api/board-definition", async (req, res) => {
       return;
     }
 
-    const boardPath = path.join(DATA_ROOT, "tasks", hit.file);
+    const boardPath = path.join(dataRoot(), "tasks", hit.file);
     try {
       await fs.unlink(boardPath);
     } catch (e) {
@@ -1294,7 +1311,7 @@ app.get("/api/board-definition/git-history", async (req, res) => {
       return;
     }
 
-    if (!existsSync(path.join(DATA_ROOT, ".git"))) {
+    if (!existsSync(path.join(dataRoot(), ".git"))) {
       res.json({
         gitAvailable: false,
         path: null,
@@ -1304,11 +1321,11 @@ app.get("/api/board-definition/git-history", async (req, res) => {
       return;
     }
 
-    let rel = path.relative(DATA_ROOT, boardPath);
+    let rel = path.relative(dataRoot(), boardPath);
     rel = rel.split(path.sep).join("/");
     const norm = path.posix.normalize(rel);
-    const absNorm = path.resolve(DATA_ROOT, norm);
-    const tasksRoot = path.resolve(DATA_ROOT, "tasks");
+    const absNorm = path.resolve(dataRoot(), norm);
+    const tasksRoot = path.resolve(dataRoot(), "tasks");
     if (
       norm.startsWith("../") ||
       norm === ".." ||
@@ -1322,7 +1339,7 @@ app.get("/api/board-definition/git-history", async (req, res) => {
 
     const env = gitChildEnv();
     const opts = {
-      cwd: DATA_ROOT,
+      cwd: dataRoot(),
       env,
       maxBuffer: 5 * 1024 * 1024,
     };
@@ -1417,7 +1434,7 @@ async function sendColumnCards(res, slug, col) {
 
     const { columns: columnsDef, swimlanes: swimlanesDef } =
       await loadBoardColumnAndSwimlaneDefsForSlug(slug);
-    const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+    const boardRoot = path.join(dataRoot(), "tasks", slug);
 
     /** @type {object[]} */
     const cards = [];
@@ -1514,7 +1531,7 @@ function parseIsoMs(raw) {
 async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
   if (ageMonths <= 0) return 0;
 
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   const archiveDir = path.join(boardRoot, "archive");
   const coldDir = path.join(boardRoot, "cold-storage");
   const cutoff = Date.now() - ageMonths * MS_PER_MONTH;
@@ -1588,7 +1605,7 @@ async function gatherCompletedAndArchiveRows(slug) {
   const { columns: columnsDef } = await loadBoardColumnAndSwimlaneDefsForSlug(
     slug
   );
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   const archiveDir = path.join(boardRoot, "archive");
 
   /** @type {Set<string>} */
@@ -1731,7 +1748,7 @@ async function gatherCompletedAndArchiveRows(slug) {
  * @param {string} slug
  */
 async function gatherColdStorageCardRows(slug) {
-  const boardRoot = path.join(DATA_ROOT, "tasks", slug);
+  const boardRoot = path.join(dataRoot(), "tasks", slug);
   const coldRoot = path.join(boardRoot, "cold-storage");
   /** @type {object[]} */
   const rows = [];
@@ -2243,7 +2260,7 @@ app.get("/api/card/git-history", async (req, res) => {
       return;
     }
 
-    if (!existsSync(path.join(DATA_ROOT, ".git"))) {
+    if (!existsSync(path.join(dataRoot(), ".git"))) {
       res.json({
         gitAvailable: false,
         path: null,
@@ -2253,11 +2270,11 @@ app.get("/api/card/git-history", async (req, res) => {
       return;
     }
 
-    let rel = path.relative(DATA_ROOT, fullPath);
+    let rel = path.relative(dataRoot(), fullPath);
     rel = rel.split(path.sep).join("/");
     const norm = path.posix.normalize(rel);
-    const absNorm = path.resolve(DATA_ROOT, norm);
-    const tasksRoot = path.resolve(DATA_ROOT, "tasks");
+    const absNorm = path.resolve(dataRoot(), norm);
+    const tasksRoot = path.resolve(dataRoot(), "tasks");
     if (
       norm.startsWith("../") ||
       norm === ".." ||
@@ -2271,7 +2288,7 @@ app.get("/api/card/git-history", async (req, res) => {
 
     const env = gitChildEnv();
     const opts = {
-      cwd: DATA_ROOT,
+      cwd: dataRoot(),
       env,
       maxBuffer: 5 * 1024 * 1024,
     };
@@ -2416,7 +2433,7 @@ app.put("/api/card", async (req, res) => {
     if (laneName !== undefined) item.swimlane = laneName;
     else delete item.swimlane;
 
-    const flatPath = path.join(DATA_ROOT, "tasks", slug, fn);
+    const flatPath = path.join(dataRoot(), "tasks", slug, fn);
     const out = serializeFullCardIni(item, nextLinks);
     await fs.writeFile(flatPath, out, "utf8");
     if (path.resolve(fullPath) !== path.resolve(flatPath)) {
@@ -2529,7 +2546,7 @@ app.post("/api/cards", async (req, res) => {
       swimlanes: swimlanesDef,
     });
 
-    const boardDir = path.join(DATA_ROOT, "tasks", slug);
+    const boardDir = path.join(dataRoot(), "tasks", slug);
     await ensureDir(boardDir);
     const filename = `${id}.ini`;
     await fs.writeFile(path.join(boardDir, filename), ini, "utf8");
@@ -2623,7 +2640,7 @@ app.post("/api/cards/move", async (req, res) => {
     );
     item.sort_order = String(maxSo + 10);
 
-    const destPath = path.join(DATA_ROOT, "tasks", slug, fn);
+    const destPath = path.join(dataRoot(), "tasks", slug, fn);
     const out = serializeFullCardIni(item, links);
 
     if (path.resolve(srcPath) !== path.resolve(destPath)) {
@@ -2746,7 +2763,7 @@ app.post("/api/cards/reorder", async (req, res) => {
 
 app.get("/api/git/status", async (_req, res) => {
   try {
-    const gitRepo = existsSync(path.join(DATA_ROOT, ".git"));
+    const gitRepo = existsSync(path.join(dataRoot(), ".git"));
     res.json({ gitRepo });
   } catch (e) {
     console.error(e);
@@ -2759,7 +2776,7 @@ app.get("/api/git/status", async (_req, res) => {
  * commit outstanding `tasks/` changes, push. Body: `{ conflictResolutions?: { path, content }[] }`.
  */
 app.post("/api/git/sync", async (req, res) => {
-  const cwd = DATA_ROOT;
+  const cwd = dataRoot();
   if (!existsSync(path.join(cwd, ".git"))) {
     res.status(400).json({
       message:
@@ -3168,7 +3185,7 @@ app.patch("/api/local-user/preferences", async (req, res) => {
 });
 
 /** User project (tasks/, optional files); then packaged UI if not present there. */
-app.use(express.static(DATA_ROOT));
+app.use((req, res, next) => express.static(dataRoot())(req, res, next));
 app.use(express.static(SCRIPT_DIR));
 
 function portFromArgv(argv) {
@@ -3188,21 +3205,21 @@ function portFromArgv(argv) {
 function cliOptionsFromArgv(argv) {
   const args = Array.isArray(argv) ? argv.slice(2) : [];
   let port = null;
-  let dataRoot = null;
+  let cliDataRootOverride = null;
   for (let i = 0; i < args.length; i += 1) {
     const raw = args[i];
     if (!raw) continue;
     if (raw === "--data-root") {
       const next = args[i + 1];
       if (next && !next.startsWith("-")) {
-        dataRoot = path.resolve(next);
+        cliDataRootOverride = path.resolve(next);
         i += 1;
       }
       continue;
     }
     if (raw.startsWith("--data-root=")) {
       const value = raw.slice("--data-root=".length).trim();
-      if (value) dataRoot = path.resolve(value);
+      if (value) cliDataRootOverride = path.resolve(value);
       continue;
     }
     if (/^\d+$/.test(raw)) {
@@ -3212,13 +3229,13 @@ function cliOptionsFromArgv(argv) {
       }
     }
   }
-  return { port, dataRoot };
+  return { port, dataRoot: cliDataRootOverride };
 }
 const PORT = portFromArgv(process.argv) ?? (Number(process.env.PORT) || 8888);
 const HOST = process.env.HOST;
 
 async function onListen() {
-  const boardPath = path.join(DATA_ROOT, "tasks", "board.ini");
+  const boardPath = path.join(dataRoot(), "tasks", "board.ini");
   const catalogPath = boardCatalogIniPath();
   const boardOk = existsSync(boardPath) || existsSync(catalogPath);
   const where =
@@ -3226,17 +3243,34 @@ async function onListen() {
       ? `http://${HOST}:${PORT}/`
       : `http://localhost:${PORT}/`;
   console.error(
-    `Millrace ${where} (data root ${DATA_ROOT}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
+    `Millrace ${where} (data root ${dataRoot()}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
   await runStartupArchiveStaleForCatalogSlugs();
 }
 
-if (HOST != null && HOST !== "") {
-  app.listen(PORT, HOST, () => {
-    void onListen();
-  });
-} else {
-  app.listen(PORT, () => {
-    void onListen();
-  });
+/** Cold-storage / archive sweep — same as after HTTP listen in production. */
+export async function millraceIntegrationStartup() {
+  await runStartupArchiveStaleForCatalogSlugs();
+}
+
+function isMillracePrimaryServerEntry() {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+  try {
+    return path.resolve(argv1) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isMillracePrimaryServerEntry()) {
+  if (HOST != null && HOST !== "") {
+    app.listen(PORT, HOST, () => {
+      void onListen();
+    });
+  } else {
+    app.listen(PORT, () => {
+      void onListen();
+    });
+  }
 }

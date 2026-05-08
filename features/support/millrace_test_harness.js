@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getFreePort, startServerForTest } from "./server_test_utils.js";
+import supertest from "supertest";
 import {
   INTEGRATION_DATA_ROOT,
   writeMillraceProfile,
@@ -10,20 +10,18 @@ import { gitCommitAll, gitInitWithFirstCommit } from "./git_test_utils.js";
 /**
  * @param {object} world
  * @param {string} profile
- * @param {{ readyPath?: string }} [opts]
  */
-export async function startMillraceForProfile(world, profile, opts = {}) {
+export async function startMillraceForProfile(world, profile) {
   await fs.rm(INTEGRATION_DATA_ROOT, { recursive: true, force: true });
   await writeMillraceProfile(profile, INTEGRATION_DATA_ROOT);
-  const port = await getFreePort();
-  const state = await startServerForTest({
-    dataRoot: INTEGRATION_DATA_ROOT,
-    port,
-    readyPath: opts.readyPath ?? "/api/flow",
-  });
-  world.flowApiBaseUrl = state.baseUrl;
-  world.flowApiServer = state.child;
-  world.flowApiServerState = state;
+  const {
+    app,
+    setMillraceDataRootForTesting,
+    millraceIntegrationStartup,
+  } = await import("../../server.js");
+  setMillraceDataRootForTesting(INTEGRATION_DATA_ROOT);
+  await millraceIntegrationStartup();
+  world.flowApiAgent = supertest(app);
 }
 
 /**
@@ -43,13 +41,12 @@ export async function startMillraceForProfileWithGit(world, profile) {
   );
   await fs.appendFile(boardPath, "\n; fixture bump\n", "utf8");
   await gitCommitAll(INTEGRATION_DATA_ROOT, "fixture second");
-  const port = await getFreePort();
-  const state = await startServerForTest({
-    dataRoot: INTEGRATION_DATA_ROOT,
-    port,
-    readyPath: "/api/flow",
-  });
-  world.flowApiBaseUrl = state.baseUrl;
-  world.flowApiServer = state.child;
-  world.flowApiServerState = state;
+  const {
+    app,
+    setMillraceDataRootForTesting,
+    millraceIntegrationStartup,
+  } = await import("../../server.js");
+  setMillraceDataRootForTesting(INTEGRATION_DATA_ROOT);
+  await millraceIntegrationStartup();
+  world.flowApiAgent = supertest(app);
 }

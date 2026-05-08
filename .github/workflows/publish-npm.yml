@@ -35,7 +35,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm test:cucumber
+        run: pnpm test
 
       - name: Publish if version has been updated
         run: |

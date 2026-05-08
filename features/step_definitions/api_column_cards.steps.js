@@ -1,13 +1,21 @@
 import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
+import { millraceHttp } from "../support/integration_request.js";
 
 When("I fetch JSON from {string}", async function (pathOrUrl) {
-  const url = pathOrUrl.startsWith("http")
-    ? pathOrUrl
-    : `${this.flowApiBaseUrl}${pathOrUrl}`;
-  const res = await fetch(url);
-  this.lastHttpStatus = res.status;
-  this.lastJson = await res.json();
+  if (pathOrUrl.startsWith("http")) {
+    const res = await fetch(pathOrUrl);
+    this.lastHttpStatus = res.status;
+    this.lastJson = await res.json();
+    return;
+  }
+  const { status, json } = await millraceHttp(
+    this.flowApiAgent,
+    "GET",
+    pathOrUrl
+  );
+  this.lastHttpStatus = status;
+  this.lastJson = json;
 });
 
 Then("the response status should be {int}", function (status) {

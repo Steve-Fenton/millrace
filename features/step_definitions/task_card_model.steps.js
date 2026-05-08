@@ -5,6 +5,7 @@ import {
   parseItemSectionLines,
   parseTaskCardIni,
   parseTaskCardIniFull,
+  stripDescriptionContinuation,
 } from "../../assets/js/models/taskModel.js";
 
 function baselineTaskCard() {
@@ -78,3 +79,13 @@ Then("the parseTaskCardIni result JSON should be:", function (docString) {
     ...partial,
   });
 });
+
+Then(
+  "stripDescriptionContinuation should normalize nullish and tab-prefixed lines",
+  function () {
+    assert.strictEqual(stripDescriptionContinuation(undefined), "");
+    assert.strictEqual(stripDescriptionContinuation(null), "");
+    assert.strictEqual(stripDescriptionContinuation("plain"), "plain");
+    assert.strictEqual(stripDescriptionContinuation("\ttabbed"), "tabbed");
+  }
+);
