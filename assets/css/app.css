@@ -2138,6 +2138,7 @@ a.column-done-truncation-link:focus-visible {
 
 .flow-textarea--edit-description {
   min-height: 12rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .flow-description-tabs {
@@ -2360,6 +2361,10 @@ a.column-done-truncation-link:focus-visible {
 .flow-textarea {
   resize: vertical;
   min-height: 4rem;
+}
+
+.flow-input.flow-textarea--edit-description {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .flow-modal-actions {
