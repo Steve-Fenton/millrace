@@ -2143,19 +2143,25 @@ a.column-done-truncation-link:focus-visible {
 .flow-description-tabs {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--elevated);
 }
 
 .flow-description-tab {
   margin: 0;
   padding: 0.28rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--elevated);
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
   color: var(--text-muted);
   font: inherit;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
   transition:
@@ -2164,20 +2170,31 @@ a.column-done-truncation-link:focus-visible {
     color 0.12s ease;
 }
 
-.flow-description-tab:hover {
-  color: var(--text);
-  border-color: rgba(56, 189, 248, 0.45);
-  background: var(--surface-hover);
+.flow-description-tab:last-child {
+  border-right: 0;
+}
+
+.flow-description-tab:not(.flow-description-tab--active):hover {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* When pointer is over the editor, suppress any lingering inactive-tab hover look. */
+.flow-field:has(.flow-textarea--edit-description:hover)
+  .flow-description-tab:not(.flow-description-tab--active) {
+  color: var(--text-muted);
+  background: transparent;
 }
 
 .flow-description-tab:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-.flow-description-tab--active {
+.flow-description-tab--active,
+.flow-description-tab--active:hover {
   color: var(--accent);
-  border-color: rgba(56, 189, 248, 0.45);
+  font-weight: 600;
   background: var(--accent-dim);
 }
 
