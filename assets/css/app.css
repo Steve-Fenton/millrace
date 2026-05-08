@@ -2151,6 +2151,28 @@ a.column-done-truncation-link:focus-visible {
   background: var(--elevated);
 }
 
+.flow-description-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.flow-description-expand-toggle {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.flow-description-expand-toggle[hidden] {
+  display: none;
+}
+
+.flow-description-expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .flow-description-tab {
   margin: 0;
   padding: 0.28rem 0.6rem;
@@ -2255,6 +2277,38 @@ a.column-done-truncation-link:focus-visible {
   margin: 0;
   color: var(--text-muted);
   font-style: italic;
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded {
+  max-width: min(980px, 100vw - 2rem);
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded .flow-modal-form {
+  min-height: min(72vh, calc(100dvh - 9rem));
+  height: min(72vh, calc(100dvh - 9rem));
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded
+  .flow-modal-form
+  > .flow-field:not(.flow-field--description) {
+  display: none;
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded .flow-field--description {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded .flow-textarea--edit-description,
+.flow-modal--edit-card.flow-modal--description-expanded .flow-description-preview {
+  flex: 1 1 auto;
+  min-height: min(58vh, calc(100dvh - 14rem));
+}
+
+.flow-modal--edit-card.flow-modal--description-expanded .flow-description-preview {
+  overflow: auto;
 }
 
 .flow-modal-title {

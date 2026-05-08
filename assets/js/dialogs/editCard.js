@@ -279,12 +279,15 @@ export async function openCardEditorDialog(ctx) {
   const titleInput = modal.querySelector('input[name="title"]');
   const descInput = modal.querySelector('textarea[name="description"]');
   const descField = descInput.closest(".flow-field");
+  descField?.classList.add("flow-field--description");
   const descriptionIdSuffix = Math.random().toString(36).slice(2, 8);
   const descriptionTabListId = `flow-description-tabs-${descriptionIdSuffix}`;
   const previewTabId = `flow-description-preview-tab-${descriptionIdSuffix}`;
   const editTabId = `flow-description-edit-tab-${descriptionIdSuffix}`;
   const previewPanelId = `flow-description-preview-panel-${descriptionIdSuffix}`;
   const editPanelId = `flow-description-edit-panel-${descriptionIdSuffix}`;
+  const descToolbar = document.createElement("div");
+  descToolbar.className = "flow-description-toolbar";
   const descTabs = document.createElement("div");
   descTabs.className = "flow-description-tabs";
   descTabs.id = descriptionTabListId;
@@ -305,7 +308,18 @@ export async function openCardEditorDialog(ctx) {
   descEditTab.setAttribute("role", "tab");
   descEditTab.setAttribute("aria-controls", editPanelId);
   descTabs.append(descPreviewTab, descEditTab);
-  descInput.insertAdjacentElement("beforebegin", descTabs);
+  const descExpandToggle = document.createElement("button");
+  descExpandToggle.type = "button";
+  descExpandToggle.className =
+    "flow-btn flow-btn-icon flow-description-expand-toggle";
+  descExpandToggle.setAttribute("aria-pressed", "false");
+  const expandIcon = document.createElement("span");
+  expandIcon.className = "flow-description-expand-icon";
+  expandIcon.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+  descExpandToggle.append(expandIcon);
+  descToolbar.append(descTabs, descExpandToggle);
+  descInput.insertAdjacentElement("beforebegin", descToolbar);
   descInput.id = editPanelId;
   descInput.setAttribute("role", "tabpanel");
   descInput.setAttribute("aria-labelledby", editTabId);
@@ -332,6 +346,29 @@ export async function openCardEditorDialog(ctx) {
 
   /** @type {boolean | null} */
   let showingDescriptionPreview = null;
+  let descriptionEditorExpanded = false;
+
+  function syncDescriptionExpandUi() {
+    modal.classList.toggle(
+      "flow-modal--description-expanded",
+      descriptionEditorExpanded
+    );
+    descField?.classList.toggle(
+      "flow-field--description-expanded",
+      descriptionEditorExpanded
+    );
+    const action = descriptionEditorExpanded ? "Collapse" : "Expand";
+    descExpandToggle.setAttribute(
+      "aria-label",
+      `${action} description editor`
+    );
+    descExpandToggle.title = `${action} description editor`;
+    descExpandToggle.setAttribute(
+      "aria-pressed",
+      String(descriptionEditorExpanded)
+    );
+  }
+
   function refreshDescriptionPreview() {
     renderLimitedMarkdown(descPreview, descInput.value);
   }
@@ -339,9 +376,22 @@ export async function openCardEditorDialog(ctx) {
     const resolvedHeight =
       Number.isFinite(editorHeightPx) && editorHeightPx > 0
         ? editorHeightPx
-        : descInput.offsetHeight;
+        : descInput.offsetHeight || descPreview.offsetHeight;
     if (!Number.isFinite(resolvedHeight) || resolvedHeight <= 0) return;
     descPreview.style.minHeight = `${resolvedHeight}px`;
+  }
+  function setDescriptionExpanded(nextExpanded, opts = {}) {
+    const next = Boolean(nextExpanded);
+    if (descriptionEditorExpanded === next) return;
+    descriptionEditorExpanded = next;
+    syncDescriptionExpandUi();
+    requestAnimationFrame(() => {
+      syncDescriptionPreviewHeight(descInput.offsetHeight || descPreview.offsetHeight);
+      if (showingDescriptionPreview) refreshDescriptionPreview();
+      if (!showingDescriptionPreview && opts.focusEditor) {
+        descInput.focus();
+      }
+    });
   }
   function setDescriptionMode(mode, opts = {}) {
     const nextIsPreview = mode === "preview";
@@ -359,6 +409,9 @@ export async function openCardEditorDialog(ctx) {
     descEditTab.classList.toggle("flow-description-tab--active", !nextIsPreview);
     descEditTab.setAttribute("aria-selected", String(!nextIsPreview));
     descEditTab.tabIndex = nextIsPreview ? -1 : 0;
+    descExpandToggle.hidden = nextIsPreview;
+    descExpandToggle.disabled = nextIsPreview;
+    descExpandToggle.tabIndex = nextIsPreview ? -1 : 0;
     if (nextIsPreview) {
       syncDescriptionPreviewHeight(editorHeightBeforeToggle);
       refreshDescriptionPreview();
@@ -371,8 +424,14 @@ export async function openCardEditorDialog(ctx) {
     }
   }
 
+  syncDescriptionExpandUi();
   refreshDescriptionPreview();
   setDescriptionMode("preview");
+  descExpandToggle.addEventListener("click", () => {
+    setDescriptionExpanded(!descriptionEditorExpanded, {
+      focusEditor: !showingDescriptionPreview,
+    });
+  });
   descPreviewTab.addEventListener("click", () => {
     setDescriptionMode("preview");
   });
