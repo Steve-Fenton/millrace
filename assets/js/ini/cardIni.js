@@ -153,7 +153,7 @@ export function serializeFullCardIni(item, links) {
       const parts = desc.split("\n");
       lines.push(`description = ${parts[0]}`);
       for (let i = 1; i < parts.length; i++) {
-        lines.push(`    ${parts[i].trimStart()}`);
+        lines.push(`    ${parts[i]}`);
       }
     } else {
       lines.push(`description = ${desc}`);

@@ -68,6 +68,17 @@ Feature: task model (INI)
       {"description":"line1\nline2","owner":"o"}
       """
 
+  Scenario: parseItemSectionLines preserves indentation beyond the continuation marker
+    Given the item section lines array JSON is:
+      """
+      ["description = item","       - nested","owner = o"]
+      """
+    When I parse the item section lines with parseItemSectionLines
+    Then the parsed item fields JSON should be:
+      """
+      {"description":"item\n   - nested","owner":"o"}
+      """
+
   Scenario: parseItemSectionLines stops a field when the next line starts a new key
     Given the item section lines array JSON is:
       """

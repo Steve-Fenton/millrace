@@ -75,7 +75,7 @@ export function parseItemSectionLines(lines) {
       if (/^\[[^\]]+\]$/.test(nt)) break;
       if (/^[a-zA-Z_][a-zA-Z0-9_.]*\s*=/.test(nt)) break;
       if (/^\s/.test(next)) {
-        value += "\n" + next.trimStart().trimEnd();
+        value += "\n" + stripDescriptionContinuation(next);
         i++;
       } else {
         break;
@@ -84,6 +84,18 @@ export function parseItemSectionLines(lines) {
     fields[key] = value;
   }
   return fields;
+}
+
+/**
+ * Remove the indentation marker for multiline INI values while preserving
+ * user-intended indentation (e.g. nested markdown list spacing).
+ * @param {string} line
+ * @returns {string}
+ */
+function stripDescriptionContinuation(line) {
+  const raw = String(line ?? "").trimEnd();
+  if (raw.startsWith("\t")) return raw.slice(1);
+  return raw.replace(/^ {1,4}/, "");
 }
 
 /**

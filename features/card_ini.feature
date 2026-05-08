@@ -227,7 +227,7 @@ Feature: cardIni
       title = Hello
       description = line1
           line2
-          indented
+            indented
       owner = o@o.o
       column = Col A
       aaa = extra

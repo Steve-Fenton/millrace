@@ -12,36 +12,62 @@ export function renderLimitedMarkdown(target, source) {
   const lines = raw.split("\n");
   const frag = document.createDocumentFragment();
 
-  /** @type {HTMLOListElement | HTMLUListElement | null} */
-  let list = null;
-  /** @type {"ol" | "ul" | null} */
-  let listKind = null;
+  /**
+   * Active list stack from outermost to innermost depth.
+   * @type {Array<{ list: HTMLOListElement | HTMLUListElement, kind: "ol" | "ul", lastItem: HTMLLIElement | null }>}
+   */
+  let listStack = [];
 
-  function closeList() {
-    list = null;
-    listKind = null;
+  function closeLists() {
+    listStack = [];
   }
 
-  function ensureList(kind) {
-    if (list && listKind === kind) return list;
-    closeList();
-    list = document.createElement(kind);
+  /**
+   * @param {"ol" | "ul"} kind
+   * @param {HTMLElement | DocumentFragment} parent
+   * @returns {HTMLOListElement | HTMLUListElement}
+   */
+  function createList(kind, parent) {
+    const list = document.createElement(kind);
     list.className = "flow-md-list";
-    listKind = kind;
-    frag.append(list);
+    parent.append(list);
     return list;
+  }
+
+  /**
+   * @param {"ol" | "ul"} kind
+   * @param {number} depth 1-based list depth
+   * @returns {HTMLOListElement | HTMLUListElement}
+   */
+  function ensureListAtDepth(kind, depth) {
+    const desiredDepth = Math.max(1, depth);
+    while (listStack.length > desiredDepth) {
+      listStack.pop();
+    }
+
+    if (listStack.length === desiredDepth && listStack[listStack.length - 1]?.kind !== kind) {
+      listStack.pop();
+    }
+
+    while (listStack.length < desiredDepth) {
+      const parent = listStack[listStack.length - 1]?.lastItem ?? frag;
+      const next = createList(kind, parent);
+      listStack.push({ list: next, kind, lastItem: null });
+    }
+
+    return listStack[listStack.length - 1].list;
   }
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) {
-      closeList();
+      closeLists();
       continue;
     }
 
     const headingMatch = /^(#{1,3})\s+(.+)$/.exec(trimmed);
     if (headingMatch) {
-      closeList();
+      closeLists();
       const level = headingMatch[1].length;
       const heading = document.createElement(`h${level}`);
       heading.className = `flow-md-heading flow-md-heading-${level}`;
@@ -50,23 +76,32 @@ export function renderLimitedMarkdown(target, source) {
       continue;
     }
 
-    const orderedMatch = /^\d+\.\s+(.+)$/.exec(trimmed);
+    const leadingWhitespace = line.match(/^\s*/)?.[0] ?? "";
+    const normalizedIndent = leadingWhitespace.replace(/\t/g, "  ").length;
+    const depth = Math.floor(normalizedIndent / 2) + 1;
+    const trimmedStart = line.trimStart();
+
+    const orderedMatch = /^\d+\.\s+(.+)$/.exec(trimmedStart);
     if (orderedMatch) {
       const li = document.createElement("li");
       appendInlineMarkdown(li, orderedMatch[1]);
-      ensureList("ol").append(li);
+      const list = ensureListAtDepth("ol", depth);
+      list.append(li);
+      listStack[listStack.length - 1].lastItem = li;
       continue;
     }
 
-    const unorderedMatch = /^[-*]\s+(.+)$/.exec(trimmed);
+    const unorderedMatch = /^[-*]\s+(.+)$/.exec(trimmedStart);
     if (unorderedMatch) {
       const li = document.createElement("li");
       appendInlineMarkdown(li, unorderedMatch[1]);
-      ensureList("ul").append(li);
+      const list = ensureListAtDepth("ul", depth);
+      list.append(li);
+      listStack[listStack.length - 1].lastItem = li;
       continue;
     }
 
-    closeList();
+    closeLists();
     const p = document.createElement("p");
     p.className = "flow-md-paragraph";
     appendInlineMarkdown(p, trimmed);
