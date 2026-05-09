@@ -79,6 +79,28 @@ body {
   overflow: hidden;
 }
 
+/*
+ * Main kanban view only: fill the viewport minus .app padding so the shell is tall
+ * enough that the header nav dropdown (absolute; clipped by overflow:hidden) stays
+ * visible on an empty or short board.
+ */
+.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell) {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 2 * clamp(1rem, 3vw, 2rem));
+  min-height: calc(100dvh - 2 * clamp(1rem, 3vw, 2rem));
+}
+
+.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell) .board-top {
+  flex-shrink: 0;
+}
+
+.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell)
+  .board-kanban-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .board-kanban-scroll {
   overflow-x: auto;
   overflow-y: visible;

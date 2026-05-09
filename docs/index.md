@@ -10,11 +10,9 @@ Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com
 
 ## Getting started
 
-- [Quick start guide](quick-start.md)
+- [Quick start guide](quick-start/)
 
 ## Using Millrace
-
-
 
 ### Kanban boards
 
@@ -65,10 +63,11 @@ The charts are carefully designed to increase informational value. You'll notice
 
 ### Views
 
-- **Board**: Primary Kanban view
-- **Completed** : Browse closed items or search
-- **Charts**: Informational scatter charts
-- **Admin**: Create and customise boards
+- **[Board](board/)**: Primary Kanban view
+- **[Completed](completed/)**: Browse closed items or search
+- **[Charts](charts/)**: Informational charts and cycle-time analytics
+- **[Preferences](preferences/)**: Local profile (Mine, default owner, sync mode)
+- **[Admin](admin/)**: Create and customise boards
 
 ## Under the hood
 

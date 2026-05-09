@@ -34,6 +34,24 @@ is_done = true
 `;
 }
 
+/** Three workflow columns (middle is non-done) for rename regression tests. */
+export function boardIniTestThreeColumns() {
+  return `[board]
+name = Integration Test Board
+slug = test
+
+[columns.1]
+title = To Do
+
+[columns.2]
+title = In Progress
+
+[columns.3]
+title = Done
+is_done = true
+`;
+}
+
 export function boardIniOther() {
   return `[board]
 name = Other Board
@@ -56,6 +74,19 @@ title = Open Fixture Card
 description =
 owner =
 column = To Do
+sort_order = 10
+created = 2024-01-01T00:00:00.000Z
+`;
+}
+
+/** Card in the middle column ("In Progress") on {@link boardIniTestThreeColumns}. */
+export function cardIniInProgressColumnFixture() {
+  return `[item]
+id = FLOW-in-progress-1
+title = Middle Column Card
+description =
+owner =
+column = In Progress
 sort_order = 10
 created = 2024-01-01T00:00:00.000Z
 `;
@@ -117,6 +148,25 @@ export async function writeMillraceProfile(profile, dataRoot = INTEGRATION_DATA_
       await fs.writeFile(
         path.join(tasksRoot, "test", "FLOW-fix-open.ini"),
         cardIniOpenFixture(),
+        "utf8"
+      );
+      break;
+    }
+    case "with-in-progress-card": {
+      await fs.writeFile(
+        path.join(tasksRoot, ".millrace.ini"),
+        CATALOG_ONE_BOARD,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "test.ini"),
+        boardIniTestThreeColumns(),
+        "utf8"
+      );
+      await fs.mkdir(path.join(tasksRoot, "test"), { recursive: true });
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-in-progress.ini"),
+        cardIniInProgressColumnFixture(),
         "utf8"
       );
       break;

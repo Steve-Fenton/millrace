@@ -167,7 +167,7 @@ app.put("/api/board-definition", async (req, res) => {
     }
 
     if (!isPureColumnSwimlaneReorderForTasks(oldModel, newModel)) {
-      await syncTaskFilesToNewBoardModel(slug, newModel);
+      await syncTaskFilesToNewBoardModel(slug, oldModel, newModel);
     }
 
     await fs.writeFile(boardPath, t.replace(/^\uFEFF/, ""), "utf8");

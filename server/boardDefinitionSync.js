@@ -85,16 +85,69 @@ export function isPureColumnSwimlaneReorderForTasks(oldModel, newModel) {
 }
 
 /**
+ * If `raw` matches a column title on the old board, return the new board title at the same
+ * column index when it changed (rename). Otherwise return `raw`. Matches the first column
+ * with the same title as {@link resolveCardColumnIndex} (duplicate titles use the first).
+ * @param {string | undefined} raw
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} oldModel
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} newModel
+ * @returns {string}
+ */
+export function mapColumnTitleAfterBoardEdit(raw, oldModel, newModel) {
+  const s = String(raw ?? "").trim();
+  if (!s) return s;
+  const lower = s.toLowerCase();
+  const oldCols = oldModel.columns ?? [];
+  const matched = oldCols.find(
+    (c) => String(c.title ?? "").trim().toLowerCase() === lower
+  );
+  if (!matched) return s;
+  const newCol = (newModel.columns ?? []).find((c) => c.index === matched.index);
+  if (!newCol) return s;
+  const oldT = String(matched.title ?? "").trim();
+  const newT = String(newCol.title ?? "").trim();
+  if (oldT === newT) return s;
+  return newT || `Column ${newCol.index}`;
+}
+
+/**
+ * Same as {@link mapColumnTitleAfterBoardEdit} for swimlanes.
+ * @param {string | undefined} raw
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} oldModel
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} newModel
+ * @returns {string | undefined}
+ */
+export function mapSwimlaneTitleAfterBoardEdit(raw, oldModel, newModel) {
+  const s = String(raw ?? "").trim();
+  if (!s) return raw;
+  const lower = s.toLowerCase();
+  const oldLanes = oldModel.swimlanes ?? [];
+  const matched = oldLanes.find(
+    (l) => String(l.title ?? "").trim().toLowerCase() === lower
+  );
+  if (!matched) return raw;
+  const newLane = (newModel.swimlanes ?? []).find((l) => l.index === matched.index);
+  if (!newLane) return raw;
+  const oldT = String(matched.title ?? "").trim();
+  const newT = String(newLane.title ?? "").trim();
+  if (oldT === newT) return raw;
+  return newT || `Lane ${newLane.index}`;
+}
+
+/**
  * After board definition change, rewrite each card's column/swimlane strings when titles
  * or lane/column counts change (renames, add/remove). Skipped for pure reorder — cards
  * stay keyed by name and still resolve.
  * Resolves each card's stored column/swimlane against the new board by title (or legacy
  * numeric id), not by old board slot index — so inserting or reordering columns does not
  * reassign cards to whatever title occupied the same index.
+ * Renames are applied by matching the card's stored title on the old board (same slot as
+ * {@link resolveCardColumnIndex}), then taking the new title at that column/swimlane index.
  * @param {string} slug
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} oldModel
  * @param {import("../assets/js/models/boardModel.js").BoardModel} newModel
  */
-export async function syncTaskFilesToNewBoardModel(slug, newModel) {
+export async function syncTaskFilesToNewBoardModel(slug, oldModel, newModel) {
   const paths = await walkBoardTaskIniPaths(slug);
   for (const fullPath of paths) {
     let raw;
@@ -110,9 +163,17 @@ export async function syncTaskFilesToNewBoardModel(slug, newModel) {
     } catch {
       continue;
     }
-    const colIdx = resolveCardColumnIndex(item.column, newModel.columns);
+    const columnInput = mapColumnTitleAfterBoardEdit(
+      item.column,
+      oldModel,
+      newModel
+    );
+    const colIdx = resolveCardColumnIndex(columnInput, newModel.columns);
     item.column = columnNameForIniItem(newModel.columns, colIdx);
-    const laneIdx = resolveCardSwimlaneIndex(item.swimlane, newModel.swimlanes);
+    const laneIdx = resolveCardSwimlaneIndex(
+      mapSwimlaneTitleAfterBoardEdit(item.swimlane, oldModel, newModel),
+      newModel.swimlanes
+    );
     const ln = swimlaneNameForIniItem(newModel.swimlanes, laneIdx);
     if (ln !== undefined) item.swimlane = ln;
     else delete item.swimlane;
