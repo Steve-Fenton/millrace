@@ -1106,6 +1106,92 @@ dialog.git-conflict-dialog::backdrop {
   gap: 1rem;
 }
 
+.charts-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.charts-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.charts-chart-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.charts-chart-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.charts-chart-card__note {
+  margin: 0;
+}
+
+.charts-chart-card .charts-cycle-stats {
+  margin: 0.35rem 0 0;
+  justify-content: center;
+}
+
+.charts-chart-card .charts-stack-legend {
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+}
+
+.charts-svg-wrap--tile {
+  min-height: 200px;
+  flex: 1;
+}
+
+.charts-chart-card .charts-scatter-svg {
+  max-height: 240px;
+}
+
+.charts-svg-wrap--expanded .charts-scatter-svg {
+  max-height: min(72vh, 640px);
+}
+
+.flow-modal.flow-modal--chart-expand {
+  max-width: min(960px, 100vw - 2rem);
+}
+
+.flow-modal--chart-expand .charts-svg-wrap {
+  margin: 0;
+}
+
+.flow-modal--chart-expand .charts-cycle-stats {
+  margin: 0.65rem 0 0;
+  justify-content: center;
+}
+
+.flow-modal--chart-expand .charts-stack-legend {
+  margin: 0.65rem 0 0;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+}
+
+.flow-modal-actions--chart-expand {
+  margin-top: 0.65rem;
+}
+
 /* Preferences (/preferences/) — centered panel, settings in a 2-column grid on wide viewports */
 .preferences-panel {
   width: 100%;

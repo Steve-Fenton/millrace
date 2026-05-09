@@ -397,6 +397,147 @@ function fmtDays(n) {
   return `${n.toFixed(2)} d`;
 }
 
+/** Same expand icon as the card description editor (`editCard.js`). */
+function createChartExpandButton() {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className =
+    "flow-btn flow-btn-icon flow-description-expand-toggle";
+  btn.setAttribute("aria-label", "Expand chart");
+  btn.title = "Expand chart";
+  const expandIcon = document.createElement("span");
+  expandIcon.className = "flow-description-expand-icon";
+  expandIcon.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+  btn.append(expandIcon);
+  return btn;
+}
+
+let chartExpandDialogUid = 0;
+
+/**
+ * @param {string} titleText
+ * @param {SVGElement} svgEl live chart SVG (cloned for the dialog)
+ * @param {{ beforeChart?: HTMLElement[], afterChart?: HTMLElement[] }} [blocks]
+ */
+function openChartExpandDialog(titleText, svgEl, blocks = {}) {
+  const beforeChart = blocks.beforeChart ?? [];
+  const afterChart = blocks.afterChart ?? [];
+
+  const uid = ++chartExpandDialogUid;
+  const titleId = `flow-chart-expand-title-${uid}`;
+
+  const dialog = document.createElement("dialog");
+  dialog.className = "flow-modal flow-modal--chart-expand";
+  dialog.setAttribute("aria-labelledby", titleId);
+
+  const h2 = document.createElement("h2");
+  h2.id = titleId;
+  h2.className = "flow-modal-title";
+  h2.textContent = titleText;
+
+  const wrap = document.createElement("div");
+  wrap.className = "charts-svg-wrap charts-svg-wrap--expanded";
+  const svgClone = /** @type {SVGElement} */ (svgEl.cloneNode(true));
+  wrap.append(svgClone);
+
+  const actions = document.createElement("div");
+  actions.className = "flow-modal-actions flow-modal-actions--chart-expand";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "flow-btn flow-btn-primary";
+  closeBtn.textContent = "Close";
+  actions.append(closeBtn);
+
+  dialog.append(h2);
+  for (const node of beforeChart) {
+    dialog.append(node.cloneNode(true));
+  }
+  dialog.append(wrap);
+  for (const node of afterChart) {
+    dialog.append(node.cloneNode(true));
+  }
+  dialog.append(actions);
+
+  document.body.append(dialog);
+
+  function destroy() {
+    dialog.remove();
+  }
+
+  closeBtn.addEventListener("click", () => {
+    dialog.close();
+  });
+
+  dialog.addEventListener("close", destroy);
+
+  let backdropPointerDown = false;
+  dialog.addEventListener("pointerdown", (e) => {
+    backdropPointerDown = e.target === dialog;
+  });
+  dialog.addEventListener("click", (e) => {
+    const isBackdrop = backdropPointerDown && e.target === dialog;
+    backdropPointerDown = false;
+    if (isBackdrop) dialog.close();
+  });
+
+  dialog.showModal();
+}
+
+/**
+ * @param {object} opts
+ * @param {string} opts.title
+ * @param {string} opts.note
+ * @param {SVGElement} opts.svgElement
+ * @param {HTMLElement | null} [opts.footer]
+ * @param {HTMLElement[]} [opts.beforeChart]
+ * @param {HTMLElement[]} [opts.afterChart]
+ */
+function createChartCard(opts) {
+  const {
+    title,
+    note,
+    svgElement,
+    footer = null,
+    beforeChart = [],
+    afterChart = [],
+  } = opts;
+
+  const card = document.createElement("section");
+  card.className = "charts-chart-card";
+
+  const header = document.createElement("div");
+  header.className = "charts-chart-card__header";
+
+  const h = document.createElement("h2");
+  h.className = "charts-chart-card__title";
+  h.textContent = title;
+
+  const expandBtn = createChartExpandButton();
+  expandBtn.addEventListener("click", () => {
+    openChartExpandDialog(title, svgElement, { beforeChart, afterChart });
+  });
+
+  header.append(h, expandBtn);
+  card.append(header);
+
+  const noteEl = document.createElement("p");
+  noteEl.className = "charts-note charts-chart-card__note";
+  noteEl.textContent = note;
+  card.append(noteEl);
+
+  const chartWrap = document.createElement("div");
+  chartWrap.className = "charts-svg-wrap charts-svg-wrap--tile";
+  chartWrap.append(svgElement);
+  card.append(chartWrap);
+
+  if (footer) {
+    card.append(footer);
+  }
+
+  return card;
+}
+
 /**
  * @param {{ t: string, n: number }[]} buckets
  * @param {Granularity} granularity
@@ -743,6 +884,10 @@ function renderChartsShell(
     ? /** @type {{ t: string }[]} */ (swimlaneStackData.buckets)
     : [];
   const timeDomain = sharedTimeDomain(buckets, cyclePoints, stackBuckets);
+  const totalClosedCards = buckets.reduce(
+    (sum, b) => sum + (Number(b.n) || 0),
+    0
+  );
   const medianDays =
     typeof cycleData.medianDays === "number" ? cycleData.medianDays : null;
   const stdevDays =
@@ -830,38 +975,39 @@ function renderChartsShell(
   const body = document.createElement("div");
   body.className = "charts-body";
 
-  const secCompletions = document.createElement("h2");
-  secCompletions.className = "charts-section-title";
-  secCompletions.textContent = "Completions";
+  const svgScatter = renderScatterSvg(buckets, granularity, timeDomain);
 
-  const note = document.createElement("p");
-  note.className = "charts-note";
-  note.textContent =
-    "Cards closed in the selected period (UTC buckets); board and archive INIs with a parseable close date.";
+  const completionStats = document.createElement("div");
+  completionStats.className = "charts-cycle-stats";
+  const completionTotalRow = document.createElement("span");
+  completionTotalRow.className = "charts-stat";
+  const completionTotalN = document.createElement("strong");
+  completionTotalN.textContent = String(totalClosedCards);
+  completionTotalRow.append("Total ", completionTotalN, " closed cards");
+  completionStats.append(completionTotalRow);
 
-  const wrap = document.createElement("div");
-  wrap.className = "charts-svg-wrap";
-  wrap.append(renderScatterSvg(buckets, granularity, timeDomain));
+  const cardScatter = createChartCard({
+    title: "Completions",
+    note:
+      "Cards closed in the selected period (UTC buckets)",
+    svgElement: svgScatter,
+    footer: completionStats,
+    afterChart: [completionStats],
+  });
 
-  const secSwim = document.createElement("h2");
-  secSwim.className = "charts-section-title";
-  secSwim.textContent = "Completions by swimlane";
-
-  const noteSwim = document.createElement("p");
-  noteSwim.className = "charts-note";
-  noteSwim.textContent =
-    "Completions: cards closed grouped by swimlane .";
-
-  const wrapStack = document.createElement("div");
-  wrapStack.className = "charts-svg-wrap";
-  wrapStack.append(
-    renderStackedAreaSvg(swimlaneStackData, granularity, timeDomain)
+  const svgStack = renderStackedAreaSvg(
+    swimlaneStackData,
+    granularity,
+    timeDomain
   );
   const stackLegend = renderSwimlaneStackLegend(swimlaneStackData);
-
-  const secTitle = document.createElement("h2");
-  secTitle.className = "charts-section-title";
-  secTitle.textContent = "Cycle time (created → closed)";
+  const cardStack = createChartCard({
+    title: "Completions by swimlane",
+    note: "Completions: cards closed grouped by swimlane.",
+    svgElement: svgStack,
+    footer: stackLegend,
+    afterChart: [stackLegend],
+  });
 
   const stats = document.createElement("div");
   stats.className = "charts-cycle-stats";
@@ -888,28 +1034,21 @@ function renderChartsShell(
   stN.append("n = ", nK);
   stats.append(stMed, stSig, stN);
 
-  const note2 = document.createElement("p");
-  note2.className = "charts-note";
-  note2.textContent =
-    "Cycle times: Each dot is one card shown by close date. The shaded band is median ± one standard deviation (when n ≥ 2).";
+  const svgCycle = renderCycleScatterSvg(cycleData, granularity, timeDomain);
+  const cardCycle = createChartCard({
+    title: "Cycle time (created → closed)",
+    note:
+      "The shaded band is median ± one standard deviation",
+    svgElement: svgCycle,
+    footer: stats,
+    afterChart: [stats],
+  });
 
-  const wrap2 = document.createElement("div");
-  wrap2.className = "charts-svg-wrap";
-  wrap2.append(renderCycleScatterSvg(cycleData, granularity, timeDomain));
+  const dashboard = document.createElement("div");
+  dashboard.className = "charts-dashboard";
+  dashboard.append(cardScatter, cardStack, cardCycle);
 
-  body.append(
-    secCompletions,
-    note,
-    wrap,
-    secSwim,
-    noteSwim,
-    wrapStack,
-    stackLegend,
-    secTitle,
-    stats,
-    note2,
-    wrap2
-  );
+  body.append(dashboard);
   root.append(top, body);
   return root;
 }
