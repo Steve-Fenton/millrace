@@ -432,13 +432,6 @@ body {
   line-height: 1.2;
 }
 
-.complete-deep-label input {
-  width: 0.95rem;
-  height: 0.95rem;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 .board-title {
   margin: 0;
   font-size: 1.35rem;
@@ -2655,6 +2648,49 @@ select.board-owner-filter-select {
 select.flow-input:focus,
 select.board-owner-filter-select:focus {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius-sm) - 2px);
+  background-color: var(--bg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px 11px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+input[type="checkbox"]:hover:not(:disabled):not(:checked) {
+  border-color: rgba(56, 189, 248, 0.45);
+  background-color: var(--surface-hover);
+}
+
+input[type="checkbox"]:checked {
+  border-color: rgba(56, 189, 248, 0.9);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%2309090b' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' d='M3.75 8.25l2.9 2.9 6.7-7.9'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .flow-textarea {
