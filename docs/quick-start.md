@@ -1,6 +1,6 @@
 # Quick start
 
-To use Millrace, follow these steps.
+To use Millrace, follow these steps. It will set up your project and make it automatically run when you start you machine, so you can always open your Milrace instance in a browser and do your work.
 
 ## 1. Create a repo
 
@@ -26,6 +26,8 @@ Add a `package.json` file. You can use this example.
 }
 ```
 
+You can choose your own port by adding it to the `start` command, i.e.: `pnpm exec millrace 8080`.
+
 ## 3. Add an ignore file
 
 Add a `.gitignore` to make sure you don't commit your local settings.
@@ -47,7 +49,7 @@ pnpm install
 Install PM2 globally:
 
 ```bash
-npm install pm2@latest -g`
+pnpm add -g pm2
 ```
 
 ## Go

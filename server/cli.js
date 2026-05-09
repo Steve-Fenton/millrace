@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { runStartupArchiveStaleForCatalogSlugs } from "./archiveAnalytics.js";
 import { portFromArgv } from "./cliArgs.js";
 import { app } from "./createApp.js";
+import { ensureDefaultTasksLayout } from "./bootstrapTasks.js";
 import { boardCatalogIniPath, dataRoot } from "./dataRoot.js";
 
 const PORT = portFromArgv(process.argv) ?? (Number(process.env.PORT) || 8888);
@@ -36,6 +37,11 @@ export function isMillracePrimaryServerEntry() {
 
 export function startMillraceServerIfPrimary() {
   if (!isMillracePrimaryServerEntry()) return;
+  void startPrimaryServer();
+}
+
+async function startPrimaryServer() {
+  await ensureDefaultTasksLayout();
   if (HOST != null && HOST !== "") {
     app.listen(PORT, HOST, () => {
       void onListen();
