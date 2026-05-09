@@ -3,6 +3,7 @@ import { Then, When } from "@cucumber/cucumber";
 import {
   bucketStartMsForGranularity,
   completedRowMatchesSearch,
+  legacySwimlaneFilterCandidates,
   medianSample,
   parseIsoMs,
   resolveCompletedLaneFilterIndices,
@@ -119,5 +120,29 @@ Then("the resolved lane filter should contain index {int}", function (n) {
   assert.ok(
     this.laneFilter.has(n),
     `expected Set to contain ${n}, got ${[...this.laneFilter].join(",")}`
+  );
+});
+
+When(
+  "I call legacySwimlaneFilterCandidates with rows JSON:",
+  function (docString) {
+    this.legacyCandidatesRows = JSON.parse(docString.trim());
+  }
+);
+
+When(
+  "with swimlanes JSON:",
+  function (docString) {
+    this.legacyCandidates = legacySwimlaneFilterCandidates(
+      this.legacyCandidatesRows,
+      JSON.parse(docString.trim())
+    );
+  }
+);
+
+Then("the legacy swimlane candidates should equal JSON:", function (docString) {
+  assert.deepStrictEqual(
+    this.legacyCandidates,
+    JSON.parse(docString.trim())
   );
 });

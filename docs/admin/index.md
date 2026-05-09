@@ -15,6 +15,9 @@ When you **Edit** a board you can change it's name and customize the columns and
 
 ![Screenshot: Editing boards](../screenshots/demo-admin-edit-board-dialog.png)
 
+> [!Tip]
+> When you rename a column or swimlane, current cards will be automatically updated with the change. Cards in the archive and cold storage aren't updated, but they are not shown on boards, only the completed view.
+
 > [!WARNING]
 > When you delete a column or swimlane, cards will be moved to the first column / first swimlane on your board. This prevents them going missing.
 

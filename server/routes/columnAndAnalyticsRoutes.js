@@ -7,6 +7,7 @@ import {
   buildCycleTimeScatter,
   completedRowMatchesSearch,
   gatherCompletedArchiveAndOptionalCold,
+  legacySwimlaneFilterCandidates,
   resolveCompletedLaneFilterIndices,
 } from "../archiveAnalytics.js";
 import { resolveBoardIniPathForSlug, sanitizeSegment } from "../boardCatalog.js";
@@ -85,10 +86,7 @@ app.get("/api/completed-cards", async (req, res) => {
       ownerNames = distinctRowOwners;
     }
 
-    const laneIndices =
-      swimlanes.length > 0 && laneRaw
-        ? resolveCompletedLaneFilterIndices(laneRaw, swimlanes)
-        : null;
+    const legacySwimlaneFilters = legacySwimlaneFilterCandidates(all, swimlanes);
 
     let filtered = all;
     if (of === "mine" && me) {
@@ -100,15 +98,39 @@ app.get("/api/completed-cards", async (req, res) => {
       filtered = all.filter((r) => String(r.owner ?? "").trim() === pick);
     }
 
-    if (laneIndices != null && laneIndices.size > 0) {
-      filtered = filtered.filter((r) =>
-        laneIndices.has(
-          resolveCardSwimlaneIndex(
-            /** @type {string | undefined} */ (r.swimlane),
-            swimlanes
-          )
-        )
-      );
+    if (laneRaw) {
+      if (swimlanes.length > 0) {
+        const laneIndices = resolveCompletedLaneFilterIndices(laneRaw, swimlanes);
+        if (laneIndices != null && laneIndices.size > 0) {
+          filtered = filtered.filter((r) => {
+            const idx = resolveCardSwimlaneIndex(
+              /** @type {string | undefined} */ (r.swimlane),
+              swimlanes
+            );
+            if (!laneIndices.has(idx)) return false;
+            const raw = String(r.swimlane ?? "").trim();
+            if (
+              raw &&
+              resolveCompletedLaneFilterIndices(raw, swimlanes) == null
+            ) {
+              return false;
+            }
+            return true;
+          });
+        } else {
+          const want = laneRaw.toLowerCase();
+          filtered = filtered.filter(
+            (r) =>
+              String(r.swimlane ?? "").trim().toLowerCase() === want
+          );
+        }
+      } else {
+        const want = laneRaw.toLowerCase();
+        filtered = filtered.filter(
+          (r) =>
+            String(r.swimlane ?? "").trim().toLowerCase() === want
+        );
+      }
     }
 
     if (searchLower) {
@@ -127,6 +149,7 @@ app.get("/api/completed-cards", async (req, res) => {
       pageSize: limit,
       total,
       ownerNames,
+      legacySwimlaneFilters,
     });
   } catch (e) {
     console.error(e);

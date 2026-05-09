@@ -34,6 +34,27 @@ is_done = true
 `;
 }
 
+/** Same as {@link boardIniTest} with two swimlanes (for legacy swimlane filter tests). */
+export function boardIniTestWithSwimlanes() {
+  return `[board]
+name = Integration Test Board
+slug = test
+
+[columns.1]
+title = To Do
+
+[columns.2]
+title = Done
+is_done = true
+
+[swimlanes.1]
+title = Alpha
+
+[swimlanes.2]
+title = Beta
+`;
+}
+
 /** Three workflow columns (middle is non-done) for rename regression tests. */
 export function boardIniTestThreeColumns() {
   return `[board]
@@ -276,6 +297,42 @@ title = Archived Card
 description =
 owner = archive@example.com
 column = Done
+sort_order = 10
+created = ${created}
+closed = ${closed}
+`,
+        "utf8"
+      );
+      break;
+    }
+    case "with-archive-legacy-swimlane": {
+      await fs.writeFile(
+        path.join(tasksRoot, ".millrace.ini"),
+        CATALOG_ONE_BOARD,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "test.ini"),
+        boardIniTestWithSwimlanes(),
+        "utf8"
+      );
+      const archiveDir = path.join(tasksRoot, "test", "archive");
+      await fs.mkdir(archiveDir, { recursive: true });
+      const created = new Date(
+        Date.now() - 60 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const closed = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      await fs.writeFile(
+        path.join(archiveDir, "FLOW-archive-legacy.ini"),
+        `[item]
+id = FLOW-archive-legacy
+title = Archived Legacy Lane Card
+description =
+owner = archive@example.com
+column = Done
+swimlane = Gamma Lane
 sort_order = 10
 created = ${created}
 closed = ${closed}

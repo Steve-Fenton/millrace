@@ -463,6 +463,36 @@ export function completedRowMatchesSearch(row, qLower) {
   return parts.join("\n").toLowerCase().includes(qLower);
 }
 
+/**
+ * Distinct non-empty swimlane strings stored on completed rows (`item.swimlane`).
+ * @param {Array<{ swimlane?: string }>} rows
+ * @returns {string[]}
+ */
+export function distinctSwimlaneRawStrings(rows) {
+  const set = new Set();
+  for (const row of rows) {
+    const s = String(row.swimlane ?? "").trim();
+    if (s) set.add(s);
+  }
+  return [...set].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" })
+  );
+}
+
+/**
+ * Swimlane raw strings on cards that cannot be selected via current board swimlane tokens
+ * (renamed/removed lanes on archived cards). Filtering uses case-insensitive equality on the stored raw string.
+ * @param {Array<{ swimlane?: string }>} rows
+ * @param {Array<{ index: number, title: string }>} swimlanes
+ */
+export function legacySwimlaneFilterCandidates(rows, swimlanes) {
+  const distinct = distinctSwimlaneRawStrings(rows);
+  if (!swimlanes.length) return distinct;
+  return distinct.filter(
+    (s) => resolveCompletedLaneFilterIndices(s, swimlanes) == null
+  );
+}
+
 export function utcDayBucketMs(ms) {
   const d = new Date(ms);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());

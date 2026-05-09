@@ -52,6 +52,13 @@ Then("the last JSON field {string} should be an empty array", function (field) {
   assert.ok(Array.isArray(v) && v.length === 0);
 });
 
+Then(
+  "the last JSON field {string} should deeply equal JSON:",
+  function (field, docString) {
+    assert.deepStrictEqual(this.lastJson[field], JSON.parse(docString.trim()));
+  }
+);
+
 Then("the last JSON field {string} should equal number {int}", function (field, n) {
   assert.strictEqual(this.lastJson[field], n);
 });

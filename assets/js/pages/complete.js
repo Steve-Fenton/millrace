@@ -163,7 +163,7 @@ async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts
  * @param {object} model
  * @param {string} boardSlug
  * @param {number} page
- * @param {{ cards: object[], total: number, pageSize: number, ownerNames?: string[] }} data — ownerNames are filter keys (emails when the board lists users)
+ * @param {{ cards: object[], total: number, pageSize: number, ownerNames?: string[], legacySwimlaneFilters?: string[] }} data — ownerNames are filter keys (emails when the board lists users)
  * @param {string} mineEmail `[user] mine`
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  * @param {string} searchQuery
@@ -184,6 +184,9 @@ function renderCompleteShell(
   const name = model.board.name?.trim() || "Board";
   const { cards, total, pageSize } = data;
   const ownerNames = Array.isArray(data.ownerNames) ? data.ownerNames : [];
+  const legacySwimlaneFilters = Array.isArray(data.legacySwimlaneFilters)
+    ? data.legacySwimlaneFilters
+    : [];
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, pageCount);
   const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
@@ -396,7 +399,9 @@ function renderCompleteShell(
   const filterPanel = document.createElement("div");
   filterPanel.className = "complete-filters-panel";
   filterPanel.append(filterWrap);
-  if (swimlanesSorted.length > 0) {
+  const showLaneFilter =
+    swimlanesSorted.length > 0 || legacySwimlaneFilters.length > 0;
+  if (showLaneFilter) {
     const laneWrap = document.createElement("div");
     laneWrap.className = "board-owner-filter";
     const laneLabel = document.createElement("label");
@@ -418,13 +423,41 @@ function renderCompleteShell(
       o.textContent = t;
       laneSelect.append(o);
     }
-    const wantLane =
-      swimlaneFilterParam != null &&
-      swimlanesSorted.some(
+    if (legacySwimlaneFilters.length > 0 && swimlanesSorted.length > 0) {
+      const og = document.createElement("optgroup");
+      og.label = "From card files (archive / cold)";
+      for (const s of legacySwimlaneFilters) {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        og.append(o);
+      }
+      laneSelect.append(og);
+    } else if (legacySwimlaneFilters.length > 0) {
+      for (const s of legacySwimlaneFilters) {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        laneSelect.append(o);
+      }
+    }
+    /** @param {string | null} param */
+    function legacyMatchingParam(param) {
+      if (param == null) return null;
+      const low = param.toLowerCase();
+      return (
+        legacySwimlaneFilters.find((s) => s.toLowerCase() === low) ?? null
+      );
+    }
+    const matchedLegacy = legacyMatchingParam(swimlaneFilterParam);
+    let wantLane = "all";
+    if (swimlaneFilterParam != null) {
+      const boardHit = swimlanesSorted.some(
         (x) => swimlaneFilterToken(x, swimlanesSorted) === swimlaneFilterParam
-      )
-        ? swimlaneFilterParam
-        : "all";
+      );
+      if (boardHit) wantLane = swimlaneFilterParam;
+      else if (matchedLegacy != null) wantLane = matchedLegacy;
+    }
     laneSelect.value = wantLane;
     laneSelect.addEventListener("change", () => {
       const u = new URL(window.location.href);
@@ -701,27 +734,21 @@ async function main() {
       (a, b) => a.index - b.index
     );
     if (laneParamRaw != null && String(laneParamRaw).trim() !== "") {
+      const rawTrim = String(laneParamRaw).trim();
       if (swimlanesSorted.length > 0) {
         const canonical = canonicalLaneParamFromUrl(laneParamRaw, swimlanesSorted);
-        if (canonical == null) {
-          const uFix = new URL(window.location.href);
-          uFix.searchParams.delete("lane");
-          uFix.searchParams.set("page", "1");
-          window.history.replaceState({}, "", uFix.pathname + uFix.search + uFix.hash);
-          page = 1;
-        } else {
+        if (canonical != null) {
           swimlaneFilterParam = canonical;
-          const rawTrim = String(laneParamRaw).trim();
           if (rawTrim !== canonical) {
             const uNorm = new URL(window.location.href);
             uNorm.searchParams.set("lane", canonical);
             window.history.replaceState({}, "", uNorm.pathname + uNorm.search + uNorm.hash);
           }
+        } else {
+          swimlaneFilterParam = rawTrim;
         }
       } else {
-        const uFix = new URL(window.location.href);
-        uFix.searchParams.delete("lane");
-        window.history.replaceState({}, "", uFix.pathname + uFix.search + uFix.hash);
+        swimlaneFilterParam = rawTrim;
       }
     }
 
@@ -790,6 +817,9 @@ async function main() {
           total,
           pageSize,
           ownerNames: ownerNamesOut,
+          legacySwimlaneFilters: Array.isArray(data.legacySwimlaneFilters)
+            ? data.legacySwimlaneFilters
+            : [],
         },
         mineEmail,
         flowCtx,

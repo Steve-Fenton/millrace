@@ -6,7 +6,27 @@ Feature: Archive and cold-storage in completed cards
     When I fetch JSON from "/api/completed-cards?boardSlug=test&page=1&limit=20"
     Then the response status should be 200
     And the last JSON field "total" should equal number 1
+    And the last JSON field "legacySwimlaneFilters" should be an empty array
     And the first completed card title should be "Archived Card"
+
+  Scenario: completed-cards lists legacy swimlane strings from archived cards
+    Given the Millrace integration server has profile "with-archive-legacy-swimlane"
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&page=1&limit=20"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 1
+    And the last JSON field "legacySwimlaneFilters" should deeply equal JSON:
+      """
+      ["Gamma Lane"]
+      """
+
+  Scenario: lane filter matches archived swimlane by raw string
+    Given the Millrace integration server has profile "with-archive-legacy-swimlane"
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&lane=Gamma%20Lane"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 1
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&lane=Alpha"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 0
 
   Scenario: cold-storage cards appear only with deep=1
     Given the Millrace integration server has profile "with-cold-storage-card"

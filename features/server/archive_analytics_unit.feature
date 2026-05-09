@@ -168,3 +168,31 @@ Feature: archiveAnalytics utilities
       [ { "index": 1, "title": "A" } ]
       """
     Then the resolved lane filter should be null
+
+  Scenario: legacySwimlaneFilterCandidates omits strings that match board swimlanes
+    When I call legacySwimlaneFilterCandidates with rows JSON:
+      """
+      [ { "swimlane": "Gamma Lane" }, { "swimlane": "Alpha" } ]
+      """
+    And with swimlanes JSON:
+      """
+      [ { "index": 1, "title": "Alpha" }, { "index": 2, "title": "Beta" } ]
+      """
+    Then the legacy swimlane candidates should equal JSON:
+      """
+      ["Gamma Lane"]
+      """
+
+  Scenario: legacySwimlaneFilterCandidates returns all distinct strings when board has no swimlanes
+    When I call legacySwimlaneFilterCandidates with rows JSON:
+      """
+      [ { "swimlane": "y" }, { "swimlane": "x" } ]
+      """
+    And with swimlanes JSON:
+      """
+      []
+      """
+    Then the legacy swimlane candidates should equal JSON:
+      """
+      ["x", "y"]
+      """
