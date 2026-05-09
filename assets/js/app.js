@@ -48,6 +48,14 @@ const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0
 
 const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
 
+/** Small chevrons for in-card move compass (up / right / down / left). */
+const CARD_NUDGE_SVG = {
+  up: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M18 15l-6-6-6 6"/></svg>`,
+  right: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>`,
+  down: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>`,
+  left: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>`,
+};
+
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
 const DONE_COLUMN_DISPLAY_MAX = 5;
 
@@ -225,6 +233,150 @@ function filenamesInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
     if (fn) out.push(fn);
   }
   return out;
+}
+
+/**
+ * Move or reorder a card from arrow controls (same semantics as drag: column move + lane reorder).
+ * @param {'up' | 'down' | 'left' | 'right'} direction
+ * @param {{ boardSlug: string, filename: string, columnIndex: number, swimlaneIndex: number }} cardCtx
+ */
+async function performCardNudge(direction, cardCtx) {
+  const cache = boardCache.cardsByColumn;
+  const model = boardCache.model;
+  if (!cache || !model) return;
+
+  const { boardSlug, filename, columnIndex, swimlaneIndex } = cardCtx;
+  const fn = String(filename).trim();
+  const colIdx = Number(columnIndex);
+  const laneIdx = Number(swimlaneIndex);
+  const swimlanesDef = model.swimlanes ?? [];
+
+  const sortedCols = [...model.columns].sort((a, b) => a.index - b.index);
+  const laneDefs =
+    swimlanesDef.length > 0
+      ? [...swimlanesDef].sort((a, b) => a.index - b.index)
+      : [{ index: 0, title: "" }];
+
+  if (direction === "left") {
+    const ix = sortedCols.findIndex((c) => Number(c.index) === colIdx);
+    if (ix <= 0) return;
+    const toCol = Number(sortedCols[ix - 1].index);
+    await moveCard({
+      boardSlug,
+      filename: fn,
+      fromColumnIndex: colIdx,
+      toColumnIndex: toCol,
+      swimlaneIndex: laneIdx,
+    });
+    return;
+  }
+
+  if (direction === "right") {
+    const ix = sortedCols.findIndex((c) => Number(c.index) === colIdx);
+    if (ix < 0 || ix >= sortedCols.length - 1) return;
+    const toCol = Number(sortedCols[ix + 1].index);
+    await moveCard({
+      boardSlug,
+      filename: fn,
+      fromColumnIndex: colIdx,
+      toColumnIndex: toCol,
+      swimlaneIndex: laneIdx,
+    });
+    return;
+  }
+
+  if (direction === "up") {
+    const peers = filenamesInCell(cache, colIdx, laneIdx, swimlanesDef);
+    const pos = peers.indexOf(fn);
+    if (pos < 0) return;
+    if (pos > 0) {
+      const newOrder = [...peers];
+      [newOrder[pos - 1], newOrder[pos]] = [newOrder[pos], newOrder[pos - 1]];
+      await reorderCards({
+        boardSlug,
+        columnIndex: colIdx,
+        swimlaneIndex: laneIdx,
+        filenames: newOrder,
+      });
+      return;
+    }
+    const lix = laneDefs.findIndex((l) => Number(l.index) === laneIdx);
+    if (lix <= 0) return;
+    const prevLane = Number(laneDefs[lix - 1].index);
+    await moveCard({
+      boardSlug,
+      filename: fn,
+      fromColumnIndex: colIdx,
+      toColumnIndex: colIdx,
+      swimlaneIndex: prevLane,
+    });
+    const destPeers = filenamesInCell(cache, colIdx, prevLane, swimlanesDef).filter(
+      (f) => f !== fn
+    );
+    await reorderCards({
+      boardSlug,
+      columnIndex: colIdx,
+      swimlaneIndex: prevLane,
+      filenames: [...destPeers, fn],
+    });
+    return;
+  }
+
+  if (direction === "down") {
+    const peers = filenamesInCell(cache, colIdx, laneIdx, swimlanesDef);
+    const pos = peers.indexOf(fn);
+    if (pos < 0) return;
+    if (pos < peers.length - 1) {
+      const newOrder = [...peers];
+      [newOrder[pos], newOrder[pos + 1]] = [newOrder[pos + 1], newOrder[pos]];
+      await reorderCards({
+        boardSlug,
+        columnIndex: colIdx,
+        swimlaneIndex: laneIdx,
+        filenames: newOrder,
+      });
+      return;
+    }
+    const lix = laneDefs.findIndex((l) => Number(l.index) === laneIdx);
+    if (lix < 0 || lix >= laneDefs.length - 1) return;
+    const nextLane = Number(laneDefs[lix + 1].index);
+    await moveCard({
+      boardSlug,
+      filename: fn,
+      fromColumnIndex: colIdx,
+      toColumnIndex: colIdx,
+      swimlaneIndex: nextLane,
+    });
+    const destPeers = filenamesInCell(cache, colIdx, nextLane, swimlanesDef).filter(
+      (f) => f !== fn
+    );
+    await reorderCards({
+      boardSlug,
+      columnIndex: colIdx,
+      swimlaneIndex: nextLane,
+      filenames: [fn, ...destPeers],
+    });
+  }
+}
+
+/**
+ * Close move compasses on pointerdown outside the active card (see board shell listener).
+ * @param {HTMLElement} boardShell
+ */
+function attachBoardCompassDismiss(boardShell) {
+  boardShell.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (e.target.closest(".column-card-nudge")) return;
+      const hit = e.target.closest(".column-card");
+      boardShell.querySelectorAll(".column-card--compass-open").forEach((el) => {
+        if (hit === el) return;
+        el.classList.remove("column-card--compass-open");
+        if (el instanceof HTMLElement) el.draggable = true;
+      });
+    },
+    true
+  );
 }
 
 /**
@@ -460,6 +612,9 @@ function renderBoard(
     swimlanes.length > 0
       ? swimlanes
       : [{ index: 0, title: "" }];
+
+  const sortedColsForNudge = [...columns].sort((a, b) => a.index - b.index);
+  const sortedLanesForNudge = [...lanes].sort((a, b) => a.index - b.index);
 
   const ownerNames = ownerFilterKeys(model, cardsByColumn);
   ownerFilter = normalizeOwnerFilter(ownerNames, mineEmail, ownerFilter);
@@ -821,13 +976,110 @@ function renderBoard(
         }
 
         if (fn) {
+          const peersFull = filenamesInCell(
+            cardsByColumn,
+            colIdx,
+            laneIdx,
+            swimlanes
+          );
+          const posInLane = peersFull.indexOf(fn);
+          const colPos = sortedColsForNudge.findIndex(
+            (c) => Number(c.index) === colIdx
+          );
+          const lanePos = sortedLanesForNudge.findIndex(
+            (l) => Number(l.index) === laneIdx
+          );
+          const canLeft = colPos > 0;
+          const canRight =
+            colPos >= 0 && colPos < sortedColsForNudge.length - 1;
+          const canUp = posInLane > 0 || lanePos > 0;
+          const canDown =
+            (posInLane >= 0 && posInLane < peersFull.length - 1) ||
+            (lanePos >= 0 && lanePos < sortedLanesForNudge.length - 1);
+
+          const compass = document.createElement("div");
+          compass.className = "column-card-compass";
+          compass.setAttribute("aria-hidden", "true");
+
+          /**
+           * @param {'up' | 'down' | 'left' | 'right'} dir
+           */
+          function mkNudge(dir, label, enabled) {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = `column-card-nudge column-card-nudge--${dir}`;
+            b.setAttribute("aria-label", label);
+            b.disabled = !enabled;
+            b.innerHTML = CARD_NUDGE_SVG[dir] ?? "";
+            b.addEventListener("pointerdown", (e) => e.stopPropagation());
+            b.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (!enabled) return;
+              void (async () => {
+                try {
+                  await performCardNudge(dir, {
+                    boardSlug,
+                    filename: fn,
+                    columnIndex: colIdx,
+                    swimlaneIndex: laneIdx,
+                  });
+                  li.classList.remove("column-card--compass-open");
+                  li.draggable = true;
+                  document.dispatchEvent(new CustomEvent("flow:refresh-board"));
+                } catch (err) {
+                  const msg =
+                    err instanceof Error ? err.message : String(err);
+                  await showFlowAlert(msg, { title: "Could not move card" });
+                }
+              })();
+            });
+            return b;
+          }
+
+          compass.append(
+            mkNudge(
+              "up",
+              "Move up in column or to previous swimlane",
+              canUp
+            ),
+            mkNudge("left", "Move to previous column", canLeft),
+            mkNudge("right", "Move to next column", canRight),
+            mkNudge(
+              "down",
+              "Move down in column or to next swimlane",
+              canDown
+            )
+          );
+
+          li.append(compass);
+
+          li.addEventListener("click", (e) => {
+            if (e.target.closest("a.column-card-link")) return;
+            if (e.target.closest(".flow-card-edit-btn")) return;
+            if (e.target.closest(".column-card-nudge")) return;
+            e.stopPropagation();
+            root.querySelectorAll(".column-card--compass-open").forEach((el) => {
+              if (el !== li) {
+                el.classList.remove("column-card--compass-open");
+                el.draggable = true;
+              }
+            });
+            li.classList.toggle("column-card--compass-open");
+            li.draggable = !li.classList.contains("column-card--compass-open");
+          });
+
           li.draggable = true;
           li.dataset.filename = fn;
           li.title =
             ownerFilter.mode === "all"
-              ? "Drag to reorder or move to another column/lane"
-              : "Drag to reorder among visible cards or move to another column/lane";
+              ? "Click for move arrows, or drag to reorder / move columns"
+              : "Click for move arrows, or drag among visible cards";
           li.addEventListener("dragstart", (e) => {
+            if (li.classList.contains("column-card--compass-open")) {
+              e.preventDefault();
+              return;
+            }
             const payload = JSON.stringify({
               boardSlug,
               filename: fn,
@@ -1059,6 +1311,7 @@ function renderBoard(
   kanbanScroll.className = "board-kanban-scroll";
   kanbanScroll.append(kanban);
   root.append(top, kanbanScroll);
+  attachBoardCompassDismiss(root);
   attachKanbanHeaderDock(root, kanbanScroll, kanban, corner);
   return root;
 }
