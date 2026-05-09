@@ -3,6 +3,8 @@ import { createOwnerField } from "../ui/selectOwner.js";
 import { createCard, readLocalUserIni } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
+import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
+import { showFlowConfirm } from "../ui/showMessage.js";
 
 /**
  * @param {{ boardSlug: string, columnIndex: number, columnTitle: string, swimlaneIndex: number, swimlaneTitle?: string, boardUsers?: import("../models/boardModel.js").BoardUserDef[] }} ctx
@@ -13,9 +15,9 @@ export function openAddCardDialog(ctx) {
     <div class="flow-modal-backdrop" role="presentation"></div>
   `);
   const modal = el(`
-    <div class="flow-modal" role="dialog" aria-modal="true" aria-labelledby="flow-add-card-title">
+    <div class="flow-modal" role="dialog" aria-modal="true" aria-labelledby="flow-add-card-title" aria-describedby="flow-add-card-context">
       <h2 id="flow-add-card-title" class="flow-modal-title">New card</h2>
-      <p class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
+      <p id="flow-add-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
       <form class="flow-modal-form">
         <label class="flow-field">
           <span class="flow-field-label">Title</span>
@@ -36,6 +38,8 @@ export function openAddCardDialog(ctx) {
   backdrop.append(modal);
   document.body.append(backdrop);
 
+  const releaseFocusTrap = beginModalFocusTrap(backdrop);
+
   const form = modal.querySelector("form");
   const titleInput = modal.querySelector('input[name="title"]');
   const descInput = modal.querySelector('textarea[name="description"]');
@@ -50,10 +54,34 @@ export function openAddCardDialog(ctx) {
   focusTitle();
   requestAnimationFrame(focusTitle);
 
+  function normalizeLinks(links) {
+    if (!Array.isArray(links)) return [];
+    return links.map((l) => ({
+      text: String(l?.text ?? "").trim(),
+      url: String(l?.url ?? "").trim(),
+    }));
+  }
+
+  function snapshotDraft() {
+    return JSON.stringify({
+      title: String(titleInput.value ?? "").trim(),
+      description: String(descInput.value ?? ""),
+      owner: ownerField.getValue(),
+      links: normalizeLinks(linksEditor.getLinks()),
+    });
+  }
+
+  let initialDraftSnapshot = snapshotDraft();
+
   void (async () => {
     const saved = await readLocalUserIni();
     if (!saved) return;
-    ownerField.applyLocalDefault(String(saved).trim());
+    const trimmed = String(saved).trim();
+    const ownerBefore = ownerField.getValue();
+    ownerField.applyLocalDefault(trimmed);
+    if (ownerField.getValue() !== ownerBefore) {
+      initialDraftSnapshot = snapshotDraft();
+    }
   })();
 
   let settled = false;
@@ -62,8 +90,14 @@ export function openAddCardDialog(ctx) {
     function finish(ok) {
       if (settled) return;
       settled = true;
+      document.removeEventListener("keydown", onEsc);
+      releaseFocusTrap();
       backdrop.remove();
       resolve(ok);
+    }
+
+    function hasUnsavedChanges() {
+      return snapshotDraft() !== initialDraftSnapshot;
     }
 
     function showErr(msg) {
@@ -75,30 +109,12 @@ export function openAddCardDialog(ctx) {
       bar.textContent = msg;
     }
 
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) finish(false);
-    });
-
-    modal.querySelector(".flow-cancel").addEventListener("click", () => finish(false));
-
-    document.addEventListener(
-      "keydown",
-      function onEsc(ev) {
-        if (ev.key === "Escape") {
-          document.removeEventListener("keydown", onEsc);
-          finish(false);
-        }
-      },
-      { once: true }
-    );
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    async function tryCreateCard() {
       const fd = new FormData(form);
       const title = String(fd.get("title") || "").trim();
       if (!title) {
         showErr("Title is required.");
-        return;
+        return false;
       }
 
       const description = String(fd.get("description") || "");
@@ -116,10 +132,66 @@ export function openAddCardDialog(ctx) {
         });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
         finish(true);
+        return true;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         showErr(msg);
+        return false;
       }
+    }
+
+    let closeInProgress = false;
+    async function requestClose() {
+      if (settled || closeInProgress) return;
+      if (!hasUnsavedChanges()) {
+        finish(false);
+        return;
+      }
+      closeInProgress = true;
+      const shouldCreate = await showFlowConfirm(
+        "You have unsaved changes. Create this card before closing?",
+        {
+          title: "Unsaved changes",
+          confirmLabel: "Create",
+          cancelLabel: "Discard",
+          allowEscapeDismiss: false,
+          allowBackdropDismiss: false,
+        }
+      );
+      closeInProgress = false;
+      if (settled) return;
+      if (shouldCreate) {
+        await tryCreateCard();
+        return;
+      }
+      finish(false);
+    }
+
+    function onEsc(ev) {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      void requestClose();
+    }
+
+    let backdropPointerDown = false;
+    backdrop.addEventListener("pointerdown", (e) => {
+      backdropPointerDown = e.target === backdrop;
+    });
+    backdrop.addEventListener("click", (e) => {
+      const isFullBackdropClick = backdropPointerDown && e.target === backdrop;
+      backdropPointerDown = false;
+      if (isFullBackdropClick) void requestClose();
+    });
+
+    modal.querySelector(".flow-cancel").addEventListener("click", () => {
+      void requestClose();
+    });
+
+    document.addEventListener("keydown", onEsc);
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      void tryCreateCard();
     });
   });
 }

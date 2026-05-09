@@ -14,6 +14,7 @@ import {
 } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
+import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
 
 /** @param {string | undefined} raw */
 function formatTs(raw) {
@@ -51,11 +52,14 @@ async function openBoardGitHistoryNested(ctx) {
   nestedBackdrop.append(histModal);
   document.body.append(nestedBackdrop);
 
+  const releaseNestedFocus = beginModalFocusTrap(nestedBackdrop);
+
   const pathEl = histModal.querySelector(".flow-git-history-path");
   const listEl = histModal.querySelector(".flow-git-history-list");
 
   function closeNested() {
     document.removeEventListener("keydown", onEscCapture, true);
+    releaseNestedFocus();
     nestedBackdrop.remove();
   }
 
@@ -75,7 +79,7 @@ async function openBoardGitHistoryNested(ctx) {
     if (e.target === nestedBackdrop) closeNested();
   });
   histModal.querySelector(".flow-git-history-close")?.addEventListener("click", closeNested);
-  void nestedBackdrop.focus();
+  histModal.querySelector(".flow-git-history-close")?.focus();
 
   try {
     const data = await fetchBoardDefinitionGitHistory({
@@ -270,7 +274,7 @@ export async function openBoardEditorDialog(ctx) {
     <div class="flow-modal-backdrop" role="presentation"></div>
   `);
   const modal = el(`
-    <div class="flow-modal flow-modal--edit-board" role="dialog" aria-modal="true" aria-labelledby="flow-edit-board-title">
+    <div class="flow-modal flow-modal--edit-board" role="dialog" aria-modal="true" aria-labelledby="flow-edit-board-title" aria-describedby="flow-edit-board-context">
       <div class="flow-modal-header flow-modal-header--edit-card">
         <h2 id="flow-edit-board-title" class="flow-modal-title">Edit board</h2>
         <button
@@ -282,7 +286,7 @@ export async function openBoardEditorDialog(ctx) {
           <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
         </button>
       </div>
-      <p class="flow-modal-context flow-modal-context--board">${escapeHtml(ctx.displayName)} · <code class="flow-board-editor-file">${escapeHtml(ctx.configFile)}</code></p>
+      <p id="flow-edit-board-context" class="flow-modal-context flow-modal-context--board">${escapeHtml(ctx.displayName)} · <code class="flow-board-editor-file">${escapeHtml(ctx.configFile)}</code></p>
       <form class="flow-modal-form flow-modal-form--edit-board">
         <label class="flow-field">
           <span class="flow-field-label">Board name</span>
@@ -313,6 +317,8 @@ export async function openBoardEditorDialog(ctx) {
 
   backdrop.append(modal);
   document.body.append(backdrop);
+
+  const releaseFocusTrap = beginModalFocusTrap(backdrop);
 
   const form = modal.querySelector("form");
   const nameInput = modal.querySelector('input[name="boardName"]');
@@ -361,6 +367,7 @@ export async function openBoardEditorDialog(ctx) {
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onEsc);
+      releaseFocusTrap();
       backdrop.remove();
       resolve(ok);
     }

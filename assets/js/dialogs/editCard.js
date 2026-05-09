@@ -12,6 +12,7 @@ import {
 } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
+import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
 
 /**
  * @param {{ boardSlug: string, columnIndex: number, filename: string }} ctx
@@ -33,11 +34,14 @@ async function openCardGitHistoryNested(ctx) {
   nestedBackdrop.append(histModal);
   document.body.append(nestedBackdrop);
 
+  const releaseNestedFocus = beginModalFocusTrap(nestedBackdrop);
+
   const pathEl = histModal.querySelector(".flow-git-history-path");
   const listEl = histModal.querySelector(".flow-git-history-list");
 
   function closeNested() {
     document.removeEventListener("keydown", onEscCapture, true);
+    releaseNestedFocus();
     nestedBackdrop.remove();
   }
 
@@ -60,7 +64,7 @@ async function openCardGitHistoryNested(ctx) {
 
   histModal.querySelector(".flow-git-history-close")?.addEventListener("click", closeNested);
 
-  void nestedBackdrop.focus();
+  histModal.querySelector(".flow-git-history-close")?.focus();
 
   try {
     const data = await fetchCardGitHistory({
@@ -187,7 +191,7 @@ export async function openCardEditorDialog(ctx) {
     <div class="flow-modal-backdrop" role="presentation"></div>
   `);
   const modal = el(`
-    <div class="flow-modal flow-modal--edit-card" role="dialog" aria-modal="true" aria-labelledby="flow-edit-card-title">
+    <div class="flow-modal flow-modal--edit-card" role="dialog" aria-modal="true" aria-labelledby="flow-edit-card-title" aria-describedby="flow-edit-card-context">
       <div class="flow-modal-header flow-modal-header--edit-card">
         <h2 id="flow-edit-card-title" class="flow-modal-title">Edit card</h2>
         <div class="flow-edit-card-header-actions">
@@ -209,7 +213,7 @@ export async function openCardEditorDialog(ctx) {
           </button>
         </div>
       </div>
-      <p class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
+      <p id="flow-edit-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
       <form class="flow-modal-form">
         <label class="flow-field">
           <span class="flow-field-label">Title</span>
@@ -239,6 +243,8 @@ export async function openCardEditorDialog(ctx) {
 
   backdrop.append(modal);
   document.body.append(backdrop);
+
+  const releaseFocusTrap = beginModalFocusTrap(backdrop);
 
   const contextP = modal.querySelector(".flow-modal-context");
   const createdRaw = String(initial.created ?? "").trim();
@@ -505,6 +511,7 @@ export async function openCardEditorDialog(ctx) {
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onEsc);
+      releaseFocusTrap();
       backdrop.remove();
       resolve(ok);
     }

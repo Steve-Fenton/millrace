@@ -5,6 +5,7 @@ import {
   replaceFirstConflictHunk,
 } from "../git/conflictMerge.js";
 import { showFlowAlert } from "../ui/showMessage.js";
+import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
 
 /** @param {string} [s] @param {number} [max] */
 function shortRef(s, max = 40) {
@@ -29,6 +30,7 @@ export function openGitConflictResolutionScreen(files) {
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     panel.setAttribute("aria-labelledby", "git-conflict-title");
+    panel.setAttribute("aria-describedby", "git-conflict-intro");
 
     const header = document.createElement("header");
     header.className = "git-conflict-header";
@@ -37,6 +39,7 @@ export function openGitConflictResolutionScreen(files) {
     h1.className = "git-conflict-title";
     h1.textContent = "Resolve Git merge conflicts";
     const intro = document.createElement("p");
+    intro.id = "git-conflict-intro";
     intro.className = "git-conflict-intro";
     intro.textContent =
       "For each conflict, choose one version with the button under that column, then adjust the full file below if needed. Repeat until no conflict markers remain, then Continue sync.";
@@ -178,8 +181,16 @@ export function openGitConflictResolutionScreen(files) {
     submit.className = "flow-btn flow-btn-primary";
     submit.textContent = "Continue sync";
 
+    footer.append(cancel, submit);
+    panel.append(header, scroll, footer);
+    backdrop.append(panel);
+    document.body.append(backdrop);
+
+    const releaseFocusTrap = beginModalFocusTrap(backdrop);
+
     function cleanup() {
       document.removeEventListener("keydown", onKey, { capture: true });
+      releaseFocusTrap();
       backdrop.remove();
     }
 
@@ -225,10 +236,6 @@ export function openGitConflictResolutionScreen(files) {
       resolve(out);
     });
 
-    footer.append(cancel, submit);
-    panel.append(header, scroll, footer);
-    backdrop.append(panel);
-    document.body.append(backdrop);
     document.addEventListener("keydown", onKey, { capture: true });
     const firstKeep = scroll.querySelector(
       ".git-conflict-hunk-tools:not([hidden]) .git-conflict-keep-side"

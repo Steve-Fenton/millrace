@@ -18,6 +18,8 @@ This isn't a watefall. It's engineering.
 
 # App design
 
+We use the [Web UI Boilerplate Storybook](https://basher.github.io/Web-UI-Boilerplate/?path=/docs/web-ui-storybook-introduction--docs) by [Basher](https://basher.biz) for guidance on accessible modern UI.
+
 ## `server.js`
 
 The API for the application: Express serves the static UI and `/api/*`, reads and writes `tasks/*.ini`, and runs git operations for sync and history. It imports the same `assets/js` ini, models, and git helpers as the browser bundles so parsing stays consistent.

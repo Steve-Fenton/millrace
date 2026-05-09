@@ -3,6 +3,14 @@
  * plus a lightweight toast for non-blocking feedback.
  */
 
+import { beginModalFocusTrap } from "./modalFocusTrap.js";
+
+function flowModalInstanceId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 /** @type {HTMLElement | null} */
 let toastEl = null;
 /** @type {number} */
@@ -55,17 +63,22 @@ export function showFlowAlert(message, opts = {}) {
   return new Promise((resolve) => {
     const backdrop = backdropEl();
     const modal = document.createElement("div");
+    const uid = flowModalInstanceId();
+    const titleId = `flow-flowalert-title-${uid}`;
+    const descId = `flow-flowalert-desc-${uid}`;
     modal.className = "flow-modal flow-modal--prompt";
     modal.setAttribute("role", "alertdialog");
     modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "flow-flowalert-title");
+    modal.setAttribute("aria-labelledby", titleId);
+    modal.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
-    h2.id = "flow-flowalert-title";
+    h2.id = titleId;
     h2.className = "flow-modal-title";
     h2.textContent = title;
 
     const p = document.createElement("p");
+    p.id = descId;
     p.className = "flow-modal-message";
     p.textContent = message;
 
@@ -82,11 +95,14 @@ export function showFlowAlert(message, opts = {}) {
     backdrop.append(modal);
     document.body.append(backdrop);
 
+    const releaseTrap = beginModalFocusTrap(backdrop);
+
     let settled = false;
     function close() {
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onKey, { capture: true });
+      releaseTrap();
       backdrop.remove();
       resolve();
     }
@@ -131,17 +147,22 @@ export function showFlowConfirm(message, opts = {}) {
   return new Promise((resolve) => {
     const backdrop = backdropEl();
     const modal = document.createElement("div");
+    const uid = flowModalInstanceId();
+    const titleId = `flow-flowconfirm-title-${uid}`;
+    const descId = `flow-flowconfirm-desc-${uid}`;
     modal.className = "flow-modal flow-modal--prompt";
     modal.setAttribute("role", "alertdialog");
     modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "flow-flowconfirm-title");
+    modal.setAttribute("aria-labelledby", titleId);
+    modal.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
-    h2.id = "flow-flowconfirm-title";
+    h2.id = titleId;
     h2.className = "flow-modal-title";
     h2.textContent = title;
 
     const p = document.createElement("p");
+    p.id = descId;
     p.className = "flow-modal-message";
     p.textContent = message;
 
@@ -165,11 +186,14 @@ export function showFlowConfirm(message, opts = {}) {
     backdrop.append(modal);
     document.body.append(backdrop);
 
+    const releaseTrap = beginModalFocusTrap(backdrop);
+
     let settled = false;
     function finish(val) {
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onKey, { capture: true });
+      releaseTrap();
       backdrop.remove();
       resolve(val);
     }
@@ -210,17 +234,22 @@ export function showFlowPrompt(message, opts = {}) {
   return new Promise((resolve) => {
     const backdrop = backdropEl();
     const modal = document.createElement("div");
+    const uid = flowModalInstanceId();
+    const titleId = `flow-flowprompt-title-${uid}`;
+    const descId = `flow-flowprompt-desc-${uid}`;
     modal.className = "flow-modal flow-modal--prompt";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "flow-flowprompt-title");
+    modal.setAttribute("aria-labelledby", titleId);
+    modal.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
-    h2.id = "flow-flowprompt-title";
+    h2.id = titleId;
     h2.className = "flow-modal-title";
     h2.textContent = title;
 
     const p = document.createElement("p");
+    p.id = descId;
     p.className = "flow-modal-message";
     p.textContent = message;
 
@@ -257,11 +286,14 @@ export function showFlowPrompt(message, opts = {}) {
     backdrop.append(modal);
     document.body.append(backdrop);
 
+    const releaseTrap = beginModalFocusTrap(backdrop);
+
     let settled = false;
     function finish(val) {
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onKey, { capture: true });
+      releaseTrap();
       backdrop.remove();
       resolve(val);
     }
