@@ -2061,8 +2061,44 @@ app.get(
  * Response includes ownerNames (distinct owners across all completed rows, before filter).
  * Cards: on-board items with `closed` set, plus `archive/*.ini`. Optional `deep=1` also loads `cold-storage/**`.
  * Query `q` filters title, description, owner, filename, dates, links (substring, case-insensitive).
+ * Optional `lane` filters by swimlane: use the lane title (stable when lanes are renumbered), or `swimlanes.N`
+ * for unnamed lanes / ambiguous duplicate titles. Plain numeric index is accepted for legacy URLs.
  * Newest `closed` first (archive / cold rows fall back to `created` / mtime).
  */
+/**
+ * @param {string} laneRaw
+ * @param {Array<{ index: number, title: string }>} swimlanes
+ * @returns {Set<number> | null} indices to keep, or null if param should be ignored
+ */
+function resolveCompletedLaneFilterIndices(laneRaw, swimlanes) {
+  const s = String(laneRaw ?? "").trim();
+  if (!s) return null;
+  if (!swimlanes.length) return null;
+
+  const list = [...swimlanes].sort((a, b) => a.index - b.index);
+  const lower = s.toLowerCase();
+
+  const byTitle = list.filter(
+    (l) => String(l.title ?? "").trim().toLowerCase() === lower
+  );
+  if (byTitle.length > 0) {
+    return new Set(byTitle.map((l) => l.index));
+  }
+
+  const key = s.match(/^swimlanes\.(\d+)$/i);
+  if (key) {
+    const n = Number(key[1]);
+    if (list.some((l) => l.index === n)) return new Set([n]);
+  }
+
+  if (/^\d+$/.test(s)) {
+    const n = Number.parseInt(s, 10);
+    if (list.some((l) => l.index === n)) return new Set([n]);
+  }
+
+  return null;
+}
+
 app.get("/api/completed-cards", async (req, res) => {
   try {
     const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
@@ -2088,6 +2124,7 @@ app.get("/api/completed-cards", async (req, res) => {
         .toLowerCase() === "1";
 
     const searchLower = String(req.query.q ?? "").trim().toLowerCase();
+    const laneRaw = String(req.query.lane ?? "").trim();
 
     const all = await gatherCompletedArchiveAndOptionalCold(slug, includeCold);
 
@@ -2101,17 +2138,26 @@ app.get("/api/completed-cards", async (req, res) => {
     );
 
     let ownerNames = [];
+    /** @type {Array<{ index: number, title: string }>} */
+    let swimlanes = [];
     try {
       const boardPath = await resolveBoardIniPathForSlug(slug);
       const boardText = await fs.readFile(boardPath, "utf8");
       const boardModel = parseBoardIni(boardText);
       ownerNames = boardOwnerEmailsForFilter(boardModel.users ?? []);
+      swimlanes = boardModel.swimlanes ?? [];
     } catch {
       ownerNames = [];
+      swimlanes = [];
     }
     if (ownerNames.length === 0) {
       ownerNames = distinctRowOwners;
     }
+
+    const laneIndices =
+      swimlanes.length > 0 && laneRaw
+        ? resolveCompletedLaneFilterIndices(laneRaw, swimlanes)
+        : null;
 
     let filtered = all;
     if (of === "mine" && me) {
@@ -2121,6 +2167,17 @@ app.get("/api/completed-cards", async (req, res) => {
       );
     } else if (of === "owner" && pick) {
       filtered = all.filter((r) => String(r.owner ?? "").trim() === pick);
+    }
+
+    if (laneIndices != null && laneIndices.size > 0) {
+      filtered = filtered.filter((r) =>
+        laneIndices.has(
+          resolveCardSwimlaneIndex(
+            /** @type {string | undefined} */ (r.swimlane),
+            swimlanes
+          )
+        )
+      );
     }
 
     if (searchLower) {

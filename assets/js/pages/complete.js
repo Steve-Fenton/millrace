@@ -51,11 +51,67 @@ function formatWhenPlain(iso) {
 }
 
 /**
+ * URL/API token for a swimlane: title when unique; otherwise `swimlanes.N` (unnamed or duplicate titles).
+ * @param {{ index: number, title?: string }} l
+ * @param {Array<{ index: number, title?: string }>} swimlanesSorted
+ */
+function swimlaneFilterToken(l, swimlanesSorted) {
+  const t = String(l.title ?? "").trim();
+  if (!t) return `swimlanes.${l.index}`;
+  const lower = t.toLowerCase();
+  const sameTitle = swimlanesSorted.filter(
+    (x) => String(x.title ?? "").trim().toLowerCase() === lower
+  );
+  if (sameTitle.length > 1) return `swimlanes.${l.index}`;
+  return t;
+}
+
+/**
+ * Normalize `lane` query to the canonical token for this board, or null if invalid / no filter.
+ * @param {string | null} raw
+ * @param {Array<{ index: number, title?: string }>} swimlanesSorted
+ * @returns {string | null}
+ */
+function canonicalLaneParamFromUrl(raw, swimlanesSorted) {
+  if (raw == null || String(raw).trim() === "") return null;
+  const decoded = String(raw).trim();
+  if (swimlanesSorted.length === 0) return null;
+
+  for (const l of swimlanesSorted) {
+    const tok = swimlaneFilterToken(l, swimlanesSorted);
+    if (tok === decoded) return tok;
+  }
+
+  const lower = decoded.toLowerCase();
+  for (const l of swimlanesSorted) {
+    const t = String(l.title ?? "").trim();
+    if (t && t.toLowerCase() === lower) {
+      return swimlaneFilterToken(l, swimlanesSorted);
+    }
+  }
+
+  const key = decoded.match(/^swimlanes\.(\d+)$/i);
+  if (key) {
+    const n = Number(key[1]);
+    const hit = swimlanesSorted.find((x) => x.index === n);
+    if (hit) return swimlaneFilterToken(hit, swimlanesSorted);
+  }
+
+  if (/^\d+$/.test(decoded)) {
+    const n = Number.parseInt(decoded, 10);
+    const hit = swimlanesSorted.find((x) => x.index === n);
+    if (hit) return swimlaneFilterToken(hit, swimlanesSorted);
+  }
+
+  return null;
+}
+
+/**
  * @param {string} boardSlug
  * @param {number} page
  * @param {{ mode: "all" | "mine" | "owner"; owner: string }} filter
  * @param {string} mineEmail `[user] mine` for API `me` when filter is Mine
- * @param {{ q?: string, deep?: boolean }} [searchOpts]
+ * @param {{ q?: string, deep?: boolean, lane?: string | null }} [searchOpts]
  */
 async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts = {}) {
   const q = new URLSearchParams({
@@ -78,6 +134,8 @@ async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts
   const sq = String(searchOpts.q ?? "").trim();
   if (sq) q.set("q", sq);
   if (searchOpts.deep) q.set("deep", "1");
+  const laneStr = String(searchOpts.lane ?? "").trim();
+  if (laneStr) q.set("lane", laneStr);
   const res = await fetch(`/api/completed-cards?${q}`, NO_STORE);
   const ct = res.headers.get("content-type") ?? "";
   /** @type {Record<string, unknown>} */
@@ -110,6 +168,7 @@ async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  * @param {string} searchQuery
  * @param {boolean} deepSearch
+ * @param {string | null} swimlaneFilterParam — canonical lane token from URL, or null for all
  */
 function renderCompleteShell(
   model,
@@ -119,7 +178,8 @@ function renderCompleteShell(
   mineEmail,
   flowCtx,
   searchQuery,
-  deepSearch
+  deepSearch,
+  swimlaneFilterParam
 ) {
   const name = model.board.name?.trim() || "Board";
   const { cards, total, pageSize } = data;
@@ -254,6 +314,10 @@ function renderCompleteShell(
 
   filterWrap.append(filterLabel, ownerSelect);
 
+  const swimlanesSorted = [...(model.swimlanes ?? [])].sort(
+    (a, b) => a.index - b.index
+  );
+
   const searchWrap = document.createElement("div");
   searchWrap.className = "complete-search-toolbar";
   const searchLabel = document.createElement("label");
@@ -274,13 +338,10 @@ function renderCompleteShell(
   deepCb.type = "checkbox";
   deepCb.id = "flow-complete-deep";
   deepCb.checked = deepSearch;
-  deepCb.setAttribute(
-    "aria-label",
-    "Include cold storage (older archived completions)"
-  );
+  deepCb.setAttribute("aria-label", "Include cold storage");
   const deepText = document.createElement("span");
   deepText.className = "complete-deep-text";
-  deepText.textContent = "Full";
+  deepText.textContent = "Include cold storage";
   deepLabel.title =
     "Include tasks in cold-storage. Applied when you click Search.";
   deepLabel.append(deepCb, deepText);
@@ -329,8 +390,55 @@ function renderCompleteShell(
 
   const navMenu = createFlowNavMenu({ current: "completed" });
 
-  topActions.append(filterWrap, searchWrap, badge, navMenu);
+  topActions.append(badge, navMenu);
   top.append(topLeft, topActions);
+
+  const filterPanel = document.createElement("div");
+  filterPanel.className = "complete-filters-panel";
+  filterPanel.append(filterWrap);
+  if (swimlanesSorted.length > 0) {
+    const laneWrap = document.createElement("div");
+    laneWrap.className = "board-owner-filter";
+    const laneLabel = document.createElement("label");
+    laneLabel.className = "board-owner-filter-label";
+    laneLabel.htmlFor = "flow-complete-swimlane-filter";
+    laneLabel.textContent = "Swimlane";
+    const laneSelect = document.createElement("select");
+    laneSelect.id = "flow-complete-swimlane-filter";
+    laneSelect.className = "board-owner-filter-select";
+    laneSelect.setAttribute("aria-label", "Filter completed cards by swimlane");
+    const oAll = document.createElement("option");
+    oAll.value = "all";
+    oAll.textContent = "All";
+    laneSelect.append(oAll);
+    for (const l of swimlanesSorted) {
+      const o = document.createElement("option");
+      o.value = swimlaneFilterToken(l, swimlanesSorted);
+      const t = String(l.title ?? "").trim() || `Lane ${l.index}`;
+      o.textContent = t;
+      laneSelect.append(o);
+    }
+    const wantLane =
+      swimlaneFilterParam != null &&
+      swimlanesSorted.some(
+        (x) => swimlaneFilterToken(x, swimlanesSorted) === swimlaneFilterParam
+      )
+        ? swimlaneFilterParam
+        : "all";
+    laneSelect.value = wantLane;
+    laneSelect.addEventListener("change", () => {
+      const u = new URL(window.location.href);
+      const v = laneSelect.value;
+      if (v === "all") u.searchParams.delete("lane");
+      else u.searchParams.set("lane", v);
+      u.searchParams.set("page", "1");
+      window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+      void main();
+    });
+    laneWrap.append(laneLabel, laneSelect);
+    filterPanel.append(laneWrap);
+  }
+  filterPanel.append(searchWrap);
 
   const scroll = document.createElement("div");
   scroll.className = "complete-list-wrap";
@@ -557,7 +665,7 @@ function renderCompleteShell(
   btnRow.append(prevBtn, nextBtn);
   pager.append(rangeLabel, btnRow);
 
-  root.append(top, scroll, pager);
+  root.append(top, filterPanel, scroll, pager);
   return root;
 }
 
@@ -586,6 +694,37 @@ async function main() {
     const boardSlug = boardSlugFrom(model.board);
     const boardOwnerKeys = boardOwnerEmailsForFilter(model.users);
 
+    const laneParamRaw = params.get("lane");
+    /** @type {string | null} */
+    let swimlaneFilterParam = null;
+    const swimlanesSorted = [...(model.swimlanes ?? [])].sort(
+      (a, b) => a.index - b.index
+    );
+    if (laneParamRaw != null && String(laneParamRaw).trim() !== "") {
+      if (swimlanesSorted.length > 0) {
+        const canonical = canonicalLaneParamFromUrl(laneParamRaw, swimlanesSorted);
+        if (canonical == null) {
+          const uFix = new URL(window.location.href);
+          uFix.searchParams.delete("lane");
+          uFix.searchParams.set("page", "1");
+          window.history.replaceState({}, "", uFix.pathname + uFix.search + uFix.hash);
+          page = 1;
+        } else {
+          swimlaneFilterParam = canonical;
+          const rawTrim = String(laneParamRaw).trim();
+          if (rawTrim !== canonical) {
+            const uNorm = new URL(window.location.href);
+            uNorm.searchParams.set("lane", canonical);
+            window.history.replaceState({}, "", uNorm.pathname + uNorm.search + uNorm.hash);
+          }
+        }
+      } else {
+        const uFix = new URL(window.location.href);
+        uFix.searchParams.delete("lane");
+        window.history.replaceState({}, "", uFix.pathname + uFix.search + uFix.hash);
+      }
+    }
+
     const stored = readStoredOwnerFilter();
     if (stored) ownerFilter = { mode: stored.mode, owner: stored.owner };
 
@@ -608,6 +747,7 @@ async function main() {
     let data = await fetchCompletedPage(boardSlug, page, ownerFilter, mineEmail, {
       q: searchQuery,
       deep: deepSearch,
+      lane: swimlaneFilterParam,
     });
     let ownerNames =
       boardOwnerKeys.length > 0
@@ -629,6 +769,7 @@ async function main() {
       data = await fetchCompletedPage(boardSlug, 1, ownerFilter, mineEmail, {
         q: searchQuery,
         deep: deepSearch,
+        lane: swimlaneFilterParam,
       });
     }
 
@@ -653,7 +794,8 @@ async function main() {
         mineEmail,
         flowCtx,
         searchQuery,
-        deepSearch
+        deepSearch,
+        swimlaneFilterParam
       )
     );
   } catch (e) {
