@@ -3,14 +3,14 @@ import { parseTaskCardIniFull } from "../models/taskModel.js";
 const DISPLAY_MAX = 64;
 
 /** @param {string} s */
-function truncOneLine(s, max = DISPLAY_MAX) {
+export function truncOneLine(s, max = DISPLAY_MAX) {
   const t = String(s ?? "").replace(/\r?\n/g, " ↵ ");
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
 }
 
 /** @param {string} s */
-function dispChange(s) {
+export function dispChange(s) {
   const t = String(s ?? "").trim();
   if (!t) return "∅";
   return truncOneLine(t, 56);
@@ -43,7 +43,7 @@ const ITEM_COMPARE_KEYS = [
 /**
  * @param {{ text: string, url: string }[]} links
  */
-function linksFingerprint(links) {
+export function linksFingerprint(links) {
   return links
     .map((l) => `${String(l.text ?? "").trim()}\t${String(l.url ?? "").trim()}`)
     .join("\n");
@@ -52,9 +52,10 @@ function linksFingerprint(links) {
 /**
  * @param {string | null | undefined} beforeRaw
  * @param {string | null | undefined} afterRaw
+ * @param {(raw: string) => { item: Record<string, string>, links: { text: string, url: string }[] }} [parseFull]
  * @returns {string[]}
  */
-export function summarizeCardIniDiff(beforeRaw, afterRaw) {
+export function summarizeCardIniDiff(beforeRaw, afterRaw, parseFull = parseTaskCardIniFull) {
   const beforeEmpty = !String(beforeRaw ?? "").trim();
   const afterEmpty = !String(afterRaw ?? "").trim();
 
@@ -65,14 +66,14 @@ export function summarizeCardIniDiff(beforeRaw, afterRaw) {
   try {
     before = beforeEmpty
       ? { item: {}, links: [] }
-      : parseTaskCardIniFull(String(beforeRaw));
+      : parseFull(String(beforeRaw));
   } catch {
     return ["(Could not parse earlier version)"];
   }
   try {
     after = afterEmpty
       ? { item: {}, links: [] }
-      : parseTaskCardIniFull(String(afterRaw));
+      : parseFull(String(afterRaw));
   } catch {
     return ["(Could not parse this version)"];
   }
@@ -87,22 +88,25 @@ export function summarizeCardIniDiff(beforeRaw, afterRaw) {
     return ["File removed in this commit."];
   }
 
+  const beforeItem = before.item ?? {};
+  const afterItem = after.item ?? {};
+
   for (const k of ITEM_COMPARE_KEYS) {
-    const a = String(before.item[k] ?? "").trim();
-    const b = String(after.item[k] ?? "").trim();
+    const a = String(beforeItem[k] ?? "").trim();
+    const b = String(afterItem[k] ?? "").trim();
     if (a === b) continue;
     const label = FIELD_LABEL[k] || k;
     lines.push(`${label}: ${dispChange(a)} → ${dispChange(b)}`);
   }
 
   const allKeys = new Set([
-    ...Object.keys(before.item ?? {}),
-    ...Object.keys(after.item ?? {}),
+    ...Object.keys(beforeItem),
+    ...Object.keys(afterItem),
   ]);
   for (const k of allKeys) {
     if (ITEM_COMPARE_KEYS.includes(k)) continue;
-    const a = String(before.item[k] ?? "").trim();
-    const b = String(after.item[k] ?? "").trim();
+    const a = String(beforeItem[k] ?? "").trim();
+    const b = String(afterItem[k] ?? "").trim();
     if (a === b) continue;
     const label = FIELD_LABEL[k] || k;
     lines.push(`${label}: ${dispChange(a)} → ${dispChange(b)}`);
