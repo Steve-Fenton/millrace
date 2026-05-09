@@ -22,6 +22,9 @@
     "preferences"
   ],
   "scripts": {
+    "sync-docs": "node scripts/sync-docs-version.mjs",
+    "prepublishOnly": "node scripts/sync-docs-version.mjs",
+    "version": "node scripts/sync-docs-version.mjs",
     "start": "node server.js 7713",
     "test": "NODE_OPTIONS=--experimental-vm-modules c8 cucumber-js",
     "test:cucumber": "cucumber-js",
