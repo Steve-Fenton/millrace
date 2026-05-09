@@ -2,35 +2,54 @@
 
 To use Millrace, follow these steps.
 
-- Install (with pnpm or npm)
-- Add one `.gitignore` rule for `tasks/localuser.ini`
+## 1. Create a repo
 
-### pnpm
+Create an empty git repository to store you work.
 
-From your project root:
+## 2. Add a package file
 
-```bash
-pnpm add millrace
+Add a `package.json` file. You can use this example.
+
+```json
+{
+  "name": "your-kanban-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "pnpm exec millrace",
+    "cycle": "pm2 restart millrace-devrel"
+  },
+  "dependencies": {
+    "millrace": "^0.0.21"
+  }
+}
 ```
 
-Run the server with **`pnpm exec millrace`** (optionally pass a port: **`pnpm exec millrace 8888`**), or add a script to your **`package.json`** (for example **`"start": "millrace"`**) and run **`pnpm start`**.
+## 3. Add an ignore file
 
-### npm
+Add a `.gitignore` to make sure you don't commit your local settings.
 
-From your project root:
-
-```bash
-npm install millrace
-```
-
-Run with **`npx millrace`** (or **`npx millrace 8888`** for a port), or add a **`package.json`** script such as **`"start": "millrace"`** and run **`npm run start`**.
-
-### Ignore `tasks/localuser.ini` in Git
-
-Millrace may create **`tasks/localuser.ini`** to store the default owner on this machine (used for new cards and filters). That file is machine-specific, so add it to **`.gitignore`** in the repo where you keep **`tasks/`**:
-
-```gitignore
+```text
 tasks/localuser.ini
 ```
 
-To run Millrace on login with PM2, see the [guide to auto start](auto-start.md).
+## 4. Get ready
+
+Run the following scripts.
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Install PM2 globally:
+
+```bash
+npm install pm2@latest -g`
+```
+
+## Go
+
+Open `http://localhost:8888` and use your app.

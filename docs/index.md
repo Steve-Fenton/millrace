@@ -14,7 +14,7 @@ Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com
 
 ## Using Millrace
 
-Run the server using `pnpm exec millrace` or `npx millrace` and open the URL in your browser. By default the URL is `localhost:8888`.
+
 
 ### Kanban boards
 
