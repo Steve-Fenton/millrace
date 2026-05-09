@@ -2,6 +2,8 @@
 
 The **Preferences** view edits settings stored in **`tasks/localuser.ini`** (machine-local; keep that file gitignored). Changes apply across views after you save.
 
+![](../screenshots/demo-preferences-full.png)
+
 ## Settings
 
 - **Mine**: Email address used for the **Mine** owner filter on the board and elsewhere. Set this so “mine” means your cards.
@@ -9,5 +11,8 @@ The **Preferences** view edits settings stored in **`tasks/localuser.ini`** (mac
 - **Sync mode**: **Automatic** or **Manual** control over how sync behaves with your workflow (pair with the **Sync** control on the board).
 
 Saving preferences triggers a refresh so lists and filters stay consistent.
+
+> [!TIP]
+> Usually the **MINE** and **DEFAULT OWNER** will both be set to your email address. However, if you create tasks on someone else's behalf, you can reduce friction by entering their email address in the **DEFAULT OWNER** field.
 
 [← Millrace documentation](../)

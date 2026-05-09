@@ -1,13 +1,12 @@
 # Completed
 
-The **Completed** view lists **closed** task cards for the current board. It complements the small completed strip on the [Board](../board/) view, where only a handful of recent closures are shown to save space.
+The **Completed** view shows cards that are finished. These cards come from the board, from the archive, and if you choose to include them, from cold storage.
 
-## What you can do
+![Screenshot: The completed view](../screenshots/demo-completed-full.png)
 
-- Browse completed work in a **paginated** table (50 cards per page).
-- **Search** to find closed cards by title or other text.
-- Filter by **swimlane** when your board uses swimlanes (URL and UI reflect the lane you care about).
-- Open a card to inspect or edit it like on the board.
+You can filter the card list by owner and swimlane, or perform a text search.
+
+You can use the **Completed** view to see all tasks, while the [Board](../board/) view limits the number of closed cards shown.
 
 For aggregate trends across completions, use [Charts](../charts/).
 
