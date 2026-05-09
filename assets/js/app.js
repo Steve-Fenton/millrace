@@ -136,6 +136,12 @@ let boardCache = {
 /** Set on full board load; used when re-rendering after owner filter only. */
 let gitRepoAvailable = false;
 
+/**
+ * After a compass arrow move + board refresh, reopen arrows on this card until the user dismisses.
+ * @type {{ boardSlug: string, filename: string } | null}
+ */
+let compassPersistCard = null;
+
 /** @type {ReturnType<typeof setTimeout> | null} */
 let autoSyncDebounceTimer = null;
 let boardGitSyncInFlight = false;
@@ -369,11 +375,14 @@ function attachBoardCompassDismiss(boardShell) {
     (e) => {
       if (e.target.closest(".column-card-nudge")) return;
       const hit = e.target.closest(".column-card");
+      let closed = false;
       boardShell.querySelectorAll(".column-card--compass-open").forEach((el) => {
         if (hit === el) return;
         el.classList.remove("column-card--compass-open");
         if (el instanceof HTMLElement) el.draggable = true;
+        closed = true;
       });
+      if (closed) compassPersistCard = null;
     },
     true
   );
@@ -607,6 +616,8 @@ function renderBoard(
   const { board, columns, swimlanes } = model;
   const name = board.name?.trim() || "Board";
   const boardSlug = boardSlugFrom(board);
+
+  let compassPersistMatched = false;
 
   const lanes =
     swimlanes.length > 0
@@ -1024,8 +1035,7 @@ function renderBoard(
                     columnIndex: colIdx,
                     swimlaneIndex: laneIdx,
                   });
-                  li.classList.remove("column-card--compass-open");
-                  li.draggable = true;
+                  compassPersistCard = { boardSlug, filename: fn };
                   document.dispatchEvent(new CustomEvent("flow:refresh-board"));
                 } catch (err) {
                   const msg =
@@ -1066,11 +1076,24 @@ function renderBoard(
               }
             });
             li.classList.toggle("column-card--compass-open");
-            li.draggable = !li.classList.contains("column-card--compass-open");
+            const compassOpen = li.classList.contains("column-card--compass-open");
+            li.draggable = !compassOpen;
+            compassPersistCard = compassOpen
+              ? { boardSlug, filename: fn }
+              : null;
           });
 
           li.draggable = true;
           li.dataset.filename = fn;
+          if (
+            compassPersistCard &&
+            compassPersistCard.boardSlug === boardSlug &&
+            compassPersistCard.filename === fn
+          ) {
+            li.classList.add("column-card--compass-open");
+            li.draggable = false;
+            compassPersistMatched = true;
+          }
           li.title =
             ownerFilter.mode === "all"
               ? "Click for move arrows, or drag to reorder / move columns"
@@ -1311,6 +1334,13 @@ function renderBoard(
   kanbanScroll.className = "board-kanban-scroll";
   kanbanScroll.append(kanban);
   root.append(top, kanbanScroll);
+  if (
+    compassPersistCard &&
+    compassPersistCard.boardSlug === boardSlug &&
+    !compassPersistMatched
+  ) {
+    compassPersistCard = null;
+  }
   attachBoardCompassDismiss(root);
   attachKanbanHeaderDock(root, kanbanScroll, kanban, corner);
   return root;
