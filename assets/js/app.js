@@ -1010,7 +1010,6 @@ function renderBoard(
 
           const compass = document.createElement("div");
           compass.className = "column-card-compass";
-          compass.setAttribute("aria-hidden", "true");
 
           /**
            * @param {'up' | 'down' | 'left' | 'right'} dir
