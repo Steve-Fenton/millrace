@@ -1135,6 +1135,19 @@ dialog.git-conflict-dialog::backdrop {
   gap: 0.5rem;
 }
 
+/* Expand control: visible on chart hover (and when focused), always visible on coarse/touch */
+@media (hover: hover) and (pointer: fine) {
+  .charts-chart-card .charts-chart-expand-btn {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  .charts-chart-card:hover .charts-chart-expand-btn,
+  .charts-chart-card:focus-within .charts-chart-expand-btn {
+    opacity: 1;
+  }
+}
+
 .charts-chart-card__title {
   margin: 0;
   font-size: 1.05rem;

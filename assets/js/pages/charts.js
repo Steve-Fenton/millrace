@@ -402,7 +402,7 @@ function createChartExpandButton() {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className =
-    "flow-btn flow-btn-icon flow-description-expand-toggle";
+    "flow-btn flow-btn-icon flow-description-expand-toggle charts-chart-expand-btn";
   btn.setAttribute("aria-label", "Expand chart");
   btn.title = "Expand chart";
   const expandIcon = document.createElement("span");
