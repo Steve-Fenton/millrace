@@ -71,3 +71,33 @@ When("I store the last JSON field {string} as {string}", function (field, name) 
 Then("the last JSON field {string} should be null", function (field) {
   assert.strictEqual(this.lastJson[field], null);
 });
+
+Then(
+  "the last JSON field {string} should not be {string}",
+  function (field, value) {
+    assert.notStrictEqual(String(this.lastJson[field] ?? ""), value);
+  }
+);
+
+Then(
+  "the last JSON field {string} should be ISO 8601",
+  function (field) {
+    const v = String(this.lastJson[field] ?? "");
+    assert.match(
+      v,
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+      `expected ISO 8601 timestamp, got ${v}`
+    );
+  }
+);
+
+Then(
+  "the last JSON field {string} should be empty or missing",
+  function (field) {
+    const v = this.lastJson[field];
+    assert.ok(
+      v === undefined || v === null || String(v) === "",
+      `expected empty / missing, got ${JSON.stringify(v)}`
+    );
+  }
+);

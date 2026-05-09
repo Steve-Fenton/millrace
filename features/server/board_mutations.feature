@@ -48,3 +48,42 @@ Feature: Board definition mutations
     Then the response status should be 200
     And the last JSON field "boards" should have array length at least 1
     And the first board slug in the last response should be "test"
+
+  Scenario: POST /api/board rejects empty board name
+    Given the Millrace integration server has profile "flow-board"
+    When I send a POST request to "/api/board" with JSON body:
+      """
+      { "name": "  " }
+      """
+    Then the response status should be 400
+    And the last JSON field "message" should contain "Board name"
+
+  Scenario: PUT board-definition rejects blank text
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PUT request to "/api/board-definition" with JSON body:
+      """
+      { "boardSlug": "test", "text": "   " }
+      """
+    Then the response status should be 400
+
+  Scenario: PUT board-definition rejects multiple done columns
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PUT request to "/api/board-definition" with JSON body:
+      """
+      {
+        "boardSlug": "test",
+        "text": "[board]\nname = Integration Test Board\nslug = test\n\n[columns.1]\ntitle = Done\nis_done = true\n\n[columns.2]\ntitle = Also Done\nis_done = true\n"
+      }
+      """
+    Then the response status should be 400
+
+  Scenario: DELETE board-definition refuses the only board in the catalog
+    Given the Millrace integration server has profile "flow-board"
+    When I send a DELETE request to "/api/board-definition?boardSlug=test"
+    Then the response status should be 400
+    And the last JSON field "message" should contain "only board"
+
+  Scenario: DELETE board-definition returns 404 for unknown slug
+    Given the Millrace integration server has profile "two-boards"
+    When I send a DELETE request to "/api/board-definition?boardSlug=ghost"
+    Then the response status should be 404

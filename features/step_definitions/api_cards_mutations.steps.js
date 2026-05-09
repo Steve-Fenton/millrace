@@ -41,6 +41,29 @@ When(
   }
 );
 
+When(
+  "I put the test card in column {int} with title {string} and owner {string}",
+  async function (columnIndex, title, owner) {
+    const fn = this.testCardFilename;
+    assert.ok(fn);
+    const { status, json } = await millraceHttp(
+      this.flowApiAgent,
+      "PUT",
+      "/api/card",
+      {
+        boardSlug: "test",
+        columnIndex,
+        filename: fn,
+        title,
+        description: "",
+        owner,
+      }
+    );
+    this.lastHttpStatus = status;
+    this.lastJson = json;
+  }
+);
+
 When("I delete the test card from column {int}", async function (columnIndex) {
   const fn = this.testCardFilename;
   assert.ok(fn);

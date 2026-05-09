@@ -164,6 +164,101 @@ export async function writeMillraceProfile(profile, dataRoot = INTEGRATION_DATA_
       );
       break;
     }
+    case "with-board-users": {
+      await fs.writeFile(
+        path.join(tasksRoot, ".millrace.ini"),
+        CATALOG_ONE_BOARD,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "test.ini"),
+        `[board]
+name = Integration Test Board
+slug = test
+
+[columns.1]
+title = To Do
+
+[columns.2]
+title = Done
+is_done = true
+
+[users.1]
+email = active@example.com
+
+[users.2]
+email = removed@example.com
+inactive = true
+`,
+        "utf8"
+      );
+      break;
+    }
+    case "with-legacy-column-card": {
+      await writeMillraceProfile("flow-board", dataRoot);
+      const legacyDir = path.join(tasksRoot, "test", "columns.1");
+      await fs.mkdir(legacyDir, { recursive: true });
+      await fs.writeFile(
+        path.join(legacyDir, "FLOW-legacy-1.ini"),
+        cardIniOpenFixture().replace(
+          "id = FLOW-fix-open-1",
+          "id = FLOW-legacy-1"
+        ),
+        "utf8"
+      );
+      break;
+    }
+    case "with-archive-card": {
+      await writeMillraceProfile("flow-board", dataRoot);
+      const archiveDir = path.join(tasksRoot, "test", "archive");
+      await fs.mkdir(archiveDir, { recursive: true });
+      const created = new Date(
+        Date.now() - 60 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const closed = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      await fs.writeFile(
+        path.join(archiveDir, "FLOW-archive-1.ini"),
+        `[item]
+id = FLOW-archive-1
+title = Archived Card
+description =
+owner = archive@example.com
+column = Done
+sort_order = 10
+created = ${created}
+closed = ${closed}
+`,
+        "utf8"
+      );
+      break;
+    }
+    case "with-cold-storage-card": {
+      await writeMillraceProfile("flow-board", dataRoot);
+      const coldDir = path.join(
+        tasksRoot,
+        "test",
+        "cold-storage",
+        "2022"
+      );
+      await fs.mkdir(coldDir, { recursive: true });
+      await fs.writeFile(
+        path.join(coldDir, "FLOW-cold-1.ini"),
+        `[item]
+id = FLOW-cold-1
+title = Cold Storage Card
+description =
+owner =
+column = Done
+sort_order = 10
+created = 2022-01-01T00:00:00.000Z
+closed = 2022-01-05T00:00:00.000Z
+`,
+        "utf8"
+      );
+      break;
+    }
     default:
       throw new Error(`Unknown Millrace test profile: ${profile}`);
   }
