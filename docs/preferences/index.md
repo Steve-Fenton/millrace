@@ -15,4 +15,4 @@ Saving preferences triggers a refresh so lists and filters stay consistent.
 > [!TIP]
 > Usually the **MINE** and **DEFAULT OWNER** will both be set to your email address. However, if you create tasks on someone else's behalf, you can reduce friction by entering their email address in the **DEFAULT OWNER** field.
 
-[← Millrace documentation](../)
+[← Millrace documentation](../index.md)

@@ -6,8 +6,8 @@ The **Completed** view shows cards that are finished. These cards come from the 
 
 You can filter the card list by owner and swimlane, or perform a text search.
 
-You can use the **Completed** view to see all tasks, while the [Board](../board/) view limits the number of closed cards shown.
+You can use the **Completed** view to see all tasks, while the [Board](../board/index.md) view limits the number of closed cards shown.
 
-For aggregate trends across completions, use [Charts](../charts/).
+For aggregate trends across completions, use [Charts](../charts/index.md).
 
-[← Millrace documentation](../)
+[← Millrace documentation](../index.md)

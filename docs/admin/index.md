@@ -21,4 +21,4 @@ When you **Edit** a board you can change it's name and customize the columns and
 > [!WARNING]
 > When you delete a column or swimlane, cards will be moved to the first column / first swimlane on your board. This prevents them going missing.
 
-[← Millrace documentation](../)
+[← Millrace documentation](../index.md)

@@ -60,7 +60,7 @@ If you changed the port number in step 2, adjust the URL accordingly.
 
 The first time you open Millrace, you'll see a default board.
 
-Head back to the [docs](../) for more information on using Millrace.
+Head back to the [docs](../index.md) for more information on using Millrace.
 
 Suggested first steps:
 

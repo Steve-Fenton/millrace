@@ -11,7 +11,7 @@ You can use the **Expand** icon to view a larger version of each chart.
 
 ## Granularity
 
-You can set chart **granularity** (for example weekly vs monthly) from this view. That preference is stored with your local profile (see [Preferences](../preferences/) and `tasks/localuser.ini` in the main docs).
+You can set chart **granularity** (for example weekly vs monthly) from this view. That preference is stored with your local profile (see [Preferences](../preferences/index.md) and `tasks/localuser.ini` in the main docs).
 
 ## Completions
 
@@ -31,4 +31,4 @@ For the selected granularity, this chart shows the time it took a card to be com
 
 ![Screenshot: Cycle times](../screenshots/demo-chart-expand-cycle-time.png)
 
-[← Millrace documentation](../)
+[← Millrace documentation](../index.md)

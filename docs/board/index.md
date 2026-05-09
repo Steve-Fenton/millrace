@@ -38,4 +38,4 @@ If you have chosen to manually sync, press the **Sync** button to share your cha
 > [!TIP]
 > If you have any merge conflicts, you'll be taken to a resolution view that will help you resolve them. If you are using auto-sync, this will rarely happen. Work in small batches. Sync often.
 
-[← Millrace documentation](../)
+[← Millrace documentation](../index.md)

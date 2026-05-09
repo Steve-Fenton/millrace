@@ -10,17 +10,17 @@ Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com
 
 ## Getting started
 
-- [Quick start guide](quick-start/)
+- [Quick start guide](quick-start/index.md)
 
 ## Using Millrace
 
 You can find documentation for each of the views here:
 
-- **[Board](board/)**: Primary Kanban view
-- **[Completed](completed/)**: Browse closed items or search
-- **[Charts](charts/)**: Informational charts and cycle-time analytics
-- **[Preferences](preferences/)**: Local profile (Mine, default owner, sync mode)
-- **[Admin](admin/)**: Create and customise boards
+- **[Board](board/index.md)**: Primary Kanban view
+- **[Completed](completed/index.md)**: Browse closed items or search
+- **[Charts](charts/index.md)**: Informational charts and cycle-time analytics
+- **[Preferences](preferences/index.md)**: Local profile (Mine, default owner, sync mode)
+- **[Admin](admin/index.md)**: Create and customise boards
 
 ## Under the hood
 
