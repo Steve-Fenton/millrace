@@ -537,7 +537,7 @@ function attachKanbanHeaderDock(root, kanbanScroll, kanban, corner) {
   headerDockRow.style.gridTemplateColumns = kanban.style.gridTemplateColumns;
   headerDockRow.style.gridTemplateRows = "auto";
   headerDockRow.appendChild(corner.cloneNode(true));
-  kanban.querySelectorAll(":scope > .column-head").forEach((h) => {
+  kanban.querySelectorAll(".column-head").forEach((h) => {
     headerDockRow.appendChild(h.cloneNode(true));
   });
 
@@ -828,12 +828,17 @@ function renderBoard(
   const colCount = columns.length;
   kanban.style.gridTemplateColumns = `minmax(100px, 140px) repeat(${colCount}, minmax(140px, 1fr))`;
   kanban.style.gridTemplateRows = `auto repeat(${lanes.length}, minmax(7rem, auto))`;
+  kanban.setAttribute("role", "grid");
+  kanban.setAttribute("aria-label", `${name}, kanban`);
 
   const corner = document.createElement("div");
   corner.className = "kanban-corner";
   corner.setAttribute("aria-hidden", "true");
 
-  kanban.append(corner);
+  const headerRow = document.createElement("div");
+  headerRow.className = "kanban-row";
+  headerRow.setAttribute("role", "row");
+  headerRow.append(corner);
 
   function clearDragFeedback() {
     removeFlowDropMarker();
@@ -865,12 +870,18 @@ function renderBoard(
         ? `${col.title} (${totalInColumn}/${limit})`
         : col.title;
     head.setAttribute("role", "columnheader");
-    kanban.append(head);
+    headerRow.append(head);
   }
+  kanban.append(headerRow);
 
   for (const lane of lanes) {
+    const laneRow = document.createElement("div");
+    laneRow.className = "kanban-row";
+    laneRow.setAttribute("role", "row");
+
     const label = document.createElement("div");
     label.className = "swimlane-label";
+    label.setAttribute("role", "rowheader");
     if (lane.title) {
       label.innerHTML = `<span>${escapeHtml(lane.title)}</span>`;
     }
@@ -878,7 +889,7 @@ function renderBoard(
       "aria-label",
       lane.title ? `Swimlane ${lane.title}` : "Swimlane"
     );
-    kanban.append(label);
+    laneRow.append(label);
 
     for (const col of columns) {
       const colIdx = Number(col.index);
@@ -1325,8 +1336,9 @@ function renderBoard(
         })();
       });
 
-      kanban.append(cell);
+      laneRow.append(cell);
     }
+    kanban.append(laneRow);
   }
 
   const kanbanScroll = document.createElement("div");

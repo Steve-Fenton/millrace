@@ -1499,6 +1499,11 @@ dialog.git-conflict-dialog::backdrop {
   align-content: start;
 }
 
+/* ARIA rows wrap logical grid rows without affecting layout (children stay grid items). */
+.kanban-row {
+  display: contents;
+}
+
 .kanban-corner {
   background: var(--elevated);
   padding: 0.2rem 0.65rem;
