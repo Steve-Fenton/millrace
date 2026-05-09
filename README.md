@@ -24,21 +24,57 @@ We use the [Web UI Boilerplate Storybook](https://basher.github.io/Web-UI-Boiler
 
 The API for the application: Express serves the static UI and `/api/*`, reads and writes `tasks/*.ini`, and runs git operations for sync and history. It imports the same `assets/js` ini, models, and git helpers as the browser bundles so parsing stays consistent.
 
+### How the server code is organized
+
+The **`millrace` npm binary** points at the repo-root **`server.js`**. That file stays small on purpose: it re-exports `app`, `setMillraceDataRootForTesting`, and `millraceIntegrationStartup` for integration tests, starts listening only when Node’s main module is `server.js`, and delegates the rest to **`server/`**.
+
+- **`server/createApp.js`** — Builds the Express app: JSON body parser, registers all HTTP handlers, then mounts static file serving (your millrace data directory first, then the packaged UI from the repo root).
+- **`server/routes/*.js`** — Each file exports a `register…Routes(app)` function for one area (flow, boards, columns and charts, cards, git sync, local user).
+- **Everything else under `server/`** — Shared helpers: data root and CLI parsing, INI read/write for `tasks/localuser.ini`, git subprocess helpers, board catalog and card paths, archive/cold-storage and analytics helpers, and so on.
+
+Dependencies generally flow in one direction: route modules call shared helpers; helpers do not import the Express app. That keeps circular imports predictable.
+
+```mermaid
+flowchart TB
+  subgraph entry [Entry]
+    rootServer[server.js]
+  end
+  subgraph assembly [App wiring]
+    createApp[createApp.js]
+    routeLayer[routes register functions]
+  end
+  subgraph libs [Shared modules]
+    helpers[dataRoot gitOps boardCatalog archiveAnalytics localUserIni ...]
+  end
+  subgraph paths [Where files live]
+    userData[dataRoot tasks localuser git]
+    packagedUi[REPO_ROOT static UI assets]
+  end
+  rootServer --> createApp
+  createApp --> routeLayer
+  routeLayer --> helpers
+  helpers --> userData
+  createApp -->|"express.static"| userData
+  createApp -->|"express.static"| packagedUi
+```
+
+At runtime the picture is still “browser talks HTTP to Express, which reads and writes your repo”:
+
 ```mermaid
 flowchart LR
   subgraph browser["Browser"]
     bundles["Bundled JS"]
   end
-  subgraph server["server.js"]
-    ex["Static files + /api/*"]
+  subgraph millraceServer["Millrace server Express"]
+    api["Static files plus /api"]
   end
   subgraph repo["Repo data root"]
     ini["tasks/*.ini"]
     git["git"]
   end
-  bundles <-->|"HTTP"| ex
-  ex --> ini
-  ex --> git
+  bundles <-->|"HTTP"| api
+  api --> ini
+  api --> git
 ```
 
 ## `assets/js`

@@ -12,6 +12,7 @@
   },
   "files": [
     "server.js",
+    "server",
     "index.html",
     "favicon.ico",
     "assets",
@@ -38,7 +39,8 @@
   "c8": {
     "include": [
       "assets/js/**/*.js",
-      "server.js"
+      "server.js",
+      "server/**/*.js"
     ],
     "reporter": [
       "text",
