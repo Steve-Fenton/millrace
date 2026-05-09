@@ -1,17 +1,34 @@
 # Charts
 
-The **Charts** view shows **aggregated** analytics for the current board. Numbers are for understanding flow and improvement—not individual scorecards or league tables.
+The **Charts** view includes a number of *informational* charts you can use to inform your continuous improvement process. The dashboard is designed to avoid accidentally creating *motivational* measures, which trigger unintended issues (like Goodhart's Law).
 
-## Chart types
+![Screenshot: Charts dashboard](../screenshots/demo-charts-full.png)
 
-- **Completions**: How many cards were completed over time.
-- **Completions by swimlane**: The same idea, split by swimlane.
-- **Cycle times**: A scatter of how long closed cards took, with median and standard deviation.
+>[!NOTE]
+> Charts cannot be de-aggregated (i.e., you cannot show numbers for an individual) and we won't accept feature requests that compromise the informational value of the charts.
+
+You can use the **Expand** icon to view a larger version of each chart.
 
 ## Granularity
 
 You can set chart **granularity** (for example weekly vs monthly) from this view. That preference is stored with your local profile (see [Preferences](../preferences/) and `tasks/localuser.ini` in the main docs).
 
-Expand sections to focus on the chart you need.
+## Completions
+
+For the selected granularity, this chart shows the total cards completed.
+
+![Screenshot: Completions chart](../screenshots/demo-chart-expand-completions.png)
+
+## Completions by swimlane
+
+For the selected granularity, this chart shows the total cards completed, grouped by swimlane.
+
+![Screenshot: Completions by swimland](../screenshots/demo-chart-expand-swimlane.png)
+
+## Cycle time
+
+For the selected granularity, this chart shows the time it took a card to be completed. It also highlights the median and one standard deviation.
+
+![Screenshot: Cycle times](../screenshots/demo-chart-expand-cycle-time.png)
 
 [← Millrace documentation](../)
