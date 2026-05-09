@@ -16,6 +16,15 @@ This isn't a watefall. It's engineering.
 
 [Read the documentation](docs/index.md).
 
+# Automatic screenshots
+
+This project uses Playwright to automate screenshots. They can be refreshed using these stps:
+
+1. Installing packages `pnpm install`
+1. Installing screenshot dependencies `screenshots:install`
+1. Running the app `pnpm start`
+1. Running Playwright `pnpm screenshots`
+
 # App design
 
 We use the [Web UI Boilerplate Storybook](https://basher.github.io/Web-UI-Boilerplate/?path=/docs/web-ui-storybook-introduction--docs) by [Basher](https://basher.biz) for guidance on accessible modern UI.

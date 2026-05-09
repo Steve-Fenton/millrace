@@ -24,7 +24,9 @@
   "scripts": {
     "start": "node server.js 7713",
     "test": "NODE_OPTIONS=--experimental-vm-modules c8 cucumber-js",
-    "test:cucumber": "cucumber-js"
+    "test:cucumber": "cucumber-js",
+    "screenshots": "playwright test",
+    "screenshots:install": "playwright install chromium"
   },
   "engines": {
     "node": ">=18"
@@ -51,6 +53,7 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@cucumber/cucumber": "^11.2.0",
     "c8": "^11.0.0",
     "jsdom": "^29.1.1",
