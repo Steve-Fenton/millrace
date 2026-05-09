@@ -59,8 +59,8 @@ const CARD_NUDGE_SVG = {
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
 const DONE_COLUMN_DISPLAY_MAX = 5;
 
-/** Coalesce rapid task writes before auto-sync (Preferences → automatic sync). */
-const AUTO_SYNC_DEBOUNCE_MS = 900;
+/** Wait this long after the last task change before auto-sync (Preferences → automatic sync). */
+const AUTO_SYNC_DEBOUNCE_MS = 5000;
 
 /** @type {{ mode: 'all' | 'mine' | 'owner', owner: string }} */
 let ownerFilter = { mode: "all", owner: "" };
