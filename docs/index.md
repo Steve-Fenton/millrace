@@ -4,6 +4,8 @@ Millrace is a local web app you can use to manage work on customisable Kanban bo
 
 You can work in the UI, but all updates are captured in Git commits against human-readable INI files.
 
+![Millrace](../assets/svg/millrace.svg)
+
 ## Repository
 
 Source and issue tracking: [github.com/Steve-Fenton/millrace](https://github.com/Steve-Fenton/millrace).
