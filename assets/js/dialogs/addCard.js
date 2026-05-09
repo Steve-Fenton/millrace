@@ -3,7 +3,6 @@ import { createOwnerField } from "../ui/selectOwner.js";
 import { createCard, readLocalUserIni } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
-import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
 import { showFlowConfirm } from "../ui/showMessage.js";
 
 /**
@@ -11,11 +10,8 @@ import { showFlowConfirm } from "../ui/showMessage.js";
  * @returns {Promise<boolean>} true if a card file was written
  */
 export function openAddCardDialog(ctx) {
-  const backdrop = el(`
-    <div class="flow-modal-backdrop" role="presentation"></div>
-  `);
   const modal = el(`
-    <div class="flow-modal" role="dialog" aria-modal="true" aria-labelledby="flow-add-card-title" aria-describedby="flow-add-card-context">
+    <dialog class="flow-modal" aria-labelledby="flow-add-card-title" aria-describedby="flow-add-card-context">
       <h2 id="flow-add-card-title" class="flow-modal-title">New card</h2>
       <p id="flow-add-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
       <form class="flow-modal-form">
@@ -32,13 +28,10 @@ export function openAddCardDialog(ctx) {
           <button type="submit" class="flow-btn flow-btn-primary">Create</button>
         </div>
       </form>
-    </div>
+    </dialog>
   `);
 
-  backdrop.append(modal);
-  document.body.append(backdrop);
-
-  const releaseFocusTrap = beginModalFocusTrap(backdrop);
+  document.body.append(modal);
 
   const form = modal.querySelector("form");
   const titleInput = modal.querySelector('input[name="title"]');
@@ -51,8 +44,6 @@ export function openAddCardDialog(ctx) {
   function focusTitle() {
     titleInput?.focus();
   }
-  focusTitle();
-  requestAnimationFrame(focusTitle);
 
   function normalizeLinks(links) {
     if (!Array.isArray(links)) return [];
@@ -90,9 +81,8 @@ export function openAddCardDialog(ctx) {
     function finish(ok) {
       if (settled) return;
       settled = true;
-      document.removeEventListener("keydown", onEsc);
-      releaseFocusTrap();
-      backdrop.remove();
+      modal.close();
+      modal.remove();
       resolve(ok);
     }
 
@@ -167,18 +157,17 @@ export function openAddCardDialog(ctx) {
       finish(false);
     }
 
-    function onEsc(ev) {
-      if (ev.key !== "Escape") return;
-      ev.preventDefault();
+    modal.addEventListener("cancel", (e) => {
+      e.preventDefault();
       void requestClose();
-    }
+    });
 
     let backdropPointerDown = false;
-    backdrop.addEventListener("pointerdown", (e) => {
-      backdropPointerDown = e.target === backdrop;
+    modal.addEventListener("pointerdown", (e) => {
+      backdropPointerDown = e.target === modal;
     });
-    backdrop.addEventListener("click", (e) => {
-      const isFullBackdropClick = backdropPointerDown && e.target === backdrop;
+    modal.addEventListener("click", (e) => {
+      const isFullBackdropClick = backdropPointerDown && e.target === modal;
       backdropPointerDown = false;
       if (isFullBackdropClick) void requestClose();
     });
@@ -187,11 +176,13 @@ export function openAddCardDialog(ctx) {
       void requestClose();
     });
 
-    document.addEventListener("keydown", onEsc);
-
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       void tryCreateCard();
     });
+
+    modal.showModal();
+    focusTitle();
+    requestAnimationFrame(focusTitle);
   });
 }

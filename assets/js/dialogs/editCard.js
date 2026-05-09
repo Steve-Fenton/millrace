@@ -12,59 +12,44 @@ import {
 } from "../client.js";
 import { el } from "../html/element.js";
 import { escapeHtml } from "../html/escape.js";
-import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
-
 /**
  * @param {{ boardSlug: string, columnIndex: number, filename: string }} ctx
  */
 async function openCardGitHistoryNested(ctx) {
-  const nestedBackdrop = el(`
-    <div class="flow-modal-backdrop flow-modal-backdrop--nested" tabindex="-1"></div>
-  `);
-  const histModal = el(`
-    <div class="flow-modal flow-modal--git-history" role="dialog" aria-modal="true" aria-labelledby="flow-git-history-title">
+  const histDialog = el(`
+    <dialog class="flow-modal flow-modal--git-history flow-dialog--nested" aria-labelledby="flow-git-history-title">
       <h3 id="flow-git-history-title" class="flow-modal-title">Git history</h3>
       <p class="flow-git-history-meta flow-git-history-path">Loading…</p>
       <div class="flow-git-history-list" role="list"></div>
       <div class="flow-modal-actions flow-modal-actions--history">
         <button type="button" class="flow-btn flow-btn-primary flow-git-history-close">Close</button>
       </div>
-    </div>
+    </dialog>
   `);
-  nestedBackdrop.append(histModal);
-  document.body.append(nestedBackdrop);
+  document.body.append(histDialog);
 
-  const releaseNestedFocus = beginModalFocusTrap(nestedBackdrop);
+  const pathEl = histDialog.querySelector(".flow-git-history-path");
+  const listEl = histDialog.querySelector(".flow-git-history-list");
 
-  const pathEl = histModal.querySelector(".flow-git-history-path");
-  const listEl = histModal.querySelector(".flow-git-history-list");
-
-  function closeNested() {
-    document.removeEventListener("keydown", onEscCapture, true);
-    releaseNestedFocus();
-    nestedBackdrop.remove();
+  function destroyNested() {
+    if (!histDialog.isConnected) return;
+    histDialog.close();
+    histDialog.remove();
   }
 
-  function onEscCapture(ev) {
-    if (ev.key !== "Escape") return;
-    if (!document.body.contains(nestedBackdrop)) {
-      document.removeEventListener("keydown", onEscCapture, true);
-      return;
-    }
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
-    closeNested();
-  }
-
-  document.addEventListener("keydown", onEscCapture, true);
-
-  nestedBackdrop.addEventListener("click", (e) => {
-    if (e.target === nestedBackdrop) closeNested();
+  histDialog.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    destroyNested();
   });
 
-  histModal.querySelector(".flow-git-history-close")?.addEventListener("click", closeNested);
+  histDialog.addEventListener("click", (e) => {
+    if (e.target === histDialog) destroyNested();
+  });
 
-  histModal.querySelector(".flow-git-history-close")?.focus();
+  histDialog.querySelector(".flow-git-history-close")?.addEventListener("click", destroyNested);
+
+  histDialog.showModal();
+  histDialog.querySelector(".flow-git-history-close")?.focus();
 
   try {
     const data = await fetchCardGitHistory({
@@ -187,11 +172,8 @@ export async function openCardEditorDialog(ctx) {
     return false;
   }
 
-  const backdrop = el(`
-    <div class="flow-modal-backdrop" role="presentation"></div>
-  `);
   const modal = el(`
-    <div class="flow-modal flow-modal--edit-card" role="dialog" aria-modal="true" aria-labelledby="flow-edit-card-title" aria-describedby="flow-edit-card-context">
+    <dialog class="flow-modal flow-modal--edit-card" aria-labelledby="flow-edit-card-title" aria-describedby="flow-edit-card-context">
       <div class="flow-modal-header flow-modal-header--edit-card">
         <h2 id="flow-edit-card-title" class="flow-modal-title">Edit card</h2>
         <div class="flow-edit-card-header-actions">
@@ -238,13 +220,10 @@ export async function openCardEditorDialog(ctx) {
           </div>
         </div>
       </form>
-    </div>
+    </dialog>
   `);
 
-  backdrop.append(modal);
-  document.body.append(backdrop);
-
-  const releaseFocusTrap = beginModalFocusTrap(backdrop);
+  document.body.append(modal);
 
   const contextP = modal.querySelector(".flow-modal-context");
   const createdRaw = String(initial.created ?? "").trim();
@@ -483,9 +462,6 @@ export async function openCardEditorDialog(ctx) {
 
   let initialDraftSnapshot = snapshotDraft();
 
-  titleInput.focus();
-  titleInput.select();
-
   void (async () => {
     const saved = await readLocalUserIni();
     if (!saved) return;
@@ -510,9 +486,8 @@ export async function openCardEditorDialog(ctx) {
     function finish(ok) {
       if (settled) return;
       settled = true;
-      document.removeEventListener("keydown", onEsc);
-      releaseFocusTrap();
-      backdrop.remove();
+      modal.close();
+      modal.remove();
       resolve(ok);
     }
 
@@ -578,18 +553,17 @@ export async function openCardEditorDialog(ctx) {
       finish(false);
     }
 
-    function onEsc(ev) {
-      if (ev.key !== "Escape") return;
-      ev.preventDefault();
+    modal.addEventListener("cancel", (e) => {
+      e.preventDefault();
       void requestClose();
-    }
+    });
 
     let backdropPointerDown = false;
-    backdrop.addEventListener("pointerdown", (e) => {
-      backdropPointerDown = e.target === backdrop;
+    modal.addEventListener("pointerdown", (e) => {
+      backdropPointerDown = e.target === modal;
     });
-    backdrop.addEventListener("click", (e) => {
-      const isFullBackdropClick = backdropPointerDown && e.target === backdrop;
+    modal.addEventListener("click", (e) => {
+      const isFullBackdropClick = backdropPointerDown && e.target === modal;
       backdropPointerDown = false;
       if (isFullBackdropClick) void requestClose();
     });
@@ -665,11 +639,13 @@ export async function openCardEditorDialog(ctx) {
       })();
     });
 
-    document.addEventListener("keydown", onEsc);
-
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       await saveDraft();
     });
+
+    modal.showModal();
+    titleInput.focus();
+    titleInput.select();
   });
 }

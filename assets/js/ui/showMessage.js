@@ -3,8 +3,6 @@
  * plus a lightweight toast for non-blocking feedback.
  */
 
-import { beginModalFocusTrap } from "./modalFocusTrap.js";
-
 function flowModalInstanceId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
@@ -45,13 +43,6 @@ export function showFlowToast(message, opts = {}) {
   }, durationMs);
 }
 
-function backdropEl() {
-  const b = document.createElement("div");
-  b.className = "flow-modal-backdrop flow-modal-backdrop--nested";
-  b.setAttribute("role", "presentation");
-  return b;
-}
-
 /**
  * @param {string} message
  * @param {{ title?: string }} [opts]
@@ -61,16 +52,14 @@ export function showFlowAlert(message, opts = {}) {
   const title = opts.title ?? "Notice";
 
   return new Promise((resolve) => {
-    const backdrop = backdropEl();
-    const modal = document.createElement("div");
+    const dialog = document.createElement("dialog");
     const uid = flowModalInstanceId();
     const titleId = `flow-flowalert-title-${uid}`;
     const descId = `flow-flowalert-desc-${uid}`;
-    modal.className = "flow-modal flow-modal--prompt";
-    modal.setAttribute("role", "alertdialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", titleId);
-    modal.setAttribute("aria-describedby", descId);
+    dialog.className = "flow-modal flow-modal--prompt";
+    dialog.setAttribute("role", "alertdialog");
+    dialog.setAttribute("aria-labelledby", titleId);
+    dialog.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
     h2.id = titleId;
@@ -91,35 +80,30 @@ export function showFlowAlert(message, opts = {}) {
     okBtn.textContent = "OK";
 
     actions.append(okBtn);
-    modal.append(h2, p, actions);
-    backdrop.append(modal);
-    document.body.append(backdrop);
-
-    const releaseTrap = beginModalFocusTrap(backdrop);
+    dialog.append(h2, p, actions);
+    document.body.append(dialog);
 
     let settled = false;
     function close() {
       if (settled) return;
       settled = true;
-      document.removeEventListener("keydown", onKey, { capture: true });
-      releaseTrap();
-      backdrop.remove();
+      dialog.close();
+      dialog.remove();
       resolve();
     }
 
-    function onKey(ev) {
-      if (ev.key === "Escape") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        close();
-      }
-    }
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      close();
+    });
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) close();
+    });
 
     okBtn.addEventListener("click", close);
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) close();
-    });
-    document.addEventListener("keydown", onKey, { capture: true });
+
+    dialog.showModal();
     okBtn.focus();
   });
 }
@@ -145,16 +129,14 @@ export function showFlowConfirm(message, opts = {}) {
   const allowBackdropDismiss = opts.allowBackdropDismiss !== false;
 
   return new Promise((resolve) => {
-    const backdrop = backdropEl();
-    const modal = document.createElement("div");
+    const dialog = document.createElement("dialog");
     const uid = flowModalInstanceId();
     const titleId = `flow-flowconfirm-title-${uid}`;
     const descId = `flow-flowconfirm-desc-${uid}`;
-    modal.className = "flow-modal flow-modal--prompt";
-    modal.setAttribute("role", "alertdialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", titleId);
-    modal.setAttribute("aria-describedby", descId);
+    dialog.className = "flow-modal flow-modal--prompt";
+    dialog.setAttribute("role", "alertdialog");
+    dialog.setAttribute("aria-labelledby", titleId);
+    dialog.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
     h2.id = titleId;
@@ -182,39 +164,34 @@ export function showFlowConfirm(message, opts = {}) {
     confirmBtn.textContent = confirmLabel;
 
     actions.append(cancelBtn, confirmBtn);
-    modal.append(h2, p, actions);
-    backdrop.append(modal);
-    document.body.append(backdrop);
-
-    const releaseTrap = beginModalFocusTrap(backdrop);
+    dialog.append(h2, p, actions);
+    document.body.append(dialog);
 
     let settled = false;
     function finish(val) {
       if (settled) return;
       settled = true;
-      document.removeEventListener("keydown", onKey, { capture: true });
-      releaseTrap();
-      backdrop.remove();
+      dialog.close();
+      dialog.remove();
       resolve(val);
     }
 
-    function onKey(ev) {
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
       if (!allowEscapeDismiss) return;
-      if (ev.key === "Escape") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        finish(false);
-      }
-    }
+      finish(false);
+    });
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target !== dialog) return;
+      if (!allowBackdropDismiss) return;
+      finish(false);
+    });
 
     cancelBtn.addEventListener("click", () => finish(false));
     confirmBtn.addEventListener("click", () => finish(true));
-    backdrop.addEventListener("click", (e) => {
-      if (!allowBackdropDismiss) return;
-      if (e.target === backdrop) finish(false);
-    });
-    document.addEventListener("keydown", onKey, { capture: true });
 
+    dialog.showModal();
     (destructive ? cancelBtn : confirmBtn).focus();
   });
 }
@@ -232,16 +209,13 @@ export function showFlowPrompt(message, opts = {}) {
   const cancelLabel = opts.cancelLabel ?? "Cancel";
 
   return new Promise((resolve) => {
-    const backdrop = backdropEl();
-    const modal = document.createElement("div");
+    const dialog = document.createElement("dialog");
     const uid = flowModalInstanceId();
     const titleId = `flow-flowprompt-title-${uid}`;
     const descId = `flow-flowprompt-desc-${uid}`;
-    modal.className = "flow-modal flow-modal--prompt";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", titleId);
-    modal.setAttribute("aria-describedby", descId);
+    dialog.className = "flow-modal flow-modal--prompt";
+    dialog.setAttribute("aria-labelledby", titleId);
+    dialog.setAttribute("aria-describedby", descId);
 
     const h2 = document.createElement("h2");
     h2.id = titleId;
@@ -282,29 +256,26 @@ export function showFlowPrompt(message, opts = {}) {
     okBtn.textContent = confirmLabel;
 
     actions.append(cancelBtn, okBtn);
-    modal.append(h2, p, field, actions);
-    backdrop.append(modal);
-    document.body.append(backdrop);
-
-    const releaseTrap = beginModalFocusTrap(backdrop);
+    dialog.append(h2, p, field, actions);
+    document.body.append(dialog);
 
     let settled = false;
     function finish(val) {
       if (settled) return;
       settled = true;
-      document.removeEventListener("keydown", onKey, { capture: true });
-      releaseTrap();
-      backdrop.remove();
+      dialog.close();
+      dialog.remove();
       resolve(val);
     }
 
-    function onKey(ev) {
-      if (ev.key === "Escape") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        finish(null);
-      }
-    }
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      finish(null);
+    });
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) finish(null);
+    });
 
     function tryOk() {
       const v = String(input.value ?? "").trim();
@@ -321,10 +292,8 @@ export function showFlowPrompt(message, opts = {}) {
       }
     });
     cancelBtn.addEventListener("click", () => finish(null));
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) finish(null);
-    });
-    document.addEventListener("keydown", onKey, { capture: true });
+
+    dialog.showModal();
     input.focus();
     input.select();
   });

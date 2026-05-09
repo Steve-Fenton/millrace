@@ -5,7 +5,6 @@ import {
   replaceFirstConflictHunk,
 } from "../git/conflictMerge.js";
 import { showFlowAlert } from "../ui/showMessage.js";
-import { beginModalFocusTrap } from "../ui/modalFocusTrap.js";
 
 /** @param {string} [s] @param {number} [max] */
 function shortRef(s, max = 40) {
@@ -21,16 +20,13 @@ function shortRef(s, max = 40) {
  */
 export function openGitConflictResolutionScreen(files) {
   return new Promise((resolve) => {
-    const backdrop = document.createElement("div");
-    backdrop.className = "git-conflict-backdrop";
-    backdrop.setAttribute("role", "presentation");
+    const dialog = document.createElement("dialog");
+    dialog.className = "git-conflict-dialog";
+    dialog.setAttribute("aria-labelledby", "git-conflict-title");
+    dialog.setAttribute("aria-describedby", "git-conflict-intro");
 
     const panel = document.createElement("div");
     panel.className = "git-conflict-panel";
-    panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-labelledby", "git-conflict-title");
-    panel.setAttribute("aria-describedby", "git-conflict-intro");
 
     const header = document.createElement("header");
     header.className = "git-conflict-header";
@@ -183,29 +179,29 @@ export function openGitConflictResolutionScreen(files) {
 
     footer.append(cancel, submit);
     panel.append(header, scroll, footer);
-    backdrop.append(panel);
-    document.body.append(backdrop);
+    dialog.append(panel);
+    document.body.append(dialog);
 
-    const releaseFocusTrap = beginModalFocusTrap(backdrop);
-
-    function cleanup() {
-      document.removeEventListener("keydown", onKey, { capture: true });
-      releaseFocusTrap();
-      backdrop.remove();
+    let finalized = false;
+    function finalize(result) {
+      if (finalized) return;
+      finalized = true;
+      dialog.close();
+      dialog.remove();
+      resolve(result);
     }
 
-    function onKey(ev) {
-      if (ev.key === "Escape") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        cleanup();
-        resolve(null);
-      }
-    }
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      finalize(null);
+    });
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) finalize(null);
+    });
 
     cancel.addEventListener("click", () => {
-      cleanup();
-      resolve(null);
+      finalize(null);
     });
     submit.addEventListener("click", async () => {
       for (const ta of areas.values()) {
@@ -232,11 +228,10 @@ export function openGitConflictResolutionScreen(files) {
         });
         return;
       }
-      cleanup();
-      resolve(out);
+      finalize(out);
     });
 
-    document.addEventListener("keydown", onKey, { capture: true });
+    dialog.showModal();
     const firstKeep = scroll.querySelector(
       ".git-conflict-hunk-tools:not([hidden]) .git-conflict-keep-side"
     );
