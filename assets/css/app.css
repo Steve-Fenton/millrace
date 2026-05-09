@@ -2040,7 +2040,7 @@ dialog.flow-modal::backdrop {
 
 .flow-board-sortable-row {
   display: grid;
-  grid-template-columns: auto 1fr 4.5rem auto auto;
+  grid-template-columns: auto 1fr minmax(5.75rem, 7rem) auto auto;
   align-items: center;
   gap: 0.35rem 0.45rem;
   padding: 0.35rem 0.4rem;
@@ -2137,6 +2137,49 @@ dialog.flow-modal::backdrop {
 .flow-board-sort-arrow {
   display: block;
   pointer-events: none;
+}
+
+.flow-board-sortable-wip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.flow-board-sortable-wip-wrap .flow-board-sortable-wip {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Native spinners cannot match theme; WIP uses themed steppers beside the field. */
+.flow-board-sortable-wip-wrap input[type="number"]::-webkit-inner-spin-button,
+.flow-board-sortable-wip-wrap input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.flow-board-sortable-wip-wrap input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.flow-board-sortable-wip-steppers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  flex-shrink: 0;
+}
+
+.flow-board-sort-dir.flow-board-sort-dir--wip-step {
+  width: 1.65rem;
+  height: 1.28rem;
+}
+
+.flow-board-sort-dir--wip-step .flow-board-sort-arrow {
+  width: 14px;
+  height: 14px;
 }
 
 .flow-board-sortable-wip {
@@ -2593,6 +2636,25 @@ dialog.flow-modal::backdrop {
   outline: none;
   border-color: rgba(56, 189, 248, 0.55);
   box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Native select arrows sit in a wide right gutter; custom chevron + inset position */
+select.flow-input,
+select.board-owner-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-inline-end: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  background-position: right 1rem center;
+}
+
+select.flow-input:focus,
+select.board-owner-filter-select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .flow-textarea {

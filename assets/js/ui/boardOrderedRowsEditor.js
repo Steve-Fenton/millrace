@@ -102,12 +102,59 @@ export function createSortableColumnList(initial) {
     titleIn.autocomplete = "off";
 
     const wipIn = document.createElement("input");
-    wipIn.type = "text";
+    wipIn.type = "number";
+    wipIn.min = "0";
+    wipIn.step = "1";
     wipIn.className = "flow-input flow-board-sortable-wip";
     wipIn.placeholder = "WIP";
     wipIn.title = "WIP limit (optional, non‑negative integer)";
     wipIn.value = row.wipLimit;
     wipIn.autocomplete = "off";
+
+    function wipIntFromField() {
+      const raw = String(wipIn.value ?? "").trim();
+      if (raw === "") return null;
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) return null;
+      return Math.floor(n);
+    }
+
+    const wipSteppers = document.createElement("div");
+    wipSteppers.className = "flow-board-sortable-wip-steppers";
+
+    const wipUp = document.createElement("button");
+    wipUp.type = "button";
+    wipUp.className = "flow-board-sort-dir flow-board-sort-dir--wip-step";
+    wipUp.setAttribute("aria-label", "Increase WIP limit");
+    wipUp.title = "Increase";
+    wipUp.innerHTML = ARROW_UP;
+    wipUp.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const v = wipIntFromField();
+      wipIn.value = v === null ? "1" : String(v + 1);
+    });
+
+    const wipDown = document.createElement("button");
+    wipDown.type = "button";
+    wipDown.className = "flow-board-sort-dir flow-board-sort-dir--wip-step";
+    wipDown.setAttribute("aria-label", "Decrease WIP limit");
+    wipDown.title = "Decrease";
+    wipDown.innerHTML = ARROW_DOWN;
+    wipDown.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const v = wipIntFromField();
+      if (v === null) return;
+      if (v <= 0) wipIn.value = "";
+      else wipIn.value = String(v - 1);
+    });
+
+    wipSteppers.append(wipUp, wipDown);
+
+    const wipWrap = document.createElement("div");
+    wipWrap.className = "flow-board-sortable-wip-wrap";
+    wipWrap.append(wipIn, wipSteppers);
 
     const doneLbl = document.createElement("label");
     doneLbl.className = "flow-board-sortable-done";
@@ -131,7 +178,7 @@ export function createSortableColumnList(initial) {
       render();
     });
 
-    rowEl.append(reorder, titleIn, wipIn, doneLbl, rm);
+    rowEl.append(reorder, titleIn, wipWrap, doneLbl, rm);
     return rowEl;
   }
 
@@ -411,8 +458,7 @@ export function createSortableBoardUserList(initial) {
     reorder.append(upBtn, downBtn);
 
     const emailIn = document.createElement("input");
-    emailIn.type = "text";
-    emailIn.inputMode = "email";
+    emailIn.type = "email";
     emailIn.className = "flow-input flow-board-sortable-user-email";
     emailIn.placeholder = "Email";
     emailIn.autocomplete = "off";

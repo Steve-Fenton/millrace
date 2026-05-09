@@ -23,7 +23,7 @@ function renderPreferencesForm(initial) {
   mineSpan.className = "flow-field-label";
   mineSpan.textContent = "Mine";
   const mineInput = document.createElement("input");
-  mineInput.type = "text";
+  mineInput.type = "email";
   mineInput.className = "flow-input";
   mineInput.name = "mine";
   mineInput.autocomplete = "email";
@@ -38,7 +38,7 @@ function renderPreferencesForm(initial) {
   ownerSpan.className = "flow-field-label";
   ownerSpan.textContent = "Default owner";
   const ownerInput = document.createElement("input");
-  ownerInput.type = "text";
+  ownerInput.type = "email";
   ownerInput.className = "flow-input";
   ownerInput.name = "owner";
   ownerInput.autocomplete = "email";
