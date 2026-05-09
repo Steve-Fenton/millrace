@@ -1794,13 +1794,12 @@ a.column-done-truncation-link:focus-visible {
   display: block;
 }
 
-/* Modals use native <dialog>. Overlay is dialog::backdrop (top layer). */
+/* Native <dialog>: overlay via ::backdrop. Do not zero border/padding/background here —
+   `dialog.flow-modal` beats `.flow-modal` on specificity and would hide the panel styling
+   that used to live on the inner div. */
 dialog.flow-modal {
   margin: auto;
-  border: none;
   outline: none;
-  padding: 0;
-  background: transparent;
   color: inherit;
 }
 
