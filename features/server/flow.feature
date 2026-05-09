@@ -14,3 +14,12 @@ Feature: Flow API catalog
         }
       ]
       """
+
+  Scenario: /api/flow returns 500 when the board catalog cannot be loaded
+    Given an Express app with flow routes that fail loading the catalog
+    When I request the flow API catalog
+    Then the flow API response status should be 500
+    And the flow API JSON field "message" should be:
+      """
+      Failed to read board catalog (.millrace.ini).
+      """

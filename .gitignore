@@ -2,6 +2,7 @@
 .pnpm-store
 node_modules
 coverage
+tmp_cov
 
 # tasks/ holds versioned work-item INI files — do not gitignore the folder
 
