@@ -1,4 +1,4 @@
-import { existsSync } from "fs";
+import { existsSync, realpathSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { runStartupArchiveStaleForCatalogSlugs } from "./archiveAnalytics.js";
@@ -24,12 +24,22 @@ async function onListen() {
   await runStartupArchiveStaleForCatalogSlugs();
 }
 
+/** Resolve to the real path so symlinked installs (e.g. pnpm) match argv[1]. */
+function canonicalScriptPath(p) {
+  const resolved = path.resolve(p);
+  try {
+    return realpathSync(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
 export function isMillracePrimaryServerEntry() {
   const argv1 = process.argv[1];
   if (!argv1) return false;
   try {
     const entryPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "server.js");
-    return path.resolve(argv1) === path.resolve(entryPath);
+    return canonicalScriptPath(argv1) === canonicalScriptPath(entryPath);
   } catch {
     return false;
   }
