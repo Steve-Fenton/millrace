@@ -90,8 +90,10 @@ test.describe("doc screenshots", () => {
   });
 
   test("demo board — charts page full page", async ({ page }) => {
-    await page.goto("/charts/");
+    /** Pin "Group by" to Weekly so screenshots are deterministic regardless of saved profile. */
+    await page.goto("/charts/?g=weekly");
     await page.waitForSelector(".charts-shell", { timeout: 30_000 });
+    await expect(page.locator("#flow-chart-granularity")).toHaveValue("weekly");
     const out = path.join(
       process.cwd(),
       "docs/screenshots/demo-charts-full.png"
@@ -158,8 +160,10 @@ test.describe("doc screenshots", () => {
   });
 
   test("demo board — each chart expanded (dialog only)", async ({ page }) => {
-    await page.goto("/charts/");
+    /** Pin "Group by" to Weekly so screenshots are deterministic regardless of saved profile. */
+    await page.goto("/charts/?g=weekly");
     await page.waitForSelector(".charts-shell", { timeout: 30_000 });
+    await expect(page.locator("#flow-chart-granularity")).toHaveValue("weekly");
 
     for (const { file, title } of CHART_EXPAND_SHOTS) {
       const card = page.locator("section.charts-chart-card").filter({
