@@ -26,6 +26,7 @@ import {
   wrapSearchInputWithClear,
 } from "../ui/clearFilter.js";
 import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
+import { swimlaneNameForIniItem } from "../ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
 import { escapeHtml } from "../html/escape.js";
 
@@ -342,6 +343,7 @@ function renderCompleteShell(
   for (const { label, align } of [
     { label: "Title", align: "left" },
     { label: "Owner", align: "left" },
+    { label: "Swimlane", align: "left" },
     { label: "Links", align: "left" },
     { label: "Created", align: "right" },
     { label: "Closed", align: "right" },
@@ -432,6 +434,19 @@ function renderCompleteShell(
       ? ownerDisplayLabel(ownerStr, model.users)
       : "—";
 
+    const tdSwimlane = document.createElement("td");
+    tdSwimlane.className = "complete-table__td";
+    const lanes = model.swimlanes ?? [];
+    if (lanes.length === 0) {
+      tdSwimlane.textContent = "—";
+    } else {
+      const laneIdx = resolveCardSwimlaneIndex(
+        /** @type {string | undefined} */ (card.swimlane),
+        lanes
+      );
+      tdSwimlane.textContent = swimlaneNameForIniItem(lanes, laneIdx) ?? "—";
+    }
+
     const tdLinks = document.createElement("td");
     tdLinks.className = "complete-table__td complete-table__td--links";
     if (Array.isArray(card.links) && card.links.length > 0) {
@@ -473,7 +488,7 @@ function renderCompleteShell(
       /** @type {string | undefined} */ (card.closed)
     );
 
-    tr.append(tdTitle, tdOwner, tdLinks, tdCreated, tdClosed);
+    tr.append(tdTitle, tdOwner, tdSwimlane, tdLinks, tdCreated, tdClosed);
 
     if (canEdit) {
       tr.classList.add("complete-table__row--editable");
@@ -487,7 +502,7 @@ function renderCompleteShell(
   if (cards.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.className = "complete-empty";
     td.textContent =
       total === 0
