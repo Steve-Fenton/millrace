@@ -56,11 +56,12 @@ The charts are carefully designed to increase informational value. You'll notice
 
 ### Kanban & cards
 
-- **Drag-and-drop** between columns and swimlanes
+- **Drag-and-drop**: Move cards between columns and swimlanes
+- **Card compass**: Click a card for move buttons
 - **Create, open, edit, and delete** cards from the UI
+- **Markdown** formatting for card descriptions (limited, see [supported markdown](markdown.md))
 - **Owner filter**: All, **Mine**, or a specific task owner
 - **Search** to find tasks
-- **Markdown** formatting for card descriptions (limited, see [supported markdown](markdown.md))
 
 ### Views
 

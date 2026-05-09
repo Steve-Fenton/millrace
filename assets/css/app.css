@@ -14,6 +14,11 @@
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  /* Layered elevation for modal dialogs (stronger than --shadow) */
+  --shadow-modal:
+    0 2px 6px rgba(0, 0, 0, 0.28),
+    0 12px 36px rgba(0, 0, 0, 0.42),
+    0 28px 72px rgba(0, 0, 0, 0.38);
   font-synthesis: none;
 }
 
@@ -1993,7 +1998,7 @@ dialog.flow-modal::backdrop {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-modal);
 }
 
 .flow-modal--edit-card,
