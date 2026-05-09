@@ -20,11 +20,66 @@ This isn't a watefall. It's engineering.
 
 ## `server.js`
 
-The API for the application.
+The API for the application: Express serves the static UI and `/api/*`, reads and writes `tasks/*.ini`, and runs git operations for sync and history. It imports the same `assets/js` ini, models, and git helpers as the browser bundles so parsing stays consistent.
+
+```mermaid
+flowchart LR
+  subgraph browser["Browser"]
+    bundles["Bundled JS"]
+  end
+  subgraph server["server.js"]
+    ex["Static files + /api/*"]
+  end
+  subgraph repo["Repo data root"]
+    ini["tasks/*.ini"]
+    git["git"]
+  end
+  bundles <-->|"HTTP"| ex
+  ex --> ini
+  ex --> git
+```
 
 ## `assets/js`
 
 Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `client.js`, and `flow*.js`).
+
+Each route’s `index.html` loads one entry module:
+
+```mermaid
+flowchart LR
+  r1["/"] --> e1["app.js"]
+  r2["/admin/"] --> e2["pages/admin.js"]
+  r3["/charts/"] --> e3["pages/charts.js"]
+  r4["/complete/"] --> e4["pages/complete.js"]
+  r5["/preferences/"] --> e5["pages/preferences.js"]
+```
+
+Conceptually, shared code stacks from route and app entry points down through UI and domain layers to parsing and small utilities:
+
+```mermaid
+flowchart TB
+  subgraph entry["Entry"]
+    app["app.js · client.js · flow*.js"]
+    pages["pages/"]
+  end
+  subgraph presentation["Presentation"]
+    dialogs["dialogs/"]
+    ui["ui/"]
+  end
+  subgraph domain["Domain"]
+    models["models/"]
+  end
+  subgraph utilities["Parsing & utilities"]
+    ini["ini/"]
+    html["html/"]
+    git["git/"]
+  end
+  entry --> presentation
+  entry --> domain
+  presentation --> domain
+  domain --> utilities
+  presentation --> utilities
+```
 
 - **`dialogs/`**: Modal flows for creating or editing boards and task cards (DOM, validation, and API calls).
 - **`git/`**: Helpers around Git merge-conflict markers (detecting hunks, choosing a side), not a full Git client.
@@ -34,6 +89,6 @@ Bundled browser modules. Route-specific entry scripts live under **`pages/`**; s
 - **`pages/`**: Page entry bundles wired from each route’s `index.html` (admin, charts, completed work, preferences).
 - **`ui/`**: Shared presentation pieces: header brand mark and styled modal alerts, confirms, and email prompts (replacing `alert` / `confirm`).
 
-## features
+## features
 
 Gherkin-syntax tests with cucumber.js steps.
