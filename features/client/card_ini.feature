@@ -423,3 +423,85 @@ Feature: cardIni
       created = 2024-01-15T10:20:30.000Z
 
       """
+
+  Scenario: serializeCardIni adds strategic=yes when strategic is true
+    Given the serializeCardIni fields JSON is:
+      """
+      {"id":"s1","title":"Strategic card","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"strategic":true}
+      """
+    When I serialize with serializeCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = s1
+      title = Strategic card
+      description = 
+      owner = 
+      column = C
+      created = 2024-01-15T10:20:30.000Z
+      strategic = yes
+
+      """
+
+  Scenario: serializeCardIni omits strategic when strategic is false
+    Given the serializeCardIni fields JSON is:
+      """
+      {"id":"s2","title":"Normal","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"strategic":false}
+      """
+    When I serialize with serializeCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = s2
+      title = Normal
+      description = 
+      owner = 
+      column = C
+      created = 2024-01-15T10:20:30.000Z
+
+      """
+
+  Scenario: serializeFullCardIni writes strategic after closed
+    Given the full card item JSON is:
+      """
+      {"id":"d1","title":"Done","description":"","owner":"","created":"2024-06-01T12:00:00.000Z","closed":"2024-06-02T12:00:00.000Z","strategic":"yes"}
+      """
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = d1
+      title = Done
+      description = 
+      owner = 
+      created = 2024-06-01T12:00:00.000Z
+      closed = 2024-06-02T12:00:00.000Z
+      strategic = yes
+
+      """
+
+  Scenario: serializeFullCardIni skips blank strategic in the ordered pass then emits it from the rest loop
+    Given the full card item JSON is:
+      """
+      {"id":"e1","title":"X","description":"","owner":"","created":"2024-01-01T00:00:00.000Z","strategic":""}
+      """
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize with serializeFullCardIni
+    Then the card INI output should be:
+      """
+      [item]
+      id = e1
+      title = X
+      description = 
+      owner = 
+      created = 2024-01-01T00:00:00.000Z
+      strategic = 
+
+      """
