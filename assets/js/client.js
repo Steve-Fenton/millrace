@@ -277,7 +277,7 @@ export async function fetchLocalUserProfile() {
 
 /**
  * NPM registry update hint (server throttles via `last_npm_update_check` in tasks/localuser.ini `[flow]`).
- * @returns {Promise<{ currentVersion: string, latestVersion: string | null, updateAvailable: boolean, checkedRegistry: boolean }>}
+ * @returns {Promise<{ currentVersion: string, latestVersion: string | null, updateAvailable: boolean, checkedRegistry: boolean, projectHasCycleScript: boolean }>}
  */
 export async function fetchNpmUpdateCheck() {
   try {
@@ -288,6 +288,7 @@ export async function fetchNpmUpdateCheck() {
         latestVersion: null,
         updateAvailable: false,
         checkedRegistry: false,
+        projectHasCycleScript: false,
       };
     }
     const data = await res.json();
@@ -300,6 +301,7 @@ export async function fetchNpmUpdateCheck() {
           : null,
       updateAvailable: Boolean(data.updateAvailable),
       checkedRegistry: Boolean(data.checkedRegistry),
+      projectHasCycleScript: Boolean(data.projectHasCycleScript),
     };
   } catch {
     return {
@@ -307,8 +309,32 @@ export async function fetchNpmUpdateCheck() {
       latestVersion: null,
       updateAvailable: false,
       checkedRegistry: false,
+      projectHasCycleScript: false,
     };
   }
+}
+
+/**
+ * Runs `pnpm update --latest` then `pnpm cycle` in the data root (after user confirms).
+ * @param {string} latestVersion registry version string from {@link fetchNpmUpdateCheck}
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string }>}
+ */
+export async function postNpmUpdateRunCycle(latestVersion) {
+  const res = await fetch("/api/npm-update-run-cycle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ latestVersion }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  return data;
 }
 
 /**

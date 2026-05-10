@@ -4,6 +4,7 @@ import {
   readLocalUserIniSections,
   writeLocalUserIniSections,
 } from "./localUserIni.js";
+import { readProjectHasCycleScript } from "./projectCycleAfterUpdate.js";
 import { REPO_ROOT } from "./repoRoot.js";
 
 /** Minimum time between registry lookups (successful checks write `last_npm_update_check`). */
@@ -106,6 +107,7 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  *   latestVersion: string | null,
  *   updateAvailable: boolean,
  *   checkedRegistry: boolean,
+ *   projectHasCycleScript: boolean,
  * }>}
  */
 export async function runNpmUpdateCheck(opts = {}) {
@@ -124,7 +126,10 @@ export async function runNpmUpdateCheck(opts = {}) {
   const { version: currentVersion, packageName } =
     await readInstalledMillracePackageMeta();
 
-  const sections = await readLocalUserIniSections();
+  const [projectHasCycleScript, sections] = await Promise.all([
+    readProjectHasCycleScript(),
+    readLocalUserIniSections(),
+  ]);
   const flow = sections.flow ?? {};
   const lastRaw =
     flow.last_npm_update_check ?? flow.lastNpmUpdateCheck ?? "";
@@ -139,6 +144,7 @@ export async function runNpmUpdateCheck(opts = {}) {
       latestVersion: null,
       updateAvailable: false,
       checkedRegistry: false,
+      projectHasCycleScript,
     };
   }
 
@@ -155,6 +161,7 @@ export async function runNpmUpdateCheck(opts = {}) {
       latestVersion: null,
       updateAvailable: false,
       checkedRegistry: false,
+      projectHasCycleScript,
     };
   }
 
@@ -169,5 +176,6 @@ export async function runNpmUpdateCheck(opts = {}) {
     latestVersion,
     updateAvailable,
     checkedRegistry: true,
+    projectHasCycleScript,
   };
 }

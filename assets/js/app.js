@@ -12,11 +12,12 @@ import {
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
   fetchNpmUpdateCheck,
+  postNpmUpdateRunCycle,
   moveCard,
   reorderCards,
 } from "./client.js";
 import { runGitSyncWithConflictFlow } from "./git/gitSyncFlow.js";
-import { showFlowAlert, showFlowToast } from "./ui/showMessage.js";
+import { showFlowAlert, showFlowConfirm, showFlowToast } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./ui/setupMineOwner.js";
 import { createFlowNavMenu } from "./ui/menu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
@@ -1501,16 +1502,57 @@ async function loadApp(fullReload = true) {
 
 async function maybeNotifyNpmUpdate() {
   try {
-    if (typeof sessionStorage !== "undefined") {
-      if (sessionStorage.getItem("millrace.npmUpdateToast")) return;
-    }
+    if (typeof sessionStorage === "undefined") return;
+
     const info = await fetchNpmUpdateCheck();
     if (!info.updateAvailable || !info.latestVersion) return;
+
     const cur = info.currentVersion || "?";
     const lat = info.latestVersion;
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem("millrace.npmUpdateToast", "1");
+
+    const dismissed = sessionStorage.getItem(
+      "millrace.npmUpdateDismissedFor"
+    );
+    if (dismissed === lat) return;
+
+    if (info.projectHasCycleScript) {
+      const updateNow = await showFlowConfirm(
+        `You are running Millrace v${cur} and a new version is available: v${lat}. Run pnpm update --latest and pnpm cycle now?`,
+        {
+          title: "Update available",
+          confirmLabel: "Update now",
+          cancelLabel: "Later",
+          allowEscapeDismiss: false,
+          allowBackdropDismiss: false,
+        }
+      );
+      if (!updateNow) {
+        sessionStorage.setItem("millrace.npmUpdateDismissedFor", lat);
+        return;
+      }
+      try {
+        const result = await postNpmUpdateRunCycle(lat);
+        if (result.ok) {
+          showFlowToast(
+            "pnpm update finished. Restart Millrace if it did not reload automatically.",
+            { durationMs: 8000 }
+          );
+        } else {
+          const detail =
+            typeof result.message === "string" && result.message.trim()
+              ? result.message.trim()
+              : npmUpdateFailureReasonLabel(result.reason);
+          await showFlowAlert(detail, { title: "Could not update" });
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await showFlowAlert(msg, { title: "Could not update" });
+      }
+      return;
     }
+
+    if (sessionStorage.getItem("millrace.npmUpdateToast")) return;
+    sessionStorage.setItem("millrace.npmUpdateToast", "1");
     showFlowToast(
       `You are running Millrace v${cur} and a new version is available: v${lat}.`,
       { durationMs: 9000 }
@@ -1518,6 +1560,21 @@ async function maybeNotifyNpmUpdate() {
   } catch {
     /* ignore */
   }
+}
+
+/** @param {string | undefined} reason */
+function npmUpdateFailureReasonLabel(reason) {
+  const r = String(reason ?? "").trim();
+  if (r === "no_package_json") {
+    return "No package.json in the Millrace data root.";
+  }
+  if (r === "no_cycle_script") {
+    return 'package.json has no "cycle" script.';
+  }
+  if (r === "invalid_package_json") {
+    return "Could not parse package.json.";
+  }
+  return "pnpm reported an error.";
 }
 
 async function main() {

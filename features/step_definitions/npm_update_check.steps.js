@@ -20,6 +20,7 @@ Given("an Express app with mocked npm update check", async function () {
       latestVersion: "0.0.2",
       updateAvailable: true,
       checkedRegistry: true,
+      projectHasCycleScript: false,
     }),
   });
   this.flowApiAgent = supertest(app);
