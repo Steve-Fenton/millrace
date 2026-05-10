@@ -1,5 +1,6 @@
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
+import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import { parseBoardIni } from "../models/boardModel.js";
 import {
   fetchBoardIni,
@@ -874,6 +875,7 @@ function renderChartsShell(
   flowCtx
 ) {
   const name = model.board.name?.trim() || "Board";
+  setFlowDocumentTitle("Charts", name);
   const buckets = Array.isArray(completionData.buckets)
     ? completionData.buckets
     : [];
@@ -1066,6 +1068,7 @@ async function main() {
       gParam.toLowerCase() === "monthly" ? "monthly" : "weekly";
   }
 
+  setFlowDocumentTitle("Charts");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
 
   try {

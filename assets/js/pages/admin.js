@@ -1,6 +1,7 @@
 import { openBoardEditorDialog } from "../dialogs/editBoard.js";
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
+import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import { createBoardDefinition } from "../client.js";
 import {
   resolveActiveBoardSelection,
@@ -230,6 +231,7 @@ function renderAddBoardRow(onCreated) {
  * @param {HTMLElement} boardsSection
  */
 function renderAdminShell(boardsSection) {
+  setFlowDocumentTitle("Admin");
   const root = document.createElement("div");
   root.className = "board-shell admin-shell";
 
@@ -270,6 +272,7 @@ function renderAdminShell(boardsSection) {
 async function main() {
   const mount = document.getElementById("app");
   if (!mount) return;
+  setFlowDocumentTitle("Admin");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
   try {
     const selection = await resolveActiveBoardSelection();

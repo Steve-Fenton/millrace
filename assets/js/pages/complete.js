@@ -1,6 +1,7 @@
 import { openCardEditorDialog } from "../dialogs/editCard.js";
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
+import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import {
   boardOwnerEmailsForFilter,
   ownerDisplayLabel,
@@ -183,6 +184,7 @@ function renderCompleteShell(
   swimlaneFilterParam
 ) {
   const name = model.board.name?.trim() || "Board";
+  setFlowDocumentTitle("Completed", name);
   const { cards, total, pageSize } = data;
   const ownerNames = Array.isArray(data.ownerNames) ? data.ownerNames : [];
   const legacySwimlaneFilters = Array.isArray(data.legacySwimlaneFilters)
@@ -712,6 +714,7 @@ async function main() {
   const deepSearch =
     params.get("deep") === "1" || params.get("deep") === "true";
 
+  setFlowDocumentTitle("Completed");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
 
   try {

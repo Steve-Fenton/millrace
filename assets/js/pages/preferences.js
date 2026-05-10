@@ -1,5 +1,6 @@
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
+import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import {
   fetchLocalUserPreferences,
   patchLocalUserPreferences,
@@ -112,6 +113,7 @@ function renderPreferencesForm(initial) {
  * @param {HTMLElement} form
  */
 function renderPreferencesShell(form) {
+  setFlowDocumentTitle("Preferences");
   const root = document.createElement("div");
   root.className = "board-shell admin-shell preferences-shell";
 
@@ -158,6 +160,7 @@ function renderPreferencesShell(form) {
 async function main() {
   const mount = document.getElementById("app");
   if (!mount) return;
+  setFlowDocumentTitle("Preferences");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
   try {
     const initial = await fetchLocalUserPreferences();

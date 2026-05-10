@@ -19,6 +19,7 @@ import { showFlowAlert } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./ui/setupMineOwner.js";
 import { createFlowNavMenu } from "./ui/menu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
+import { setFlowDocumentTitle } from "./ui/documentTitle.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,
@@ -616,6 +617,7 @@ function renderBoard(
 ) {
   const { board, columns, swimlanes } = model;
   const name = board.name?.trim() || "Board";
+  setFlowDocumentTitle("Board", name);
   const boardSlug = boardSlugFrom(board);
 
   let compassPersistMatched = false;
@@ -1427,6 +1429,7 @@ async function loadApp(fullReload = true) {
   }
 
   const scrollSnapshot = captureBoardViewScroll(mount);
+  setFlowDocumentTitle("Board");
   mount.innerHTML = `<div class="app-loading">Loading board…</div>`;
 
   try {
