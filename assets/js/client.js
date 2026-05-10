@@ -317,7 +317,7 @@ export async function fetchNpmUpdateCheck() {
 /**
  * Runs `pnpm update --latest` then `pnpm cycle` in the data root (after user confirms).
  * @param {string} latestVersion registry version string from {@link fetchNpmUpdateCheck}
- * @returns {Promise<{ ok: boolean, reason?: string, message?: string }>}
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string, restarting?: boolean }>}
  */
 export async function postNpmUpdateRunCycle(latestVersion) {
   const res = await fetch("/api/npm-update-run-cycle", {

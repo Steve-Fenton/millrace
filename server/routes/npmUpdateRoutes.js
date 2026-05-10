@@ -36,7 +36,7 @@ export function registerNpmUpdateRoutes(app, deps = {}) {
         });
         return;
       }
-      const result = await runCycle(latestVersion);
+      const result = await runCycle(latestVersion, { deferCycle: true });
       res.json(result);
     } catch (e) {
       console.error(e);

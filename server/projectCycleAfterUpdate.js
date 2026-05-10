@@ -82,9 +82,12 @@ export async function readProjectHasCycleScript() {
  * Run `pnpm update --latest` then `pnpm cycle` after the user chose “Update now” in the UI.
  *
  * @param {string} registryLatestVersion
- * @returns {Promise<{ ok: boolean, reason?: string, message?: string }>}
+ * @param {{ deferCycle?: boolean }} [opts]
+ * When `deferCycle` is true (HTTP handler), `pnpm cycle` runs on the next event-loop turn after
+ * returning success so the client receives JSON before the process restarts (e.g. PM2).
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string, restarting?: boolean }>}
  */
-export async function runProjectCycleAfterUserConfirm(registryLatestVersion) {
+export async function runProjectCycleAfterUserConfirm(registryLatestVersion, opts = {}) {
   const key = String(registryLatestVersion ?? "").trim();
   if (!key) {
     return { ok: false, reason: "bad_request", message: "Missing latestVersion." };
@@ -95,7 +98,7 @@ export async function runProjectCycleAfterUserConfirm(registryLatestVersion) {
     return existing;
   }
 
-  const run = executeProjectCycleSteps(key);
+  const run = executeProjectCycleSteps(key, opts);
   inFlight.set(key, run);
 
   try {
@@ -107,9 +110,11 @@ export async function runProjectCycleAfterUserConfirm(registryLatestVersion) {
 
 /**
  * @param {string} registryLatestVersion
+ * @param {{ deferCycle?: boolean }} [opts]
  * @returns {Promise<ProjectCycleResult>}
  */
-async function executeProjectCycleSteps(registryLatestVersion) {
+async function executeProjectCycleSteps(registryLatestVersion, opts = {}) {
+  const deferCycle = Boolean(opts.deferCycle);
   const root = dataRoot();
   const pkgPath = path.join(root, "package.json");
   let pkgRaw;
@@ -156,6 +161,30 @@ async function executeProjectCycleSteps(registryLatestVersion) {
 
   try {
     await runPnpm(["update", "--latest"], root);
+    if (deferCycle) {
+      await markAutoCycleEvaluated(registryLatestVersion);
+      const rootRef = root;
+      const verRef = registryLatestVersion;
+      setImmediate(() => {
+        void (async () => {
+          try {
+            await runPnpm(["cycle"], rootRef);
+            console.info(
+              `[millrace] NPM update (user): finished deferred pnpm cycle for registry v${verRef}`
+            );
+          } catch (e) {
+            console.warn(
+              "[millrace] NPM update (user): deferred pnpm cycle failed:",
+              e
+            );
+          }
+        })();
+      });
+      console.info(
+        `[millrace] NPM update (user): update ok for registry v${registryLatestVersion}; cycle deferred until after HTTP response`
+      );
+      return { ok: true, restarting: true };
+    }
     await runPnpm(["cycle"], root);
     await markAutoCycleEvaluated(registryLatestVersion);
     console.info(

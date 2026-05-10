@@ -1517,7 +1517,7 @@ async function maybeNotifyNpmUpdate() {
 
     if (info.projectHasCycleScript) {
       const updateNow = await showFlowConfirm(
-        `You are running Millrace v${cur} and a new version is available: v${lat}. Run pnpm update --latest and pnpm cycle now?`,
+        `You are running Millrace v${cur} and a new version is available: v${lat}. Do you want to update now?`,
         {
           title: "Update available",
           confirmLabel: "Update now",
@@ -1533,8 +1533,11 @@ async function maybeNotifyNpmUpdate() {
       try {
         const result = await postNpmUpdateRunCycle(lat);
         if (result.ok) {
+          const restarting = Boolean(result.restarting);
           showFlowToast(
-            "pnpm update finished. Restart Millrace if it did not reload automatically.",
+            restarting
+              ? "Update installed. Restarting the app now — the page may reload."
+              : "pnpm update finished. Restart Millrace if it did not reload automatically.",
             { durationMs: 8000 }
           );
         } else {
@@ -1546,7 +1549,18 @@ async function maybeNotifyNpmUpdate() {
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        await showFlowAlert(msg, { title: "Could not update" });
+        const likelyRestartDisconnect =
+          /failed to fetch/i.test(msg) ||
+          msg === "Load failed" ||
+          msg === "NetworkError when attempting to fetch resource.";
+        if (likelyRestartDisconnect) {
+          showFlowToast(
+            "If the app restarted, the update finished. Otherwise check the server logs.",
+            { durationMs: 9000 }
+          );
+        } else {
+          await showFlowAlert(msg, { title: "Could not update" });
+        }
       }
       return;
     }
