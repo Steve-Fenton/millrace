@@ -1822,13 +1822,28 @@ a.column-done-truncation-link:focus-visible {
 
 .column-card {
   position: relative;
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
   flex-shrink: 0;
   margin: 0 0 0.4rem;
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);
+}
+
+/** Title + edit: only this row uses two columns; the card grid above stays single-column. */
+.column-card-head-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.column-card-head-row .flow-card-edit-btn {
+  justify-self: end;
 }
 
 /** Strategic / critical cards — override background and border in your theme if needed */
@@ -1922,18 +1937,6 @@ a.column-done-truncation-link:focus-visible {
   grid-row: 3;
 }
 
-.column-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.35rem;
-}
-
-.column-card-head .column-card-title {
-  flex: 1;
-  min-width: 0;
-}
-
 .column-card[draggable="true"] {
   cursor: grab;
 }
@@ -1957,15 +1960,15 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-title {
+  min-width: 0;
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.35;
   word-break: break-word;
+  text-wrap: balance;
 }
 
 .column-card-note {
-  margin-top: 0.22rem;
-  padding-bottom: 0.28rem;
   font-size: 0.72rem;
   font-weight: 500;
   font-style: italic;
@@ -1974,16 +1977,7 @@ a.column-done-truncation-link:focus-visible {
   word-break: break-word;
 }
 
-.column-card-note + .column-card-owner {
-  margin-top: 0;
-}
-
-.column-card-note + .column-card-links {
-  margin-top: 0.28rem;
-}
-
 .column-card-owner {
-  margin-top: 0.28rem;
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
@@ -2009,7 +2003,6 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-links {
-  margin-top: 0.45rem;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;

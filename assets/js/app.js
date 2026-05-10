@@ -942,9 +942,7 @@ function renderBoard(
 
         const fn = card.filename && String(card.filename).trim();
         if (fn) {
-          const head = document.createElement("div");
-          head.className = "column-card-head";
-          head.append(titleEl);
+          li.classList.add("column-card--editable");
           const editBtn = document.createElement("button");
           editBtn.type = "button";
           editBtn.className = "flow-card-edit-btn";
@@ -966,8 +964,10 @@ function renderBoard(
               boardUsers: model.users,
             });
           });
-          head.append(editBtn);
-          li.append(head);
+          const headRow = document.createElement("div");
+          headRow.className = "column-card-head-row";
+          headRow.append(titleEl, editBtn);
+          li.append(headRow);
         } else {
           li.append(titleEl);
         }
