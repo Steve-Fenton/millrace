@@ -247,6 +247,19 @@ Feature: Task card INI parsing and model
       {}
       """
 
+  Scenario: parseTaskCardIni reads note as a trimmed scalar line
+    Given the task card INI text is:
+      """
+      [item]
+      note =  Blocked on vendor  
+
+      """
+    When I parse the task card INI into model fields
+    Then the task card model JSON should be:
+      """
+      {"note":"Blocked on vendor"}
+      """
+
   Scenario: parseTaskCardIni maps strategic=yes to true via parseIniTruthy
     Given the task card INI text is:
       """

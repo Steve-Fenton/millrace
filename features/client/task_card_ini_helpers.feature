@@ -424,6 +424,45 @@ Feature: Task card INI helpers
 
       """
 
+  Scenario: serializeCardIni writes note after description when note is non-empty
+    Given the serializeCardIni fields JSON is:
+      """
+      {"id":"n1","title":"With note","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"note":"Blocked on CI"}
+      """
+    When I serialize the card model to INI
+    Then the card INI output should be:
+      """
+      [item]
+      id = n1
+      title = With note
+      description = 
+      owner = 
+      note = Blocked on CI
+      column = C
+      created = 2024-01-15T10:20:30.000Z
+
+      """
+
+  Scenario: serializeFullCardIni writes note in the ordered item fields
+    Given the full card item JSON is:
+      """
+      {"id":"f1","title":"T","description":"Body","note":"Waiting"}
+      """
+    And the full card links JSON is:
+      """
+      []
+      """
+    When I serialize the full card to INI
+    Then the card INI output should be:
+      """
+      [item]
+      id = f1
+      title = T
+      description = Body
+      note = Waiting
+
+      """
+
   Scenario: serializeCardIni adds strategic=yes when strategic is true
     Given the serializeCardIni fields JSON is:
       """

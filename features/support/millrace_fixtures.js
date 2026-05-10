@@ -94,6 +94,7 @@ id = FLOW-fix-open-1
 title = Open Fixture Card
 description =
 owner =
+note = Fixture note line
 column = To Do
 sort_order = 10
 created = 2024-01-01T00:00:00.000Z

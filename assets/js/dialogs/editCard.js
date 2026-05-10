@@ -160,7 +160,7 @@ function formatCardTimestampDisplay(raw) {
  * @returns {Promise<boolean>} true if saved, deleted, or duplicated (board refresh)
  */
 export async function openCardEditorDialog(ctx) {
-  /** @type {{ title?: string, description?: string, owner?: string, created?: string, closed?: string, strategic?: boolean, links?: { text?: string, url?: string }[] }} */
+  /** @type {{ title?: string, description?: string, note?: string, owner?: string, created?: string, closed?: string, strategic?: boolean, links?: { text?: string, url?: string }[] }} */
   let initial = {};
   try {
     initial = await fetchCard(ctx.boardSlug, ctx.columnIndex, ctx.filename);
@@ -330,10 +330,20 @@ export async function openCardEditorDialog(ctx) {
   );
   descInput.closest(".flow-field")?.insertAdjacentElement("afterend", ownerField.root);
 
+  const noteFieldEl = el(`
+    <label class="flow-field">
+      <span class="flow-field-label">Note</span>
+      <input class="flow-input" name="note" type="text" maxlength="300" autocomplete="off" placeholder="Short status (optional)" />
+    </label>
+  `);
+  ownerField.root.insertAdjacentElement("afterend", noteFieldEl);
+  const noteInput = noteFieldEl.querySelector('input[name="note"]');
+  if (noteInput) noteInput.value = String(initial.note ?? "").trim();
+
   const linksEditor = createLinksEditor(
     Array.isArray(initial.links) ? initial.links : []
   );
-  ownerField.root.insertAdjacentElement("afterend", linksEditor.root);
+  noteFieldEl.insertAdjacentElement("afterend", linksEditor.root);
 
   /** @type {boolean | null} */
   let showingDescriptionPreview = null;
@@ -461,6 +471,7 @@ export async function openCardEditorDialog(ctx) {
     return JSON.stringify({
       title: String(titleInput.value ?? "").trim(),
       description: String(descInput.value ?? ""),
+      note: String(noteInput?.value ?? "").trim(),
       owner: ownerField.getValue(),
       strategic: Boolean(strategicInput?.checked),
       links: normalizeLinks(linksEditor.getLinks()),
@@ -511,6 +522,7 @@ export async function openCardEditorDialog(ctx) {
       }
 
       const description = String(fd.get("description") || "");
+      const note = String(fd.get("note") || "").trim();
       const owner = ownerField.getValue();
 
       try {
@@ -520,6 +532,7 @@ export async function openCardEditorDialog(ctx) {
           filename: ctx.filename,
           title,
           description,
+          note,
           owner,
           strategic: Boolean(strategicInput?.checked),
           links: linksEditor.getLinks(),
@@ -599,6 +612,7 @@ export async function openCardEditorDialog(ctx) {
         }
         const newTitle = `${baseTitle} (copy)`;
         const description = String(descInput.value || "");
+        const note = String(noteInput?.value || "").trim();
         const owner = ownerField.getValue();
         const links = linksEditor.getLinks();
         try {
@@ -608,6 +622,7 @@ export async function openCardEditorDialog(ctx) {
             swimlaneIndex: laneNum,
             title: newTitle,
             description,
+            note,
             owner,
             strategic: Boolean(strategicInput?.checked),
             links,

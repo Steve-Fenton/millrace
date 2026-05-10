@@ -6,6 +6,7 @@ Feature: Read single task card API
     When I fetch JSON from "/api/card?boardSlug=test&columnIndex=1&filename=FLOW-fix-open.ini"
     Then the response status should be 200
     And the last JSON field "title" should be "Open Fixture Card"
+    And the last JSON field "note" should be "Fixture note line"
 
   Scenario: invalid card request returns 400
     Given the Millrace integration server has profile "with-open-card"

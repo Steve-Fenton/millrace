@@ -70,7 +70,7 @@ const AUTO_SYNC_DEBOUNCE_MS = 5000;
 /** @type {{ mode: 'all' | 'mine' | 'owner', owner: string }} */
 let ownerFilter = { mode: "all", owner: "" };
 
-/** Case-insensitive substring filter across title, description, owner, filename, links (board view). */
+/** Case-insensitive substring filter across title, description, note, owner, filename, links (board view). */
 let boardCardSearch = "";
 
 /**
@@ -967,6 +967,13 @@ function renderBoard(
           li.append(head);
         } else {
           li.append(titleEl);
+        }
+        const noteLine = card.note && String(card.note).trim();
+        if (noteLine) {
+          const noteEl = document.createElement("div");
+          noteEl.className = "column-card-note";
+          noteEl.textContent = noteLine;
+          li.append(noteEl);
         }
         if (card.owner && String(card.owner).trim()) {
           const own = document.createElement("div");

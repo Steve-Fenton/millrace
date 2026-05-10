@@ -16,6 +16,25 @@ Feature: Card mutations API
     And the last JSON field "path" should contain "tasks/test/"
     And the last JSON field "path" should contain ".ini"
 
+  Scenario: POST persists note for subsequent reads
+    Given the Millrace integration server has profile "flow-board"
+    When I send a POST request to "/api/cards" with JSON body:
+      """
+      {
+        "boardSlug": "test",
+        "columnIndex": 1,
+        "swimlaneIndex": 0,
+        "title": "Card with note",
+        "note": "Blocked on CI"
+      }
+      """
+    Then the response status should be 200
+    When I remember the last response card filename as the test card
+    When I fetch the test card from column 1
+    Then the response status should be 200
+    And the last JSON field "title" should be "Card with note"
+    And the last JSON field "note" should be "Blocked on CI"
+
   Scenario: create then read update and delete the same card
     Given the Millrace integration server has profile "flow-board"
     When I send a POST request to "/api/cards" with JSON body:

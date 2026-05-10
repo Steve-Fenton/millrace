@@ -15,6 +15,7 @@ function baselineTaskCard() {
     id: undefined,
     title: undefined,
     description: undefined,
+    note: undefined,
     owner: undefined,
     swimlane: undefined,
     column: undefined,

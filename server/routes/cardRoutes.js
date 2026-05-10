@@ -35,6 +35,15 @@ import {
   formatGitExecError,
 } from "../gitOps.js";
 
+/** Single-line card note for INI (first line, trimmed, bounded). */
+function singleLineNote(raw) {
+  const s = String(raw ?? "")
+    .replace(/\r?\n/g, " ")
+    .trim()
+    .slice(0, 300);
+  return s;
+}
+
 /** @param {import("express").Application} app */
 export function registerCardRoutes(app) {
 app.get("/api/card", async (req, res) => {
@@ -198,6 +207,7 @@ app.get("/api/card/git-history", async (req, res) => {
 
 app.put("/api/card", async (req, res) => {
   try {
+    const body = req.body && typeof req.body === "object" ? req.body : {};
     const {
       boardSlug,
       columnIndex,
@@ -205,7 +215,9 @@ app.put("/api/card", async (req, res) => {
       title,
       description = "",
       owner = "",
-    } = req.body ?? {};
+    } = body;
+    const noteInBody = "note" in body;
+    const note = noteInBody ? body.note : undefined;
 
     const t = String(title || "").trim();
     const fn = safeCardIniFilename(filename);
@@ -247,6 +259,12 @@ app.put("/api/card", async (req, res) => {
     item.title = t;
     item.description = String(description ?? "");
     item.owner = newOwner;
+
+    if (noteInBody) {
+      const noteStr = singleLineNote(note);
+      if (noteStr) item.note = noteStr;
+      else delete item.note;
+    }
 
     if (req.body && typeof req.body === "object" && "strategic" in req.body) {
       if (Boolean(req.body.strategic)) item.strategic = "yes";
@@ -324,6 +342,7 @@ app.post("/api/cards", async (req, res) => {
       swimlaneIndex,
       title,
       description = "",
+      note = "",
       owner = "",
       strategic,
       links: linksRaw,
@@ -369,6 +388,7 @@ app.post("/api/cards", async (req, res) => {
       id,
       title: t,
       description: String(description ?? ""),
+      note: singleLineNote(note),
       owner: newOwner,
       columnIndex: col,
       swimlaneIndex:

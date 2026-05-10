@@ -18,6 +18,7 @@ export function cardMatchesSearch(card, queryLower, users) {
   const parts = [];
   parts.push(String(card.title ?? ""));
   parts.push(String(card.description ?? ""));
+  parts.push(String(card.note ?? ""));
   parts.push(String(card.filename ?? "").replace(/\.ini$/i, ""));
   parts.push(String(card.owner ?? ""));
   const ownerRaw = String(card.owner ?? "").trim();

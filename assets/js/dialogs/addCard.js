@@ -38,8 +38,16 @@ export function openAddCardDialog(ctx) {
   const descInput = modal.querySelector('textarea[name="description"]');
   const ownerField = createOwnerField(ctx.boardUsers, "");
   descInput?.closest(".flow-field")?.insertAdjacentElement("afterend", ownerField.root);
+  const noteFieldEl = el(`
+    <label class="flow-field">
+      <span class="flow-field-label">Note</span>
+      <input class="flow-input" name="note" type="text" maxlength="300" autocomplete="off" placeholder="Short status (optional)" />
+    </label>
+  `);
+  ownerField.root.insertAdjacentElement("afterend", noteFieldEl);
+  const noteInput = noteFieldEl.querySelector('input[name="note"]');
   const linksEditor = createLinksEditor([]);
-  ownerField.root.insertAdjacentElement("afterend", linksEditor.root);
+  noteFieldEl.insertAdjacentElement("afterend", linksEditor.root);
 
   function focusTitle() {
     titleInput?.focus();
@@ -57,6 +65,7 @@ export function openAddCardDialog(ctx) {
     return JSON.stringify({
       title: String(titleInput.value ?? "").trim(),
       description: String(descInput.value ?? ""),
+      note: String(noteInput?.value ?? "").trim(),
       owner: ownerField.getValue(),
       links: normalizeLinks(linksEditor.getLinks()),
     });
@@ -108,6 +117,7 @@ export function openAddCardDialog(ctx) {
       }
 
       const description = String(fd.get("description") || "");
+      const note = String(fd.get("note") || "").trim();
       const owner = ownerField.getValue();
 
       try {
@@ -117,6 +127,7 @@ export function openAddCardDialog(ctx) {
           swimlaneIndex: ctx.swimlaneIndex,
           title,
           description,
+          note,
           owner,
           links: linksEditor.getLinks(),
         });

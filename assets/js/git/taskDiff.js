@@ -20,6 +20,7 @@ const FIELD_LABEL = {
   id: "ID",
   title: "Title",
   description: "Description",
+  note: "Note",
   owner: "Owner",
   swimlane: "Swimlane",
   column: "Column",
@@ -32,6 +33,7 @@ const FIELD_LABEL = {
 const ITEM_COMPARE_KEYS = [
   "title",
   "description",
+  "note",
   "owner",
   "swimlane",
   "column",

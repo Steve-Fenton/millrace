@@ -531,7 +531,17 @@ function renderCompleteShell(
     const titleDiv = document.createElement("div");
     titleDiv.className = "column-card-title complete-table__title-text";
     titleDiv.textContent = titleText;
-    titleMain.append(titleDiv);
+    const titleStack = document.createElement("div");
+    titleStack.className = "complete-table__title-stack";
+    titleStack.append(titleDiv);
+    const noteTxt = card.note && String(card.note).trim();
+    if (noteTxt) {
+      const noteEl = document.createElement("div");
+      noteEl.className = "complete-table__card-note";
+      noteEl.textContent = noteTxt;
+      titleStack.append(noteEl);
+    }
+    titleMain.append(titleStack);
     if (canEdit) {
       const editBtn = document.createElement("button");
       editBtn.type = "button";

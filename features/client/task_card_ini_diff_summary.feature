@@ -74,6 +74,28 @@ Feature: Task card INI change summary
       ["only_after: ∅ → y"]
       """
 
+  Scenario: note field added on the after side uses the Note label
+    Given the earlier task card INI text is:
+      """
+      [item]
+      id = 1
+      title = Same
+
+      """
+    And the later task card INI text is:
+      """
+      [item]
+      id = 1
+      title = Same
+      note = Waiting on reply
+
+      """
+    When I summarize the task card INI diff
+    Then the diff summary JSON should be:
+      """
+      ["Note: ∅ → Waiting on reply"]
+      """
+
   Scenario: extra-key pass skips unchanged custom fields
     Given the earlier task card INI text is:
       """
