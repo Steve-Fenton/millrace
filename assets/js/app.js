@@ -53,6 +53,9 @@ const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0
 
 const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
 
+/** Next to assignee name on kanban cards (decorative). */
+const COLUMN_CARD_OWNER_ICON = `<svg class="column-card-owner-icon-svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+
 /** Small chevrons for in-card move compass (up / right / down / left). */
 const CARD_NUDGE_SVG = {
   up: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M18 15l-6-6-6 6"/></svg>`,
@@ -978,10 +981,17 @@ function renderBoard(
         if (card.owner && String(card.owner).trim()) {
           const own = document.createElement("div");
           own.className = "column-card-owner";
-          own.textContent = ownerDisplayLabel(
+          const iconWrap = document.createElement("span");
+          iconWrap.className = "column-card-owner-icon";
+          iconWrap.setAttribute("aria-hidden", "true");
+          iconWrap.innerHTML = COLUMN_CARD_OWNER_ICON;
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "column-card-owner-name";
+          nameSpan.textContent = ownerDisplayLabel(
             String(card.owner).trim(),
             model.users
           );
+          own.append(iconWrap, nameSpan);
           li.append(own);
         }
 

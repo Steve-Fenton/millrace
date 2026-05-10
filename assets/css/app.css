@@ -1965,6 +1965,7 @@ a.column-done-truncation-link:focus-visible {
 
 .column-card-note {
   margin-top: 0.22rem;
+  padding-bottom: 0.28rem;
   font-size: 0.72rem;
   font-weight: 500;
   font-style: italic;
@@ -1973,10 +1974,38 @@ a.column-done-truncation-link:focus-visible {
   word-break: break-word;
 }
 
+.column-card-note + .column-card-owner {
+  margin-top: 0;
+}
+
+.column-card-note + .column-card-links {
+  margin-top: 0.28rem;
+}
+
 .column-card-owner {
   margin-top: 0.28rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.column-card-owner-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 0.06rem;
+  color: var(--text-muted);
+  opacity: 0.88;
+}
+
+.column-card-owner-icon-svg {
+  display: block;
+}
+
+.column-card-owner-name {
+  min-width: 0;
+  word-break: break-word;
 }
 
 .column-card-links {
