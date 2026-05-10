@@ -1,5 +1,5 @@
-Feature: Git-related API surface
-  Status, history without a repo, and sync guard when Git is absent.
+Feature: Git API surface
+  Status and history when no repo exists, sync guards, and route error handling.
 
   Scenario: git status reports no repository at data root
     Given the Millrace integration server has profile "flow-board"

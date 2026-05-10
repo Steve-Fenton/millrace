@@ -1,5 +1,5 @@
-Feature: Charts and completed work APIs
-  Analytics endpoints driven by closed card fixtures.
+Feature: Charts and completed-work APIs
+  Analytics routes backed by closed-card fixtures (aggregates, buckets, scatter, trends).
 
   Background:
     Given the Millrace integration server has profile "charts"

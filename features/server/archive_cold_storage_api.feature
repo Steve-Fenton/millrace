@@ -1,5 +1,5 @@
-Feature: Archive and cold-storage in completed cards
-  Completed-cards lists the archive folder and, when `deep=1`, also the cold-storage tree.
+Feature: Archive and cold-storage in completed cards API
+  Completed-cards lists archive paths and, with `deep=1`, walks cold-storage folders.
 
   Scenario: archived cards show up in completed-cards
     Given the Millrace integration server has profile "with-archive-card"

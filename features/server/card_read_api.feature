@@ -1,5 +1,5 @@
-Feature: Single card API
-  GET /api/card reads a task INI from the board folder.
+Feature: Read single task card API
+  `GET /api/card` loads one task INI from a column folder under the board slug.
 
   Scenario: read an existing card
     Given the Millrace integration server has profile "with-open-card"

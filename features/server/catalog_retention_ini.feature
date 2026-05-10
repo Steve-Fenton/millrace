@@ -1,62 +1,63 @@
-Feature: catalogRetention reads tasks/.millrace.ini overrides
-  Custom retention thresholds picked up from `[millrace]`, with sensible defaults.
+Feature: Catalog retention from tasks `.millrace.ini`
+  Read archive/cold-storage thresholds from `[millrace]` (or legacy `[flow]`), with
+  defaults when keys are missing or invalid.
 
   Scenario: defaults when the catalog INI is missing
-    Given the integration data root is freshly empty
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 14
-    And the retention coldStorageArchiveAfterMonths should equal 12
+    Given tasks exist but the catalog INI is absent
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 14
+    And months before cold-storage archive should be 12
 
   Scenario: snake_case overrides are applied
-    Given the integration data root has a millrace catalog INI with:
+    Given the millrace catalog INI under the integration data root contains:
       """
       [millrace]
       archive_closed_after_days = 30
       cold_storage_archive_after_months = 6
       """
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 30
-    And the retention coldStorageArchiveAfterMonths should equal 6
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 30
+    And months before cold-storage archive should be 6
 
   Scenario: camelCase overrides also work
-    Given the integration data root has a millrace catalog INI with:
+    Given the millrace catalog INI under the integration data root contains:
       """
       [millrace]
       archiveClosedAfterDays = 7
       coldStorageArchiveAfterMonths = 24
       """
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 7
-    And the retention coldStorageArchiveAfterMonths should equal 24
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 7
+    And months before cold-storage archive should be 24
 
   Scenario: legacy [flow] section is also read
-    Given the integration data root has a millrace catalog INI with:
+    Given the millrace catalog INI under the integration data root contains:
       """
       [flow]
       archive_closed_after_days = 21
       """
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 21
-    And the retention coldStorageArchiveAfterMonths should equal 12
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 21
+    And months before cold-storage archive should be 12
 
   Scenario: bad numeric values fall back to defaults
-    Given the integration data root has a millrace catalog INI with:
+    Given the millrace catalog INI under the integration data root contains:
       """
       [millrace]
       archive_closed_after_days = abc
       cold_storage_archive_after_months = -3
       """
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 14
-    And the retention coldStorageArchiveAfterMonths should equal 12
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 14
+    And months before cold-storage archive should be 12
 
   Scenario: empty values fall back to defaults
-    Given the integration data root has a millrace catalog INI with:
+    Given the millrace catalog INI under the integration data root contains:
       """
       [millrace]
       archive_closed_after_days =
       cold_storage_archive_after_months =
       """
-    When I read the millrace catalog retention settings
-    Then the retention archiveClosedAfterDays should equal 14
-    And the retention coldStorageArchiveAfterMonths should equal 12
+    When I read retention thresholds from the catalog INI
+    Then days before archiving closed cards should be 14
+    And months before cold-storage archive should be 12

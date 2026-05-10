@@ -1,5 +1,5 @@
-Feature: Board API
-  The /api/board endpoint returns board metadata and INI text from the configured data root.
+Feature: Read board definition API
+  `GET /api/board` returns metadata plus the board INI text from the configured data root.
 
   Scenario: /api/board returns the requested board from test fixtures
     Given the flow API test data root is prepared

@@ -1,5 +1,5 @@
-Feature: cliOptionsFromArgv
-  Parses --data-root and a positional port number from process.argv-style arrays.
+Feature: CLI options from argv
+  Parses `--data-root` and an optional positional port from `process.argv`-style arrays.
 
   Scenario: empty argv yields nulls
     When I parse argv as JSON:

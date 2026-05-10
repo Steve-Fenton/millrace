@@ -1,5 +1,5 @@
-Feature: Git history with repository
-  Board definition history when the data root is a Git working tree.
+Feature: Git history API with a repository
+  Commit lists for board definitions and cards when the data root is a Git working tree.
 
   Scenario: board definition git history returns commits
     Given the Millrace integration server has profile "flow-board" with git history

@@ -1,5 +1,5 @@
-Feature: Local user API
-  Reads and updates tasks/localuser.ini via HTTP.
+Feature: Local user preferences API
+  Read and patch `tasks/localuser.ini` through `/api/local-user` routes.
 
   Scenario: defaults then patch local user fields
     Given the Millrace integration server has profile "flow-board"

@@ -1,5 +1,5 @@
-Feature: localUserIni helpers
-  Section serialization, sync mode parsing, and the pending-sync flag.
+Feature: Local user INI helpers
+  Serialize preferences to INI text, read sync mode, and derive `pendingSync` from sections.
 
   Scenario: serializeLocalUserIniFile drops empty values
     When I serialize sections JSON:

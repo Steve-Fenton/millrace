@@ -1,7 +1,6 @@
-Feature: /api/git/sync end-to-end
-  Drives the sync route against a real bare upstream + local clone — covers the
-  pull / commit / push happy path, the `pendingSync` flag, and the conflict
-  resolution payload error branch.
+Feature: Git sync API end-to-end
+  Exercises `/api/git/sync` against a bare upstream and local clone: pull/commit/push,
+  pending changes, and rejecting conflict payloads when nothing is unmerged.
 
   Scenario: git sync with no pending changes succeeds
     Given the Millrace integration server has profile "flow-board" with a git remote

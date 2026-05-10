@@ -1,14 +1,15 @@
-Feature: ensureDefaultTasksLayout
-  Creating a minimal tasks layout when the data root has no catalog or no tasks directory.
+Feature: Default tasks layout bootstrap
+  When the data root has no `tasks/` tree or no catalog, create a minimal layout
+  with a demo board entry.
 
   Scenario: creates tasks layout when data root is empty
-    Given bootstrap unit empty project directory
-    When I call ensureDefaultTasksLayout
-    Then bootstrap unit tasks demo.ini should contain slug demo
-    And bootstrap unit catalog lists demo.ini
+    Given an empty Millrace data root for bootstrap
+    When I run the default tasks layout bootstrap
+    Then demo.ini in the bootstrap tasks folder should include slug demo
+    And the Millrace catalog should list demo.ini for boards
 
   Scenario: adds catalog and demo when tasks directory exists without catalog
-    Given bootstrap unit has tasks directory without catalog
-    When I call ensureDefaultTasksLayout
-    Then bootstrap unit tasks demo.ini should contain slug demo
-    And bootstrap unit catalog lists demo.ini
+    Given a tasks directory exists without a Millrace catalog file
+    When I run the default tasks layout bootstrap
+    Then demo.ini in the bootstrap tasks folder should include slug demo
+    And the Millrace catalog should list demo.ini for boards

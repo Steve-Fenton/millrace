@@ -7,7 +7,7 @@ import {
 } from "../../server/boardDefinitionSync.js";
 
 When(
-  "I compare boardTitleMultiset for the old and new boards JSON:",
+  "I compare old and new board models for pure reorder:",
   function (doc) {
     const { old: oldModel, new: newModel } = JSON.parse(doc.trim());
     this.lastReorderResult = isPureColumnSwimlaneReorderForTasks(
@@ -22,20 +22,20 @@ When(
 );
 
 Then(
-  "isPureColumnSwimlaneReorderForTasks should be true",
+  "the board change qualifies as a pure column swimlane reorder",
   function () {
     assert.strictEqual(this.lastReorderResult, true);
   }
 );
 
 Then(
-  "isPureColumnSwimlaneReorderForTasks should be false",
+  "the board change does not qualify as a pure column swimlane reorder",
   function () {
     assert.strictEqual(this.lastReorderResult, false);
   }
 );
 
-When("I take a multiset of columns from JSON:", function (doc) {
+When("I take multiset counts of column titles from JSON:", function (doc) {
   const cols = JSON.parse(doc.trim());
   this.multiset = boardTitleMultiset({ columns: cols, swimlanes: [] }, "columns");
 });

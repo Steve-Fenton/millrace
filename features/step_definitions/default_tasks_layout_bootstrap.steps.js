@@ -8,24 +8,27 @@ import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 
 const BOOTSTRAP_ROOT = path.join(INTEGRATION_DATA_ROOT, "bootstrap-unit");
 
-Given("bootstrap unit empty project directory", async function () {
+Given("an empty Millrace data root for bootstrap", async function () {
   await fs.rm(BOOTSTRAP_ROOT, { recursive: true, force: true });
   await fs.mkdir(BOOTSTRAP_ROOT, { recursive: true });
   setMillraceDataRootForTesting(BOOTSTRAP_ROOT);
 });
 
-Given("bootstrap unit has tasks directory without catalog", async function () {
-  await fs.rm(BOOTSTRAP_ROOT, { recursive: true, force: true });
-  await fs.mkdir(path.join(BOOTSTRAP_ROOT, "tasks"), { recursive: true });
-  setMillraceDataRootForTesting(BOOTSTRAP_ROOT);
-});
+Given(
+  "a tasks directory exists without a Millrace catalog file",
+  async function () {
+    await fs.rm(BOOTSTRAP_ROOT, { recursive: true, force: true });
+    await fs.mkdir(path.join(BOOTSTRAP_ROOT, "tasks"), { recursive: true });
+    setMillraceDataRootForTesting(BOOTSTRAP_ROOT);
+  }
+);
 
-When("I call ensureDefaultTasksLayout", async function () {
+When("I run the default tasks layout bootstrap", async function () {
   await ensureDefaultTasksLayout();
 });
 
 Then(
-  "bootstrap unit tasks demo.ini should contain slug demo",
+  "demo.ini in the bootstrap tasks folder should include slug demo",
   async function () {
     const text = await fs.readFile(
       path.join(BOOTSTRAP_ROOT, "tasks", "demo.ini"),
@@ -35,14 +38,17 @@ Then(
   }
 );
 
-Then("bootstrap unit catalog lists demo.ini", async function () {
-  const text = await fs.readFile(
-    path.join(BOOTSTRAP_ROOT, "tasks", ".millrace.ini"),
-    "utf8"
-  );
-  assert.ok(text.includes("[millrace]"));
-  assert.ok(text.includes("boards = demo.ini"));
-});
+Then(
+  "the Millrace catalog should list demo.ini for boards",
+  async function () {
+    const text = await fs.readFile(
+      path.join(BOOTSTRAP_ROOT, "tasks", ".millrace.ini"),
+      "utf8"
+    );
+    assert.ok(text.includes("[millrace]"));
+    assert.ok(text.includes("boards = demo.ini"));
+  }
+);
 
 After(function () {
   setMillraceDataRootForTesting(INTEGRATION_DATA_ROOT);

@@ -6,7 +6,7 @@ import { readMillraceCatalogRetentionSettings } from "../../server/catalogRetent
 import { setMillraceDataRootForTesting } from "../../server/dataRoot.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 
-Given("the integration data root is freshly empty", async function () {
+Given("tasks exist but the catalog INI is absent", async function () {
   await fs.rm(INTEGRATION_DATA_ROOT, { recursive: true, force: true });
   await fs.mkdir(path.join(INTEGRATION_DATA_ROOT, "tasks"), {
     recursive: true,
@@ -15,7 +15,7 @@ Given("the integration data root is freshly empty", async function () {
 });
 
 Given(
-  "the integration data root has a millrace catalog INI with:",
+  "the millrace catalog INI under the integration data root contains:",
   async function (docString) {
     await fs.rm(INTEGRATION_DATA_ROOT, { recursive: true, force: true });
     await fs.mkdir(path.join(INTEGRATION_DATA_ROOT, "tasks"), {
@@ -30,19 +30,16 @@ Given(
   }
 );
 
-When("I read the millrace catalog retention settings", async function () {
+When("I read retention thresholds from the catalog INI", async function () {
   this.retention = await readMillraceCatalogRetentionSettings();
 });
 
-Then(
-  "the retention archiveClosedAfterDays should equal {int}",
-  function (n) {
-    assert.strictEqual(this.retention.archiveClosedAfterDays, n);
-  }
-);
+Then("days before archiving closed cards should be {int}", function (n) {
+  assert.strictEqual(this.retention.archiveClosedAfterDays, n);
+});
 
 Then(
-  "the retention coldStorageArchiveAfterMonths should equal {int}",
+  "months before cold-storage archive should be {int}",
   function (n) {
     assert.strictEqual(this.retention.coldStorageArchiveAfterMonths, n);
   }

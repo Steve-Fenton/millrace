@@ -1,6 +1,6 @@
-Feature: Board definition sync writes back to task INIs
-  When the column titles or counts change on save, existing card INIs are rewritten
-  so they continue to resolve to the right column / swimlane.
+Feature: Saving board definition rewrites card INIs
+  After `PUT /api/board-definition`, cards pick up renamed columns and new swimlanes so
+  `item.column` / `item.swimlane` still resolve.
 
   Scenario: Renaming a column rewrites existing card column references
     Given the Millrace integration server has profile "with-open-card"

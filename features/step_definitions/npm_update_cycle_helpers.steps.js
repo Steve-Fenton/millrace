@@ -23,14 +23,14 @@ const NPM_UNIT_ROOT = path.join(INTEGRATION_DATA_ROOT, "npm-update-unit");
 const NPM_UNIT_FIXED_NOW_MS = 1704193200000;
 const ONE_HOUR_MS = 3600000;
 
-Given("npm unit data root is prepared", async function () {
+Given("the npm cycle fixture data root is prepared", async function () {
   await fs.rm(NPM_UNIT_ROOT, { recursive: true, force: true });
   await fs.mkdir(path.join(NPM_UNIT_ROOT, "tasks"), { recursive: true });
   setMillraceDataRootForTesting(NPM_UNIT_ROOT);
 });
 
 Given(
-  "npm unit localuser.ini contains last_npm_update_check 1 hour before fixed now",
+  "localuser.ini records last npm update check one hour before fixed test time",
   async function () {
     const iso = new Date(NPM_UNIT_FIXED_NOW_MS - ONE_HOUR_MS).toISOString();
     await fs.writeFile(
@@ -41,7 +41,7 @@ Given(
   }
 );
 
-Given("npm unit tasks localuser.ini is absent", async function () {
+Given("localuser.ini is absent for the npm cycle fixture", async function () {
   try {
     await fs.unlink(path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"));
   } catch {
@@ -49,7 +49,7 @@ Given("npm unit tasks localuser.ini is absent", async function () {
   }
 });
 
-Given("npm unit package.json contains cycle script", async function () {
+Given("package.json includes a cycle script for the npm cycle fixture", async function () {
   await fs.writeFile(
     path.join(NPM_UNIT_ROOT, "package.json"),
     JSON.stringify(
@@ -65,7 +65,7 @@ Given("npm unit package.json contains cycle script", async function () {
 });
 
 Given(
-  "npm unit package.json has millrace {string} and cycle script",
+  "package.json depends on millrace {string} with a cycle script",
   async function (millraceSpec) {
     await fs.writeFile(
       path.join(NPM_UNIT_ROOT, "package.json"),
@@ -84,7 +84,7 @@ Given(
 );
 
 Given(
-  "npm unit pnpm-lock.yaml locks millrace specifier {string} version {string}",
+  "pnpm-lock.yaml pins millrace specifier {string} at version {string}",
   async function (specifier, version) {
     const specYaml = specifier.replace(/'/g, "''");
     const text = `lockfileVersion: '9.0'
@@ -107,7 +107,7 @@ packages:
   }
 );
 
-Given("npm unit package.json has empty scripts", async function () {
+Given("package.json has empty scripts for the npm cycle fixture", async function () {
   await fs.writeFile(
     path.join(NPM_UNIT_ROOT, "package.json"),
     JSON.stringify({ name: "npm-unit-fixture", scripts: {} }, null, 0),
@@ -115,7 +115,7 @@ Given("npm unit package.json has empty scripts", async function () {
   );
 });
 
-Given("npm unit package.json is invalid JSON", async function () {
+Given("package.json is invalid JSON for the npm cycle fixture", async function () {
   await fs.writeFile(
     path.join(NPM_UNIT_ROOT, "package.json"),
     "{ not json",
@@ -252,7 +252,7 @@ Then(
 );
 
 Then(
-  "npm unit flow npm_auto_cycle_for should be {string}",
+  "localuser.ini should record npm_auto_cycle_for as {string}",
   async function (expected) {
     const text = await fs.readFile(
       path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),

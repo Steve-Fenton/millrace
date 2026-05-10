@@ -1,6 +1,6 @@
-Feature: gitOps helper functions
-  Pure helpers used by the git sync route: child env, error formatting, safe path,
-  and the per-data-root mutation lock.
+Feature: Git subprocess and repo-path helpers
+  Child env for non-interactive Git, formatted exec errors, safe relative paths, and
+  serialized Git work on a data root.
 
   Scenario: gitChildEnv carries through GIT_EDITOR=true and disables prompts
     When I read the millrace gitChildEnv

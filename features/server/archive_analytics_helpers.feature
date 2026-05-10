@@ -1,6 +1,6 @@
-Feature: archiveAnalytics utilities
-  Pure helpers for completed-card analytics: timestamp parsing, bucket starts,
-  median / sample standard deviation, swimlane filter resolution, and search match.
+Feature: Completed archive analytics helpers
+  Timestamp parsing, bucket boundaries, median and sample standard deviation,
+  swimlane filter resolution, and completed-card search matching.
 
   Scenario: parseIsoMs returns null for blank input
     When I call parseIsoMs with ""

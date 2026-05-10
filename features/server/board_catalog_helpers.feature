@@ -1,6 +1,5 @@
-Feature: boardCatalog helper functions
-  Pure helpers used to allocate slugs, validate filenames, parse INI truthy values,
-  and pull the column index out of a legacy `tasks/{slug}/columns.{n}/` path.
+Feature: Board catalog path and filename helpers
+  Slugs, safe filenames, INI truthy parsing, column paths, default board INI text, and IDs.
 
   Scenario: sanitizeSegment lowercases and replaces non-safe characters
     When I call sanitizeSegment with "  Hello, World!  "

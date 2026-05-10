@@ -1,6 +1,7 @@
 # Does not contact registry.npmjs.org: registerNpmUpdateRoutes uses a mocked runNpmUpdateCheck.
 
-Feature: /api/npm-update-check
+Feature: NPM update check HTTP routes
+  `GET /api/npm-update-check` and `POST /api/npm-update-run-cycle` (registry calls mocked in tests).
 
   Scenario: endpoint returns JSON from the server-side update check
     Given an Express app with mocked npm update check

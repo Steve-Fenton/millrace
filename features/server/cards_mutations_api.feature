@@ -1,5 +1,5 @@
-Feature: Card mutations
-  Create, update, delete, move, and reorder cards via the HTTP API.
+Feature: Card mutations API
+  Create, update, delete, move, and reorder cards through the REST routes.
 
   Scenario: POST creates a card under the board folder
     Given the Millrace integration server has profile "flow-board"

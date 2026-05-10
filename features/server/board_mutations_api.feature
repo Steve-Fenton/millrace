@@ -1,5 +1,5 @@
-Feature: Board definition mutations
-  POST /api/board, PUT /api/board-definition, DELETE /api/board-definition.
+Feature: Board definition mutations API
+  Create boards (`POST /api/board`), replace definitions (`PUT`), and delete (`DELETE`).
 
   Scenario: POST creates a new board file and catalog entry
     Given the Millrace integration server has profile "flow-board"

@@ -1,5 +1,5 @@
-Feature: Column cards API
-  GET /api/column-cards and the nested tasks URL list cards for a board column.
+Feature: List cards in a column API
+  `GET /api/column-cards` and the nested `/api/tasks/.../cards` route return the same payload.
 
   Scenario: column cards match between query and path routes
     Given the Millrace integration server has profile "with-open-card"
