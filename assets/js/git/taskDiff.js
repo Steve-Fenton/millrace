@@ -26,6 +26,7 @@ const FIELD_LABEL = {
   sort_order: "Sort order",
   created: "Created",
   closed: "Closed",
+  strategic: "Strategic",
 };
 
 const ITEM_COMPARE_KEYS = [
@@ -38,6 +39,7 @@ const ITEM_COMPARE_KEYS = [
   "id",
   "created",
   "closed",
+  "strategic",
 ];
 
 /**

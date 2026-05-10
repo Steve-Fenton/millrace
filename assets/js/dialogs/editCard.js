@@ -160,7 +160,7 @@ function formatCardTimestampDisplay(raw) {
  * @returns {Promise<boolean>} true if saved, deleted, or duplicated (board refresh)
  */
 export async function openCardEditorDialog(ctx) {
-  /** @type {{ title?: string, description?: string, owner?: string, created?: string, closed?: string, links?: { text?: string, url?: string }[] }} */
+  /** @type {{ title?: string, description?: string, owner?: string, created?: string, closed?: string, strategic?: boolean, links?: { text?: string, url?: string }[] }} */
   let initial = {};
   try {
     initial = await fetchCard(ctx.boardSlug, ctx.columnIndex, ctx.filename);
@@ -200,6 +200,10 @@ export async function openCardEditorDialog(ctx) {
         <label class="flow-field">
           <span class="flow-field-label">Title</span>
           <input class="flow-input" name="title" type="text" required autocomplete="off" placeholder="What needs doing?" />
+        </label>
+        <label class="flow-field flow-field--checkbox">
+          <input type="checkbox" name="strategic" />
+          <span class="flow-field-label">Strategic / critical priority</span>
         </label>
         <label class="flow-field">
           <span class="flow-field-label">Description</span>
@@ -262,6 +266,7 @@ export async function openCardEditorDialog(ctx) {
 
   const form = modal.querySelector("form");
   const titleInput = modal.querySelector('input[name="title"]');
+  const strategicInput = modal.querySelector('input[name="strategic"]');
   const descInput = modal.querySelector('textarea[name="description"]');
   const descField = descInput.closest(".flow-field");
   descField?.classList.add("flow-field--description");
@@ -316,6 +321,7 @@ export async function openCardEditorDialog(ctx) {
   descField?.append(descPreview);
 
   titleInput.value = String(initial.title ?? "").trim();
+  if (strategicInput) strategicInput.checked = Boolean(initial.strategic);
   descInput.value = String(initial.description ?? "");
 
   const ownerField = createOwnerField(
@@ -456,6 +462,7 @@ export async function openCardEditorDialog(ctx) {
       title: String(titleInput.value ?? "").trim(),
       description: String(descInput.value ?? ""),
       owner: ownerField.getValue(),
+      strategic: Boolean(strategicInput?.checked),
       links: normalizeLinks(linksEditor.getLinks()),
     });
   }
@@ -514,6 +521,7 @@ export async function openCardEditorDialog(ctx) {
           title,
           description,
           owner,
+          strategic: Boolean(strategicInput?.checked),
           links: linksEditor.getLinks(),
         });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
@@ -601,6 +609,7 @@ export async function openCardEditorDialog(ctx) {
             title: newTitle,
             description,
             owner,
+            strategic: Boolean(strategicInput?.checked),
             links,
           });
           document.dispatchEvent(new CustomEvent("flow:refresh-board"));

@@ -19,6 +19,7 @@ function baselineTaskCard() {
     sort_order: undefined,
     created: undefined,
     closed: undefined,
+    strategic: false,
     links: [],
   };
 }

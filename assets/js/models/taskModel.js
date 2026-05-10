@@ -2,8 +2,31 @@ import { parseIni } from "../ini/parseIni.js";
 
 /**
  * @typedef {{ text: string, url: string }} TaskLink
- * @typedef {{ id?: string, title?: string, description?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, links: TaskLink[], filename?: string }} TaskCard
+ * @typedef {{ id?: string, title?: string, description?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, strategic?: boolean, links: TaskLink[], filename?: string }} TaskCard
  */
+
+/**
+ * Parse typical INI boolean tokens (yes/no, true/false, 1/0).
+ * @param {unknown} raw
+ * @returns {boolean}
+ */
+export function parseIniTruthy(raw) {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (!s) return false;
+  return ["1", "true", "yes", "y", "on"].includes(s);
+}
+
+/**
+ * Title text as shown on the board and completed list (optional strategic marker).
+ * @param {{ title?: string, filename?: string, strategic?: boolean }} card
+ */
+export function displayTaskTitle(card) {
+  const base =
+    (card.title && String(card.title).trim()) ||
+    (card.filename ? String(card.filename).replace(/\.ini$/i, "") : "") ||
+    "Untitled";
+  return card.strategic ? `🎯 ${base}` : base;
+}
 
 /**
  * Lines inside `[item]` … next section (excluding the `[item]` header).
@@ -149,6 +172,7 @@ export function parseTaskCardIni(text) {
     sort_order: item.sort_order?.trim(),
     created: item.created?.trim(),
     closed: item.closed?.trim(),
+    strategic: parseIniTruthy(item.strategic),
     links,
   };
 }

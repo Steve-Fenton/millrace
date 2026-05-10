@@ -68,7 +68,7 @@ export function swimlaneNameForIniItem(swimlanes, swimlaneIndex) {
 
 /**
  * Serialize a new task card as INI (matches README work-item shape).
- * @param {{ id: string, title: string, description?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
+ * @param {{ id: string, title: string, description?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, strategic?: boolean, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
  */
 export function serializeCardIni({
   id,
@@ -78,6 +78,7 @@ export function serializeCardIni({
   columnIndex,
   swimlaneIndex,
   sortOrder,
+  strategic,
   links,
   columns = [],
   swimlanes = [],
@@ -107,6 +108,9 @@ export function serializeCardIni({
   if (sortOrder !== undefined && Number.isFinite(Number(sortOrder))) {
     item.sort_order = String(Math.round(Number(sortOrder)));
   }
+  if (strategic) {
+    item.strategic = "yes";
+  }
   return serializeFullCardIni(item, normalizeLinksForIni(links));
 }
 
@@ -134,6 +138,7 @@ export function serializeFullCardIni(item, links) {
     "sort_order",
     "created",
     "closed",
+    "strategic",
   ];
   const scalarKeys = new Set([
     "id",
@@ -144,6 +149,7 @@ export function serializeFullCardIni(item, links) {
     "sort_order",
     "created",
     "closed",
+    "strategic",
   ]);
   const used = new Set();
 
@@ -167,6 +173,7 @@ export function serializeFullCardIni(item, links) {
     if (k === "swimlane" && String(v).trim() === "") continue;
     if (k === "column" && String(v).trim() === "") continue;
     if (k === "sort_order" && String(v).trim() === "") continue;
+    if (k === "strategic" && String(v).trim() === "") continue;
     used.add(k);
     if (k === "description") {
       appendDescription(v);

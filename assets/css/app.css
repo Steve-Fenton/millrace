@@ -1050,6 +1050,14 @@ dialog.git-conflict-dialog::backdrop {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.complete-table__row--strategic .complete-table__td {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.complete-table__row--strategic:hover .complete-table__td {
+  background: rgba(56, 189, 248, 0.1);
+}
+
 .complete-table__row--editable {
   cursor: default;
 }
@@ -1755,6 +1763,12 @@ a.column-done-truncation-link:focus-visible {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);
+}
+
+/** Strategic / critical cards — override background and border in your theme if needed */
+.column-card--strategic {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.32);
 }
 
 .column-card--compass-open {
@@ -2648,6 +2662,20 @@ dialog.flow-modal::backdrop {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+.flow-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.flow-field--checkbox .flow-field-label {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .flow-field--prompt {

@@ -29,6 +29,7 @@ import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
 import { swimlaneNameForIniItem } from "../ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
 import { escapeHtml } from "../html/escape.js";
+import { displayTaskTitle } from "../models/taskModel.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
@@ -506,11 +507,9 @@ function renderCompleteShell(
     const source = String(card.source ?? "");
     const tr = document.createElement("tr");
     tr.className = "complete-table__row";
+    if (card.strategic) tr.classList.add("complete-table__row--strategic");
 
-    const titleText =
-      (card.title && String(card.title).trim()) ||
-      (card.filename ? String(card.filename).replace(/\.ini$/i, "") : "") ||
-      "Untitled";
+    const titleText = displayTaskTitle(card);
 
     const fn = card.filename && String(card.filename).trim();
     const colIdx = card.columnIndex;

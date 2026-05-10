@@ -248,6 +248,11 @@ app.put("/api/card", async (req, res) => {
     item.description = String(description ?? "");
     item.owner = newOwner;
 
+    if (req.body && typeof req.body === "object" && "strategic" in req.body) {
+      if (Boolean(req.body.strategic)) item.strategic = "yes";
+      else delete item.strategic;
+    }
+
     const nextLinks = Array.isArray(req.body.links)
       ? normalizeLinksForIni(req.body.links)
       : parsedLinks;
@@ -320,6 +325,7 @@ app.post("/api/cards", async (req, res) => {
       title,
       description = "",
       owner = "",
+      strategic,
       links: linksRaw,
     } = req.body ?? {};
 
@@ -368,6 +374,7 @@ app.post("/api/cards", async (req, res) => {
       swimlaneIndex:
         Number.isInteger(laneNum) && laneNum >= 1 ? laneNum : undefined,
       sortOrder: maxSo + 10,
+      strategic: Boolean(strategic),
       links: normalizeLinksForIni(linksRaw),
       columns: columnsDef,
       swimlanes: swimlanesDef,

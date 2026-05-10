@@ -43,6 +43,7 @@ import {
 } from "./ui/clearFilter.js";
 import { fillCardLinkWithNewTabIcon } from "./ui/cardLinkOpenNewTab.js";
 import { escapeHtml } from "./html/escape.js";
+import { displayTaskTitle } from "./models/taskModel.js";
 
 const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M7 3v8M3 7h8"/></svg>`;
 
@@ -925,10 +926,8 @@ function renderBoard(
       for (const card of displayCards) {
         const li = document.createElement("li");
         li.className = "column-card";
-        const titleText =
-          (card.title && String(card.title).trim()) ||
-          (card.filename ? String(card.filename).replace(/\.ini$/i, "") : "") ||
-          "Untitled";
+        if (card.strategic) li.classList.add("column-card--strategic");
+        const titleText = displayTaskTitle(card);
         const titleEl = document.createElement("div");
         titleEl.className = "column-card-title";
         titleEl.textContent = titleText;
