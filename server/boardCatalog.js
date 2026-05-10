@@ -138,7 +138,7 @@ export async function loadBoardCatalog() {
       const name = m.board.name?.trim() || slug || "Board";
       out.push({ file: base, slug, name });
     } catch {
-      console.warn(`[flow] board catalog lists ${base} but it could not be read`);
+      console.warn(`[millrace] board catalog lists ${base} but it could not be read`);
     }
   }
   if (out.length === 0) {

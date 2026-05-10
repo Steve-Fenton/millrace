@@ -254,21 +254,21 @@ export function registerGitRoutes(app, deps = {}) {
         return;
       }
       if (out.kind === "pullFail") {
-        console.error("[flow] git sync: pull failed", out.err);
+        console.error("[millrace] git sync: pull failed", out.err);
         res.status(500).json({
           message: formatGitExecError("git pull", out.err),
         });
         return;
       }
       if (out.kind === "commitFail") {
-        console.error("[flow] git sync: commit failed", out.err);
+        console.error("[millrace] git sync: commit failed", out.err);
         res.status(500).json({
           message: formatGitExecError("git commit", out.err),
         });
         return;
       }
       if (out.kind === "pushFail") {
-        console.error("[flow] git sync: push failed", out.err);
+        console.error("[millrace] git sync: push failed", out.err);
         res.status(500).json({
           message: formatGitExecError("git push", out.err),
         });
@@ -276,10 +276,10 @@ export function registerGitRoutes(app, deps = {}) {
       }
 
       await clearPending();
-      console.error("[flow] git sync: pull, commits, push ok");
+      console.error("[millrace] git sync: pull, commits, push ok");
       res.json({ ok: true });
     } catch (e) {
-      console.error("[flow] git sync: failed", e);
+      console.error("[millrace] git sync: failed", e);
       res.status(500).json({
         message: e instanceof Error ? e.message : "Git sync failed.",
       });

@@ -109,7 +109,7 @@ export async function markDataRootPendingSync() {
     sections.flow.pending_sync = "1";
     await writeLocalUserIniSections(sections);
   } catch (e) {
-    console.warn("[flow] could not set pending_sync:", e);
+    console.warn("[millrace] could not set pending_sync:", e);
   }
 }
 
@@ -121,7 +121,7 @@ export async function clearDataRootPendingSync() {
     delete sections.flow.pendingSync;
     await writeLocalUserIniSections(sections);
   } catch (e) {
-    console.warn("[flow] could not clear pending_sync:", e);
+    console.warn("[millrace] could not clear pending_sync:", e);
   }
 }
 

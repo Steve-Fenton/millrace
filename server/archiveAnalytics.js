@@ -53,7 +53,7 @@ export async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {
     try {
       await fs.access(dest);
       console.warn(
-        `[flow] archive: skipped ${ent.name} — already exists in archive/`
+        `[millrace] archive: skipped ${ent.name} — already exists in archive/`
       );
       continue;
     } catch {
@@ -63,9 +63,9 @@ export async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {
     try {
       await fs.rename(src, dest);
       moved++;
-      console.error(`[flow] Archived closed task (>${maxAgeDays}d): ${slug}/${ent.name}`);
+      console.error(`[millrace] Archived closed task (>${maxAgeDays}d): ${slug}/${ent.name}`);
     } catch (e) {
-      console.warn("[flow] archive: could not move", ent.name, e);
+      console.warn("[millrace] archive: could not move", ent.name, e);
     }
   }
 
@@ -111,7 +111,7 @@ export async function runStartupArchiveStaleForCatalogSlugs() {
       await runArchiveStaleClosedForSlug(slug);
     }
   } catch (e) {
-    console.error("[flow] startup archive:", e);
+    console.error("[millrace] startup archive:", e);
   }
 }
 export function parseIsoMs(raw) {
@@ -174,7 +174,7 @@ export async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
     try {
       await fs.access(dest);
       console.warn(
-        `[flow] cold-storage: skipped ${ent.name} — already exists in cold-storage/${year}/`
+        `[millrace] cold-storage: skipped ${ent.name} — already exists in cold-storage/${year}/`
       );
       continue;
     } catch {
@@ -185,10 +185,10 @@ export async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
       await fs.rename(src, dest);
       moved++;
       console.error(
-        `[flow] cold-storage: moved from archive (>${ageMonths}mo): ${slug}/archive/${ent.name} → cold-storage/${year}/`
+        `[millrace] cold-storage: moved from archive (>${ageMonths}mo): ${slug}/archive/${ent.name} → cold-storage/${year}/`
       );
     } catch (e) {
-      console.warn("[flow] cold-storage: could not move", ent.name, e);
+      console.warn("[millrace] cold-storage: could not move", ent.name, e);
     }
   }
 

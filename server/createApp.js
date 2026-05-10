@@ -8,11 +8,13 @@ import { registerColumnAndAnalyticsRoutes } from "./routes/columnAndAnalyticsRou
 import { registerFlowRoutes } from "./routes/flowRoutes.js";
 import { registerGitRoutes } from "./routes/gitRoutes.js";
 import { registerLocalUserRoutes } from "./routes/localUserRoutes.js";
+import { registerNpmUpdateRoutes } from "./routes/npmUpdateRoutes.js";
 
 export function createApp() {
   const app = express();
   app.use(express.json({ limit: "512kb" }));
   registerFlowRoutes(app);
+  registerNpmUpdateRoutes(app);
   registerBoardRoutes(app);
   registerColumnAndAnalyticsRoutes(app);
   registerCardRoutes(app);

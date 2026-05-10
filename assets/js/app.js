@@ -11,11 +11,12 @@ import {
   fetchColumnCards,
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
+  fetchNpmUpdateCheck,
   moveCard,
   reorderCards,
 } from "./client.js";
 import { runGitSyncWithConflictFlow } from "./git/gitSyncFlow.js";
-import { showFlowAlert } from "./ui/showMessage.js";
+import { showFlowAlert, showFlowToast } from "./ui/showMessage.js";
 import { ensureMineEmailConfigured } from "./ui/setupMineOwner.js";
 import { createFlowNavMenu } from "./ui/menu.js";
 import { createMillraceBrandMark } from "./ui/brandMark.js";
@@ -1498,8 +1499,30 @@ async function loadApp(fullReload = true) {
   }
 }
 
+async function maybeNotifyNpmUpdate() {
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      if (sessionStorage.getItem("millrace.npmUpdateToast")) return;
+    }
+    const info = await fetchNpmUpdateCheck();
+    if (!info.updateAvailable || !info.latestVersion) return;
+    const cur = info.currentVersion || "?";
+    const lat = info.latestVersion;
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("millrace.npmUpdateToast", "1");
+    }
+    showFlowToast(
+      `You are running Millrace v${cur} and a new version is available: v${lat}.`,
+      { durationMs: 9000 }
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 async function main() {
   await loadApp(true);
+  void maybeNotifyNpmUpdate();
 
   document.addEventListener("flow:refresh-board", () => {
     void loadApp(true);

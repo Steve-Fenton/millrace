@@ -233,7 +233,7 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
   /* Live Preview / static hosts serve board.ini but not POST/GET /api — don't fail the whole board. */
   if (typeof console !== "undefined" && console.warn) {
     console.warn(
-      "[flow] Column cards unavailable (HTTP %s). Cards need `pnpm start`. Empty column until API responds.",
+      "[millrace] Column cards unavailable (HTTP %s). Cards need `pnpm start`. Empty column until API responds.",
       String(res.status)
     );
   }
@@ -271,6 +271,42 @@ export async function fetchLocalUserProfile() {
       chartsGranularity: "",
       pendingSync: false,
       syncMode: "automatic",
+    };
+  }
+}
+
+/**
+ * NPM registry update hint (server throttles via `last_npm_update_check` in tasks/localuser.ini `[flow]`).
+ * @returns {Promise<{ currentVersion: string, latestVersion: string | null, updateAvailable: boolean, checkedRegistry: boolean }>}
+ */
+export async function fetchNpmUpdateCheck() {
+  try {
+    const res = await fetch("/api/npm-update-check", NO_STORE);
+    if (!res.ok) {
+      return {
+        currentVersion: "",
+        latestVersion: null,
+        updateAvailable: false,
+        checkedRegistry: false,
+      };
+    }
+    const data = await res.json();
+    const latestRaw = data.latestVersion;
+    return {
+      currentVersion: String(data.currentVersion ?? "").trim(),
+      latestVersion:
+        latestRaw != null && String(latestRaw).trim()
+          ? String(latestRaw).trim()
+          : null,
+      updateAvailable: Boolean(data.updateAvailable),
+      checkedRegistry: Boolean(data.checkedRegistry),
+    };
+  } catch {
+    return {
+      currentVersion: "",
+      latestVersion: null,
+      updateAvailable: false,
+      checkedRegistry: false,
     };
   }
 }
