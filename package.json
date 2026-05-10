@@ -26,8 +26,8 @@
     "prepublishOnly": "node scripts/sync-docs-version.mjs",
     "version": "node scripts/sync-docs-version.mjs",
     "start": "node server.js 7713",
-    "test": "NODE_OPTIONS=--experimental-vm-modules c8 cucumber-js",
-    "test:cucumber": "cucumber-js",
+    "test": "MILLRACE_TESTS_DISABLE_REGISTRY_FETCH=1 NODE_OPTIONS=--experimental-vm-modules c8 cucumber-js",
+    "test:cucumber": "MILLRACE_TESTS_DISABLE_REGISTRY_FETCH=1 cucumber-js",
     "screenshots": "playwright test",
     "screenshots:install": "playwright install chromium"
   },

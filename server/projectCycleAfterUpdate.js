@@ -11,11 +11,22 @@ import {
 const inFlight = new Map();
 
 /**
+ * When set (tests only), replaces real `pnpm` spawn.
+ * @type {null | ((args: string[], cwd: string) => Promise<void>)}
+ */
+let pnpmRunnerOverride = null;
+
+/** @param {null | ((args: string[], cwd: string) => Promise<void>)} fn */
+export function setProjectCyclePnpmRunnerForTesting(fn) {
+  pnpmRunnerOverride = fn;
+}
+
+/**
  * @param {string[]} args
  * @param {string} cwd
  * @returns {Promise<void>}
  */
-function runPnpm(args, cwd) {
+function runPnpmSpawn(args, cwd) {
   return new Promise((resolve, reject) => {
     const opts = {
       cwd,
@@ -39,6 +50,18 @@ function runPnpm(args, cwd) {
 }
 
 /**
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {Promise<void>}
+ */
+function runPnpm(args, cwd) {
+  if (pnpmRunnerOverride) {
+    return pnpmRunnerOverride(args, cwd);
+  }
+  return runPnpmSpawn(args, cwd);
+}
+
+/**
  * Whether `package.json` at the data root defines `scripts.cycle` (used by update-check JSON).
  * @returns {Promise<boolean>}
  */
@@ -59,7 +82,7 @@ export async function readProjectHasCycleScript() {
  * Run `pnpm update --latest` then `pnpm cycle` after the user chose “Update now” in the UI.
  *
  * @param {string} registryLatestVersion
- * @returns {Promise<ProjectCycleResult>}
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string }>}
  */
 export async function runProjectCycleAfterUserConfirm(registryLatestVersion) {
   const key = String(registryLatestVersion ?? "").trim();

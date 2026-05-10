@@ -75,8 +75,20 @@ function parseLastCheckMs(iso) {
  * @param {string} packageName
  * @param {typeof fetch} [fetchFn]
  * @returns {Promise<string | null>}
+ *
+ * When `process.env.MILLRACE_TESTS_DISABLE_REGISTRY_FETCH` is `1` (set by `npm test`),
+ * calling this with the default global `fetch` throws so the suite cannot hit registry.npmjs.org
+ * by accident — inject `fetchFn` or pass `opts.fetchLatest` into {@link runNpmUpdateCheck}.
  */
 export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
+  if (
+    process.env.MILLRACE_TESTS_DISABLE_REGISTRY_FETCH === "1" &&
+    fetchFn === fetch
+  ) {
+    throw new Error(
+      "fetchLatestNpmVersion: registry fetch blocked under tests (pass fetchFn or opts.fetchLatest)."
+    );
+  }
   const url = `${NPM_REGISTRY_LATEST}/${encodeURIComponent(packageName)}/latest`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 12_000);

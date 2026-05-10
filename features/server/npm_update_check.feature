@@ -1,3 +1,5 @@
+# Does not contact registry.npmjs.org: registerNpmUpdateRoutes uses a mocked runNpmUpdateCheck.
+
 Feature: /api/npm-update-check
 
   Scenario: endpoint returns JSON from the server-side update check
