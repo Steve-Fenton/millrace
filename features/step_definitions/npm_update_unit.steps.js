@@ -12,6 +12,7 @@ import {
 import {
   readProjectHasCycleScript,
   runProjectCycleAfterUserConfirm,
+  runProjectInstallThenCycle,
   setProjectCyclePnpmRunnerForTesting,
 } from "../../server/projectCycleAfterUpdate.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
@@ -62,6 +63,49 @@ Given("npm unit package.json contains cycle script", async function () {
     "utf8"
   );
 });
+
+Given(
+  "npm unit package.json has millrace {string} and cycle script",
+  async function (millraceSpec) {
+    await fs.writeFile(
+      path.join(NPM_UNIT_ROOT, "package.json"),
+      JSON.stringify(
+        {
+          name: "npm-unit-fixture",
+          dependencies: { millrace: millraceSpec },
+          scripts: { cycle: 'node -e ""' },
+        },
+        null,
+        0
+      ),
+      "utf8"
+    );
+  }
+);
+
+Given(
+  "npm unit pnpm-lock.yaml locks millrace specifier {string} version {string}",
+  async function (specifier, version) {
+    const specYaml = specifier.replace(/'/g, "''");
+    const text = `lockfileVersion: '9.0'
+
+importers:
+
+  .:
+    dependencies:
+      millrace:
+        specifier: '${specYaml}'
+        version: ${version}
+
+packages:
+`;
+    await fs.writeFile(
+      path.join(NPM_UNIT_ROOT, "pnpm-lock.yaml"),
+      text,
+      "utf8"
+    );
+  }
+);
 
 Given("npm unit package.json has empty scripts", async function () {
   await fs.writeFile(
@@ -130,6 +174,10 @@ When(
     this.projectCycleResult = await runProjectCycleAfterUserConfirm(ver);
   }
 );
+
+When("I run project install cycle after confirm", async function () {
+  this.projectCycleResult = await runProjectInstallThenCycle();
+});
 
 Then("npm update fetchLatest call count should be {int}", function (n) {
   assert.strictEqual(this.npmFetchCalls, n);
@@ -221,6 +269,21 @@ Then("mocked pnpm should have run update-latest then cycle", function () {
   const calls = this.pnpmMockCalls;
   assert.strictEqual(calls.length, 2);
   assert.deepStrictEqual(calls[0].args, ["update", "--latest"]);
+  assert.deepStrictEqual(calls[1].args, ["cycle"]);
+});
+
+Then("npm update result lockfileOutOfSync should be true", function () {
+  assert.strictEqual(this.npmUpdateResult.lockfileOutOfSync, true);
+});
+
+Then("npm update result lockfileOutOfSync should be false", function () {
+  assert.strictEqual(this.npmUpdateResult.lockfileOutOfSync, false);
+});
+
+Then("mocked pnpm should have run install then cycle", function () {
+  const calls = this.pnpmMockCalls;
+  assert.strictEqual(calls.length, 2);
+  assert.deepStrictEqual(calls[0].args, ["install"]);
   assert.deepStrictEqual(calls[1].args, ["cycle"]);
 });
 

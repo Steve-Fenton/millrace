@@ -109,3 +109,57 @@ Feature: npmUpdateCheck and projectCycleAfterUpdate
     When I run project cycle after confirm for version "1.0.0"
     Then project cycle result ok should be false
     And project cycle result reason should be "pnpm_failed"
+
+  Scenario: runNpmUpdateCheck reports lockfileOutOfSync when millrace specifier differs
+    Given npm unit data root is prepared
+    And npm unit tasks localuser.ini is absent
+    And npm unit package.json has millrace "^1.0.1" and cycle script
+    And npm unit pnpm-lock.yaml locks millrace specifier "^1.0.0" version "1.0.0"
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "1.0.0"
+      }
+      """
+    Then npm update result lockfileOutOfSync should be true
+
+  Scenario: runNpmUpdateCheck reports lockfileOutOfSync false when millrace matches lock
+    Given npm unit data root is prepared
+    And npm unit tasks localuser.ini is absent
+    And npm unit package.json has millrace "^1.0.0" and cycle script
+    And npm unit pnpm-lock.yaml locks millrace specifier "^1.0.0" version "1.0.0"
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "1.0.0"
+      }
+      """
+    Then npm update result lockfileOutOfSync should be false
+
+  Scenario: runNpmUpdateCheck still evaluates lock drift within registry cooldown
+    Given npm unit data root is prepared
+    And npm unit localuser.ini contains last_npm_update_check 1 hour before fixed now
+    And npm unit package.json has millrace "^1.0.1" and cycle script
+    And npm unit pnpm-lock.yaml locks millrace specifier "^1.0.0" version "1.0.0"
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "99.0.0"
+      }
+      """
+    Then npm update fetchLatest call count should be 0
+    And npm update result lockfileOutOfSync should be true
+
+  Scenario: runProjectInstallThenCycle succeeds with mocked pnpm
+    Given npm unit data root is prepared
+    And npm unit package.json contains cycle script
+    And project cycle pnpm is mocked to succeed
+    When I run project install cycle after confirm
+    Then project cycle result ok should be true
+    And mocked pnpm should have run install then cycle

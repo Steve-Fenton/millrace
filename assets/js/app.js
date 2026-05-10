@@ -12,6 +12,7 @@ import {
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
   fetchNpmUpdateCheck,
+  postNpmInstallRunCycle,
   postNpmUpdateRunCycle,
   moveCard,
   reorderCards,
@@ -1505,6 +1506,80 @@ async function maybeNotifyNpmUpdate() {
     if (typeof sessionStorage === "undefined") return;
 
     const info = await fetchNpmUpdateCheck();
+
+    const lockDrift = Boolean(info.lockfileOutOfSync);
+    const lockKey = [
+      info.packageMillraceSpec ?? "",
+      info.lockSpecifier ?? "",
+      info.lockResolvedVersion ?? "",
+    ].join("|");
+
+    if (lockDrift) {
+      const lockDismissed =
+        sessionStorage.getItem("millrace.npmLockSyncDismissedFor") ?? "";
+      if (lockDismissed !== lockKey) {
+        if (info.projectHasCycleScript) {
+          const syncNow = await showFlowConfirm(
+            "This project's Millrace dependency doesn't match the lockfile anymore — often after someone else changed package.json. Do you want to install and restart now?",
+            {
+              title: "Install needed",
+              confirmLabel: "Install now",
+              cancelLabel: "Later",
+              allowEscapeDismiss: false,
+              allowBackdropDismiss: false,
+            }
+          );
+          if (!syncNow) {
+            sessionStorage.setItem("millrace.npmLockSyncDismissedFor", lockKey);
+            return;
+          }
+          try {
+            const result = await postNpmInstallRunCycle();
+            if (result.ok) {
+              const restarting = Boolean(result.restarting);
+              showFlowToast(
+                restarting
+                  ? "Dependencies installed. Restarting the app now — the page may reload."
+                  : "Dependencies installed. Restart Millrace if it did not reload automatically.",
+                { durationMs: 8000 }
+              );
+            } else {
+              const detail =
+                typeof result.message === "string" && result.message.trim()
+                  ? result.message.trim()
+                  : npmUpdateFailureReasonLabel(result.reason);
+              await showFlowAlert(detail, { title: "Could not install" });
+            }
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            const likelyRestartDisconnect =
+              /failed to fetch/i.test(msg) ||
+              msg === "Load failed" ||
+              msg === "NetworkError when attempting to fetch resource.";
+            if (likelyRestartDisconnect) {
+              showFlowToast(
+                "If the app restarted, installation finished. Otherwise check the server logs.",
+                { durationMs: 9000 }
+              );
+            } else {
+              await showFlowAlert(msg, { title: "Could not install" });
+            }
+          }
+          return;
+        }
+
+        const toastMark = "millrace.npmLockSyncToastFor";
+        if (sessionStorage.getItem(toastMark) !== lockKey) {
+          sessionStorage.setItem(toastMark, lockKey);
+          showFlowToast(
+            "This project's Millrace dependency doesn't match the lockfile. Install dependencies, then restart the app.",
+            { durationMs: 9000 }
+          );
+        }
+        return;
+      }
+    }
+
     if (!info.updateAvailable || !info.latestVersion) return;
 
     const cur = info.currentVersion || "?";

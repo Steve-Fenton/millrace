@@ -7,8 +7,10 @@ import {
   writeLocalUserIniSections,
 } from "./localUserIni.js";
 
-/** @type {Map<string, Promise<{ ok: boolean, reason?: string, message?: string }>>} */
+/** @type {Map<string, Promise<{ ok: boolean, reason?: string, message?: string, restarting?: boolean }>>} */
 const inFlight = new Map();
+
+const INSTALL_SYNC_IN_FLIGHT_KEY = "__pnpm_install_sync__";
 
 /**
  * When set (tests only), replaces real `pnpm` spawn.
@@ -105,6 +107,113 @@ export async function runProjectCycleAfterUserConfirm(registryLatestVersion, opt
     return await run;
   } finally {
     inFlight.delete(key);
+  }
+}
+
+/**
+ * Run `pnpm install` then `pnpm cycle` when package.json and pnpm-lock.yaml disagree on Millrace.
+ *
+ * @param {{ deferCycle?: boolean }} [opts]
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string, restarting?: boolean }>}
+ */
+export async function runProjectInstallThenCycle(opts = {}) {
+  const existing = inFlight.get(INSTALL_SYNC_IN_FLIGHT_KEY);
+  if (existing) {
+    return existing;
+  }
+
+  const run = executeInstallThenCycleSteps(opts);
+  inFlight.set(INSTALL_SYNC_IN_FLIGHT_KEY, run);
+
+  try {
+    return await run;
+  } finally {
+    inFlight.delete(INSTALL_SYNC_IN_FLIGHT_KEY);
+  }
+}
+
+/**
+ * @param {{ deferCycle?: boolean }} [opts]
+ */
+async function executeInstallThenCycleSteps(opts = {}) {
+  const deferCycle = Boolean(opts.deferCycle);
+  const root = dataRoot();
+  const pkgPath = path.join(root, "package.json");
+  let pkgRaw;
+  try {
+    pkgRaw = await fs.readFile(pkgPath, "utf8");
+  } catch {
+    console.info(
+      `[millrace] NPM install sync (user): no package.json in data root (${root})`
+    );
+    return {
+      ok: false,
+      reason: "no_package_json",
+      message: "No package.json in the Millrace data root.",
+    };
+  }
+
+  /** @type {{ scripts?: Record<string, string> }} */
+  let pkg;
+  try {
+    pkg = JSON.parse(pkgRaw);
+  } catch {
+    return {
+      ok: false,
+      reason: "invalid_package_json",
+      message: "Could not parse package.json.",
+    };
+  }
+
+  const cycleScript = pkg.scripts && pkg.scripts.cycle;
+  const hasCycle =
+    typeof cycleScript === "string" && cycleScript.trim().length > 0;
+
+  if (!hasCycle) {
+    return {
+      ok: false,
+      reason: "no_cycle_script",
+      message: 'package.json has no "cycle" script.',
+    };
+  }
+
+  console.info(
+    `[millrace] NPM install sync (user): running \`pnpm install\` then \`pnpm cycle\` in ${root}`
+  );
+
+  try {
+    await runPnpm(["install"], root);
+    if (deferCycle) {
+      const rootRef = root;
+      setImmediate(() => {
+        void (async () => {
+          try {
+            await runPnpm(["cycle"], rootRef);
+            console.info("[millrace] NPM install sync (user): finished deferred pnpm cycle");
+          } catch (e) {
+            console.warn(
+              "[millrace] NPM install sync (user): deferred pnpm cycle failed:",
+              e
+            );
+          }
+        })();
+      });
+      console.info(
+        "[millrace] NPM install sync (user): install ok; cycle deferred until after HTTP response"
+      );
+      return { ok: true, restarting: true };
+    }
+    await runPnpm(["cycle"], root);
+    console.info("[millrace] NPM install sync (user): finished pnpm install and cycle");
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[millrace] NPM install sync (user): pnpm failed:", e);
+    return {
+      ok: false,
+      reason: "pnpm_failed",
+      message: msg,
+    };
   }
 }
 

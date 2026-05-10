@@ -4,6 +4,7 @@ import {
   readLocalUserIniSections,
   writeLocalUserIniSections,
 } from "./localUserIni.js";
+import { readMillraceLockfileDrift } from "./millraceLockDrift.js";
 import { readProjectHasCycleScript } from "./projectCycleAfterUpdate.js";
 import { REPO_ROOT } from "./repoRoot.js";
 
@@ -120,6 +121,10 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  *   updateAvailable: boolean,
  *   checkedRegistry: boolean,
  *   projectHasCycleScript: boolean,
+ *   lockfileOutOfSync: boolean,
+ *   packageMillraceSpec: string | null,
+ *   lockSpecifier: string | null,
+ *   lockResolvedVersion: string | null,
  * }>}
  */
 export async function runNpmUpdateCheck(opts = {}) {
@@ -138,9 +143,10 @@ export async function runNpmUpdateCheck(opts = {}) {
   const { version: currentVersion, packageName } =
     await readInstalledMillracePackageMeta();
 
-  const [projectHasCycleScript, sections] = await Promise.all([
+  const [projectHasCycleScript, sections, drift] = await Promise.all([
     readProjectHasCycleScript(),
     readLocalUserIniSections(),
+    readMillraceLockfileDrift(),
   ]);
   const flow = sections.flow ?? {};
   const lastRaw =
@@ -150,6 +156,13 @@ export async function runNpmUpdateCheck(opts = {}) {
   const withinCooldown =
     lastMs != null && nowMs - lastMs < intervalMs;
 
+  const driftPayload = {
+    lockfileOutOfSync: drift.lockfileOutOfSync,
+    packageMillraceSpec: drift.packageMillraceSpec,
+    lockSpecifier: drift.lockSpecifier,
+    lockResolvedVersion: drift.lockResolvedVersion,
+  };
+
   if (withinCooldown) {
     return {
       currentVersion,
@@ -157,6 +170,7 @@ export async function runNpmUpdateCheck(opts = {}) {
       updateAvailable: false,
       checkedRegistry: false,
       projectHasCycleScript,
+      ...driftPayload,
     };
   }
 
@@ -174,6 +188,7 @@ export async function runNpmUpdateCheck(opts = {}) {
       updateAvailable: false,
       checkedRegistry: false,
       projectHasCycleScript,
+      ...driftPayload,
     };
   }
 
@@ -189,5 +204,6 @@ export async function runNpmUpdateCheck(opts = {}) {
     updateAvailable,
     checkedRegistry: true,
     projectHasCycleScript,
+    ...driftPayload,
   };
 }

@@ -1,17 +1,23 @@
 import { runNpmUpdateCheck } from "../npmUpdateCheck.js";
-import { runProjectCycleAfterUserConfirm } from "../projectCycleAfterUpdate.js";
+import {
+  runProjectCycleAfterUserConfirm,
+  runProjectInstallThenCycle,
+} from "../projectCycleAfterUpdate.js";
 
 /**
  * @param {import("express").Application} app
  * @param {{
  *   runNpmUpdateCheck?: typeof runNpmUpdateCheck,
  *   runProjectCycleAfterUserConfirm?: typeof runProjectCycleAfterUserConfirm,
+ *   runProjectInstallThenCycle?: typeof runProjectInstallThenCycle,
  * }} [deps]
  */
 export function registerNpmUpdateRoutes(app, deps = {}) {
   const run = deps.runNpmUpdateCheck ?? runNpmUpdateCheck;
   const runCycle =
     deps.runProjectCycleAfterUserConfirm ?? runProjectCycleAfterUserConfirm;
+  const runInstall =
+    deps.runProjectInstallThenCycle ?? runProjectInstallThenCycle;
 
   app.get("/api/npm-update-check", async (_req, res) => {
     try {
@@ -28,11 +34,18 @@ export function registerNpmUpdateRoutes(app, deps = {}) {
   app.post("/api/npm-update-run-cycle", async (req, res) => {
     try {
       const body = req.body && typeof req.body === "object" ? req.body : {};
+      const mode = String(body.mode ?? "").trim().toLowerCase();
+      if (mode === "install-sync") {
+        const result = await runInstall({ deferCycle: true });
+        res.json(result);
+        return;
+      }
       const raw = body.latestVersion ?? body.latest_version;
       const latestVersion = String(raw ?? "").trim();
       if (!latestVersion) {
         res.status(400).json({
-          message: "Expected JSON body with latestVersion (string).",
+          message:
+            "Expected JSON body with latestVersion (string), or mode=install-sync.",
         });
         return;
       }

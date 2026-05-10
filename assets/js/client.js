@@ -277,19 +277,35 @@ export async function fetchLocalUserProfile() {
 
 /**
  * NPM registry update hint (server throttles via `last_npm_update_check` in tasks/localuser.ini `[flow]`).
- * @returns {Promise<{ currentVersion: string, latestVersion: string | null, updateAvailable: boolean, checkedRegistry: boolean, projectHasCycleScript: boolean }>}
+ * Also compares data-root `package.json` vs `pnpm-lock.yaml` for Millrace (`lockfileOutOfSync`).
+ * @returns {Promise<{
+ *   currentVersion: string,
+ *   latestVersion: string | null,
+ *   updateAvailable: boolean,
+ *   checkedRegistry: boolean,
+ *   projectHasCycleScript: boolean,
+ *   lockfileOutOfSync: boolean,
+ *   packageMillraceSpec: string | null,
+ *   lockSpecifier: string | null,
+ *   lockResolvedVersion: string | null,
+ * }>}
  */
 export async function fetchNpmUpdateCheck() {
+  const empty = {
+    currentVersion: "",
+    latestVersion: null,
+    updateAvailable: false,
+    checkedRegistry: false,
+    projectHasCycleScript: false,
+    lockfileOutOfSync: false,
+    packageMillraceSpec: null,
+    lockSpecifier: null,
+    lockResolvedVersion: null,
+  };
   try {
     const res = await fetch("/api/npm-update-check", NO_STORE);
     if (!res.ok) {
-      return {
-        currentVersion: "",
-        latestVersion: null,
-        updateAvailable: false,
-        checkedRegistry: false,
-        projectHasCycleScript: false,
-      };
+      return empty;
     }
     const data = await res.json();
     const latestRaw = data.latestVersion;
@@ -302,15 +318,24 @@ export async function fetchNpmUpdateCheck() {
       updateAvailable: Boolean(data.updateAvailable),
       checkedRegistry: Boolean(data.checkedRegistry),
       projectHasCycleScript: Boolean(data.projectHasCycleScript),
+      lockfileOutOfSync: Boolean(data.lockfileOutOfSync),
+      packageMillraceSpec:
+        data.packageMillraceSpec != null &&
+        String(data.packageMillraceSpec).trim()
+          ? String(data.packageMillraceSpec).trim()
+          : null,
+      lockSpecifier:
+        data.lockSpecifier != null && String(data.lockSpecifier).trim()
+          ? String(data.lockSpecifier).trim()
+          : null,
+      lockResolvedVersion:
+        data.lockResolvedVersion != null &&
+        String(data.lockResolvedVersion).trim()
+          ? String(data.lockResolvedVersion).trim()
+          : null,
     };
   } catch {
-    return {
-      currentVersion: "",
-      latestVersion: null,
-      updateAvailable: false,
-      checkedRegistry: false,
-      projectHasCycleScript: false,
-    };
+    return empty;
   }
 }
 
@@ -324,6 +349,28 @@ export async function postNpmUpdateRunCycle(latestVersion) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ latestVersion }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  return data;
+}
+
+/**
+ * Runs `pnpm install` then `pnpm cycle` when package.json and the lockfile disagree on Millrace.
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string, restarting?: boolean }>}
+ */
+export async function postNpmInstallRunCycle() {
+  const res = await fetch("/api/npm-update-run-cycle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode: "install-sync" }),
     ...NO_STORE,
   });
   const data = await res.json().catch(() => ({}));
