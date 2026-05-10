@@ -45,13 +45,28 @@ app.get("/api/local-user/preferences", async (_req, res) => {
     const sections = await readLocalUserIniSections();
     const ownerRaw = sections.user?.owner ?? sections.local?.owner ?? "";
     const mineRaw = sections.user?.mine ?? sections.user?.Mine ?? "";
+    const flow = sections.flow ?? {};
+    const lastAutoGitPull = String(
+      flow.last_auto_git_pull ?? flow.lastAutoGitPull ?? ""
+    ).trim();
+    const lastNpmUpdateCheck = String(
+      flow.last_npm_update_check ?? flow.lastNpmUpdateCheck ?? ""
+    ).trim();
     res.json({
       syncMode: syncModeFromPreferencesSection(sections.preferences ?? {}),
       mine: String(mineRaw).trim(),
       owner: String(ownerRaw).trim(),
+      lastAutoGitPull,
+      lastNpmUpdateCheck,
     });
   } catch {
-    res.json({ syncMode: "automatic", mine: "", owner: "" });
+    res.json({
+      syncMode: "automatic",
+      mine: "",
+      owner: "",
+      lastAutoGitPull: "",
+      lastNpmUpdateCheck: "",
+    });
   }
 });
 
@@ -170,15 +185,23 @@ app.patch("/api/local-user/preferences", async (req, res) => {
           : undefined;
     const mineRaw = body.mine !== undefined ? body.mine : undefined;
     const ownerRaw = body.owner !== undefined ? body.owner : undefined;
+    const clearLastAutoGitPull =
+      body.clearLastAutoGitPull === true ||
+      body.clear_last_auto_git_pull === true;
+    const clearLastNpmUpdateCheck =
+      body.clearLastNpmUpdateCheck === true ||
+      body.clear_last_npm_update_check === true;
 
     if (
       syncRaw === undefined &&
       mineRaw === undefined &&
-      ownerRaw === undefined
+      ownerRaw === undefined &&
+      !clearLastAutoGitPull &&
+      !clearLastNpmUpdateCheck
     ) {
       res.status(400).json({
         message:
-          "Expected JSON body with syncMode (automatic or manual), mine (email), and/or owner (email).",
+          "Expected JSON body with syncMode (automatic or manual), mine (email), owner (email), clearLastAutoGitPull (true), and/or clearLastNpmUpdateCheck (true).",
       });
       return;
     }
@@ -233,17 +256,38 @@ app.patch("/api/local-user/preferences", async (req, res) => {
       }
     }
 
+    if (clearLastAutoGitPull || clearLastNpmUpdateCheck) {
+      sections.flow = sections.flow ?? {};
+      if (clearLastAutoGitPull) {
+        delete sections.flow.last_auto_git_pull;
+        delete sections.flow.lastAutoGitPull;
+      }
+      if (clearLastNpmUpdateCheck) {
+        delete sections.flow.last_npm_update_check;
+        delete sections.flow.lastNpmUpdateCheck;
+      }
+    }
+
     await writeLocalUserIniSections(sections);
 
     const out = await readLocalUserIniSections();
     const ownerOut = String(out.user?.owner ?? out.local?.owner ?? "").trim();
     const mineOut = String(out.user?.mine ?? out.user?.Mine ?? "").trim();
+    const flowOut = out.flow ?? {};
+    const lastAutoGitPullOut = String(
+      flowOut.last_auto_git_pull ?? flowOut.lastAutoGitPull ?? ""
+    ).trim();
+    const lastNpmUpdateCheckOut = String(
+      flowOut.last_npm_update_check ?? flowOut.lastNpmUpdateCheck ?? ""
+    ).trim();
 
     res.json({
       ok: true,
       syncMode: syncModeFromPreferencesSection(out.preferences ?? {}),
       mine: mineOut,
       owner: ownerOut,
+      lastAutoGitPull: lastAutoGitPullOut,
+      lastNpmUpdateCheck: lastNpmUpdateCheckOut,
     });
   } catch (e) {
     console.error(e);

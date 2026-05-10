@@ -1,6 +1,15 @@
 import assert from "node:assert";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { Then, When } from "@cucumber/cucumber";
 import { millraceHttp } from "../support/integration_request.js";
+import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
+
+When("I write integration tasks localuser.ini:", async function (docString) {
+  const p = path.join(INTEGRATION_DATA_ROOT, "tasks", "localuser.ini");
+  await fs.mkdir(path.dirname(p), { recursive: true });
+  await fs.writeFile(p, `${docString.trim()}\n`, "utf8");
+});
 
 When(
   "I send a {word} request to {string} with JSON body:",

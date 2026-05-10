@@ -1301,6 +1301,55 @@ dialog.git-conflict-dialog::backdrop {
   gap: 0.5rem;
 }
 
+.preferences-flow-timestamps {
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.preferences-flow-timestamps__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.preferences-flow-timestamp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  flex-wrap: wrap;
+}
+
+.preferences-flow-timestamp-label {
+  flex: 0 0 min(11rem, 100%);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.preferences-flow-timestamp-value {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-size: 0.88rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.preferences-flow-clear.flow-btn-icon {
+  flex-shrink: 0;
+  padding: 0.35rem;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.preferences-flow-clear-icon {
+  display: block;
+}
+
 /* Non-blocking toast from showMessage.js `showFlowToast` */
 .flow-toast {
   position: fixed;

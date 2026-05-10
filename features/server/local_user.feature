@@ -148,6 +148,50 @@ Feature: Local user API
     And the last JSON field "syncMode" should be "automatic"
     And the last JSON field "mine" should be ""
     And the last JSON field "owner" should be ""
+    And the last JSON field "lastAutoGitPull" should be ""
+    And the last JSON field "lastNpmUpdateCheck" should be ""
+
+  Scenario: GET /api/local-user/preferences returns flow throttle timestamps
+    Given the Millrace integration server has profile "flow-board"
+    When I write integration tasks localuser.ini:
+      """
+      [flow]
+      last_auto_git_pull = 2026-01-01T12:00:00.000Z
+      last_npm_update_check = 2026-02-02T15:30:00.000Z
+      """
+    When I fetch JSON from "/api/local-user/preferences"
+    Then the last JSON field "lastAutoGitPull" should be "2026-01-01T12:00:00.000Z"
+    And the last JSON field "lastNpmUpdateCheck" should be "2026-02-02T15:30:00.000Z"
+
+  Scenario: PATCH /api/local-user/preferences clears flow throttle timestamps
+    Given the Millrace integration server has profile "flow-board"
+    When I write integration tasks localuser.ini:
+      """
+      [flow]
+      last_auto_git_pull = 2026-01-01T12:00:00.000Z
+      last_npm_update_check = 2026-02-02T15:30:00.000Z
+      """
+    When I send a PATCH request to "/api/local-user/preferences" with JSON body:
+      """
+      { "clearLastAutoGitPull": true, "clearLastNpmUpdateCheck": true }
+      """
+    Then the response status should be 200
+    And the last JSON field "lastAutoGitPull" should be ""
+    And the last JSON field "lastNpmUpdateCheck" should be ""
+
+  Scenario: PATCH /api/local-user/preferences accepts snake_case clear flags
+    Given the Millrace integration server has profile "flow-board"
+    When I write integration tasks localuser.ini:
+      """
+      [flow]
+      last_auto_git_pull = 2026-01-01T12:00:00.000Z
+      """
+    When I send a PATCH request to "/api/local-user/preferences" with JSON body:
+      """
+      { "clear_last_auto_git_pull": true }
+      """
+    Then the response status should be 200
+    And the last JSON field "lastAutoGitPull" should be ""
 
   Scenario: GET /api/local-user reflects camelCase chartsGranularity field
     Given the Millrace integration server has profile "flow-board"

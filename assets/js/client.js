@@ -338,14 +338,20 @@ export async function postNpmUpdateRunCycle(latestVersion) {
 }
 
 /**
- * `[preferences]` and `[user]` mine/owner from tasks/localuser.ini (preferences page).
- * @returns {Promise<{ syncMode: "automatic" | "manual", mine: string, owner: string }>}
+ * `[preferences]`, `[user]` mine/owner, and `[flow]` throttle timestamps from tasks/localuser.ini (preferences page).
+ * @returns {Promise<{ syncMode: "automatic" | "manual", mine: string, owner: string, lastAutoGitPull: string, lastNpmUpdateCheck: string }>}
  */
 export async function fetchLocalUserPreferences() {
   try {
     const res = await fetch("/api/local-user/preferences", NO_STORE);
     if (!res.ok) {
-      return { syncMode: "automatic", mine: "", owner: "" };
+      return {
+        syncMode: "automatic",
+        mine: "",
+        owner: "",
+        lastAutoGitPull: "",
+        lastNpmUpdateCheck: "",
+      };
     }
     const data = await res.json();
     const sm = String(data.syncMode ?? "").trim().toLowerCase();
@@ -353,17 +359,31 @@ export async function fetchLocalUserPreferences() {
       syncMode: sm === "manual" ? "manual" : "automatic",
       mine: String(data.mine ?? "").trim(),
       owner: String(data.owner ?? "").trim(),
+      lastAutoGitPull: String(data.lastAutoGitPull ?? "").trim(),
+      lastNpmUpdateCheck: String(data.lastNpmUpdateCheck ?? "").trim(),
     };
   } catch {
-    return { syncMode: "automatic", mine: "", owner: "" };
+    return {
+      syncMode: "automatic",
+      mine: "",
+      owner: "",
+      lastAutoGitPull: "",
+      lastNpmUpdateCheck: "",
+    };
   }
 }
 
 /**
- * @param {{ syncMode?: "automatic" | "manual", mine?: string, owner?: string }} body
+ * @param {{
+ *   syncMode?: "automatic" | "manual",
+ *   mine?: string,
+ *   owner?: string,
+ *   clearLastAutoGitPull?: boolean,
+ *   clearLastNpmUpdateCheck?: boolean,
+ * }} body
  */
 export async function patchLocalUserPreferences(body) {
-  /** @type {Record<string, string>} */
+  /** @type {Record<string, string | boolean>} */
   const payload = {};
   if (body.syncMode !== undefined) {
     payload.syncMode = body.syncMode === "manual" ? "manual" : "automatic";
@@ -373,6 +393,12 @@ export async function patchLocalUserPreferences(body) {
   }
   if (body.owner !== undefined) {
     payload.owner = String(body.owner ?? "").trim();
+  }
+  if (body.clearLastAutoGitPull === true) {
+    payload.clearLastAutoGitPull = true;
+  }
+  if (body.clearLastNpmUpdateCheck === true) {
+    payload.clearLastNpmUpdateCheck = true;
   }
   if (Object.keys(payload).length === 0) {
     throw new Error("Nothing to save");
