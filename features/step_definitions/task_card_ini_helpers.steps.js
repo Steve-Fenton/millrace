@@ -27,11 +27,11 @@ function withFixedCreated(fn) {
   }
 }
 
-Given("the JSON input for normalizeLinksForIni is:", function (docString) {
+Given("JSON input for link normalization:", function (docString) {
   this.normalizeLinksInput = JSON.parse(docString.trim());
 });
 
-When("I normalize links with normalizeLinksForIni", function () {
+When("I normalize links for task card INI", function () {
   this.result = normalizeLinksForIni(this.normalizeLinksInput);
 });
 
@@ -43,7 +43,7 @@ Given("the column index is {int}", function (n) {
   this.columnIndex = n;
 });
 
-When("I compute columnNameForIniItem", function () {
+When("I compute the column name for INI output", function () {
   this.stringResult = columnNameForIniItem(
     this.columnsPayload,
     this.columnIndex
@@ -58,7 +58,7 @@ Given("the swimlane index is {int}", function (n) {
   this.swimlaneIndex = n;
 });
 
-When("I compute swimlaneNameForIniItem", function () {
+When("I compute the swimlane name for INI output", function () {
   this.swimlaneResult = swimlaneNameForIniItem(
     this.swimlanesPayload,
     this.swimlaneIndex
@@ -112,7 +112,7 @@ Given("the full card links JSON is:", function (docString) {
   this.fullCardLinks = JSON.parse(docString.trim());
 });
 
-When("I serialize with serializeFullCardIni", function () {
+When("I serialize the full card to INI", function () {
   this.iniOutput = serializeFullCardIni(this.fullCardItem, this.fullCardLinks);
 });
 
@@ -120,7 +120,7 @@ Given("the serializeCardIni fields JSON is:", function (docString) {
   this.serializeCardFields = JSON.parse(docString.trim());
 });
 
-When("I serialize with serializeCardIni", function () {
+When("I serialize the card model to INI", function () {
   this.iniOutput = withFixedCreated(() =>
     serializeCardIni(this.serializeCardFields)
   );

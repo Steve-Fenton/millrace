@@ -34,39 +34,39 @@ Given("the task card INI text with CRLF newlines is:", function (docString) {
   this.taskCardText = docString.replace(/\n/g, "\r\n");
 });
 
-Given("the item section lines array JSON is:", function (docString) {
+Given("the item section lines as JSON:", function (docString) {
   this.itemLines = JSON.parse(docString.trim());
 });
 
-When("I extract section lines for {string}", function (sectionName) {
+When("I extract lines for the {string} section", function (sectionName) {
   this.extractedSectionLines = extractSectionLines(this.taskCardText, sectionName);
 });
 
-When("I parse the item section lines with parseItemSectionLines", function () {
+When("I parse item section lines into fields", function () {
   this.parsedItemFields = parseItemSectionLines(this.itemLines);
 });
 
-When("I parse with parseTaskCardIniFull", function () {
+When("I parse the full task card INI", function () {
   this.taskCardFull = parseTaskCardIniFull(this.taskCardText);
 });
 
-When("I parse with parseTaskCardIni", function () {
+When("I parse the task card INI into model fields", function () {
   this.taskCard = parseTaskCardIni(this.taskCardText);
 });
 
-When("I call taskModel parseIniTruthy with {string}", function (raw) {
+When("I evaluate the INI truthy token {string}", function (raw) {
   this.iniTruthyResult = parseIniTruthy(raw);
 });
 
-Then("the taskModel parseIniTruthy result should be true", function () {
+Then("the INI truthy result should be true", function () {
   assert.strictEqual(this.iniTruthyResult, true);
 });
 
-Then("the taskModel parseIniTruthy result should be false", function () {
+Then("the INI truthy result should be false", function () {
   assert.strictEqual(this.iniTruthyResult, false);
 });
 
-When("I compute displayTaskTitle for JSON:", function (docString) {
+When("I compute the display title from task fields:", function (docString) {
   this.displayTitle = displayTaskTitle(JSON.parse(docString.trim()));
 });
 
@@ -88,14 +88,11 @@ Then("the parsed item fields JSON should be:", function (docString) {
   );
 });
 
-Then("the parseTaskCardIniFull result JSON should be:", function (docString) {
-  assert.deepStrictEqual(
-    this.taskCardFull,
-    JSON.parse(docString.trim())
-  );
+Then("the full task card parse JSON should be:", function (docString) {
+  assert.deepStrictEqual(this.taskCardFull, JSON.parse(docString.trim()));
 });
 
-Then("the parseTaskCardIni result JSON should be:", function (docString) {
+Then("the task card model JSON should be:", function (docString) {
   const partial = JSON.parse(docString.trim());
   assert.deepStrictEqual(this.taskCard, {
     ...baselineTaskCard(),

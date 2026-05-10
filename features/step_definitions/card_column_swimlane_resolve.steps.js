@@ -9,15 +9,15 @@ import {
   resolveCardSwimlaneIndex,
 } from "../../assets/js/ini/swimlaneResolve.js";
 
-Given("the defaultColumnIndex columns JSON is:", function (docString) {
+Given("columns on the board as JSON:", function (docString) {
   this.columnsForDefaultCol = JSON.parse(docString.trim());
 });
 
-When("I compute defaultColumnIndex for columns", function () {
+When("I compute the default column index", function () {
   this.resolvedIndex = defaultColumnIndex(this.columnsForDefaultCol);
 });
 
-Given("the resolveCardColumnIndex input JSON is:", function (docString) {
+Given("card column resolution input as JSON:", function (docString) {
   const o = JSON.parse(docString.trim());
   this.columnsForResolveCol = o.columns;
   this.rawColumn = Object.prototype.hasOwnProperty.call(o, "raw")
@@ -25,22 +25,22 @@ Given("the resolveCardColumnIndex input JSON is:", function (docString) {
     : undefined;
 });
 
-When("I resolve the card column index", function () {
+When("I resolve the card column index from item text", function () {
   this.resolvedIndex = resolveCardColumnIndex(
     this.rawColumn,
     this.columnsForResolveCol
   );
 });
 
-Given("the defaultSwimlaneIndex swimlanes JSON is:", function (docString) {
+Given("swimlanes on the board as JSON:", function (docString) {
   this.swimlanesForDefault = JSON.parse(docString.trim());
 });
 
-When("I compute defaultSwimlaneIndex for swimlanes", function () {
+When("I compute the default swimlane index", function () {
   this.resolvedIndex = defaultSwimlaneIndex(this.swimlanesForDefault);
 });
 
-Given("the resolveCardSwimlaneIndex input JSON is:", function (docString) {
+Given("card swimlane resolution input as JSON:", function (docString) {
   const o = JSON.parse(docString.trim());
   this.swimlanesForResolve = o.swimlanes;
   this.rawSwimlane = Object.prototype.hasOwnProperty.call(o, "raw")
@@ -48,7 +48,7 @@ Given("the resolveCardSwimlaneIndex input JSON is:", function (docString) {
     : undefined;
 });
 
-When("I resolve the card swimlane index", function () {
+When("I resolve the swimlane index from item text", function () {
   this.resolvedIndex = resolveCardSwimlaneIndex(
     this.rawSwimlane,
     this.swimlanesForResolve

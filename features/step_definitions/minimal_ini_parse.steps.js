@@ -6,7 +6,7 @@ Given("the INI text is:", function (docString) {
   this.iniText = docString;
 });
 
-When("I parse with parseIni", function () {
+When("I parse the INI document", function () {
   this.parsed = parseIni(this.iniText);
 });
 

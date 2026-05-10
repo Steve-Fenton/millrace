@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { boardSlugFrom } from "../../assets/js/html/slug.js";
 
-/** Expand table cell macros (see board_slug.feature). */
+/** Expand table cell macros (see board_slug_from_meta.feature). */
 function expandSlugMacros(s) {
   return String(s).replaceAll("{SP2}", "  ");
 }

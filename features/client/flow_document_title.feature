@@ -1,6 +1,7 @@
 @document_title
-Feature: document tab title helper
-  setFlowDocumentTitle updates document.title using the Millrace tab conventions.
+Feature: Millrace browser tab title
+  Flow screens set `document.title` as `Page : Board | Millrace` when a board is
+  in scope, otherwise `Page | Millrace`, using trimmed labels.
 
   Scenario Outline: project-scoped pages include board display name
     Given the document title is cleared

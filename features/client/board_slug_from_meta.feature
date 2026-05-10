@@ -1,8 +1,6 @@
-Feature: board slug from board meta
-  The boardSlugFrom helper derives a filesystem-safe URL-style slug from board
-  metadata: preferring slug, then name, then the default "board"; trimming;
-  replacing disallowed characters with hyphens; lowercasing; and falling back
-  to "board" when the result would be empty.
+Feature: Board filesystem slug from metadata
+  Derive a URL-safe, lowercase slug from board meta: prefer `slug`, then `name`,
+  then `board`; trim; swap bad characters for hyphens; collapse empties to `board`.
 
   Slug and name columns use __omit__ when the property is absent and __empty__
   when it is present as an empty string. The macro {SP2} stands for two spaces

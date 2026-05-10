@@ -1,6 +1,6 @@
-Feature: escapeHtml
-  The escapeHtml helper escapes characters that are unsafe in HTML text or
-  double-quoted attributes, and stringifies inputs like String().
+Feature: Escape text for HTML
+  Escape characters unsafe in HTML text or double-quoted attributes; non-strings
+  follow JavaScript `String()`-style coercion.
 
   Examples use macros so cells do not contain raw angle brackets (which would
   clash with Scenario Outline placeholders): {AMP} &, {LT} <, {GT} >, {QUOT} ".

@@ -1,13 +1,14 @@
-Feature: serializeBoardIniFromModel
-  Serialize a BoardModel to tasks/*.ini text: [board], [columns.n], [swimlanes.n],
-  [users.n], with indices in sorted order and stable section numbering.
+Feature: Board model to tasks INI format
+  The client turns an in-memory board model into the text shape stored under tasks/*.ini:
+  [board], [columns.n], [swimlanes.n], and [users.n]. Rows are ordered by index;
+  output section numbers are stable (1, 2, …) after sorting.
 
-  Scenario: empty model yields board header and column or swimlane comments only
-    Given the board model JSON is:
+  Scenario: empty model yields board header and guidance comments only
+    Given a board model:
       """
       {}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -17,11 +18,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: board name and slug are written when present
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{"name":"  Demo  ","slug":"my-board"}}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -33,11 +34,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: columns are ordered by index then renumbered in output sections
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[{"index":10,"title":"Last"},{"index":2,"title":"First"}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -53,11 +54,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: column wip_limit and is_done are emitted when applicable
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[{"index":1,"title":"Doing","wipLimit":5},{"index":2,"title":"Done","isDone":true}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -75,11 +76,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: empty column title falls back to Column n
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[{"index":1,"title":"   "}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -92,11 +93,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: wip_limit is omitted when not a finite non-negative number
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[{"index":1,"title":"A","wipLimit":-1},{"index":2,"title":"B","wipLimit":null}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -112,11 +113,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: swimlanes are ordered by index with default titles
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[],"swimlanes":[{"index":3,"title":"Z"},{"index":1,"title":""}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -132,11 +133,11 @@ Feature: serializeBoardIniFromModel
       """
 
   Scenario: users are ordered by index and inactive users get active = false
-    Given the board model JSON is:
+    Given a board model:
       """
       {"board":{},"columns":[],"swimlanes":[],"users":[{"index":2,"email":"zed@x.y","name":"Zed","active":false},{"index":1,"email":"a@b.c","name":"Alice"}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]
@@ -154,12 +155,12 @@ Feature: serializeBoardIniFromModel
 
       """
 
-  Scenario: null column title swimlane title and user email or name hit nullish branches
-    Given the board model JSON is:
+  Scenario: null titles and optional user fields use defaults or empty values
+    Given a board model:
       """
       {"board":{},"columns":[{"index":1,"title":"Named"},{"index":2,"title":null}],"swimlanes":[{"index":1,"title":"Named lane"},{"index":2,"title":null}],"users":[{"index":1,"email":"x@y.z","name":null,"active":true},{"index":2,"email":null,"name":null,"active":false}]}
       """
-    When I serialize with serializeBoardIniFromModel
+    When I serialize the board model to tasks INI
     Then the INI output should be:
       """
       [board]

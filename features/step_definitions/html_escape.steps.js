@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { escapeHtml } from "../../assets/js/html/escape.js";
 
-/** Expand table cell macros (see escape_html.feature). */
+/** Expand table cell macros (see html_escape.feature). */
 function expandMacros(s) {
   return String(s)
     .replaceAll("{NL}", "\n")

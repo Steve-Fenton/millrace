@@ -1,24 +1,24 @@
-Feature: cardIni
-  Card INI helpers: link normalization, column and swimlane titles for [item],
-  and serialization of work items for tasks/*.ini files.
+Feature: Task card INI helpers
+  Normalize links, resolve column and swimlane labels for `[item]`, and serialize
+  card models to `tasks/*.ini` text.
 
   Scenario: normalizeLinksForIni returns empty for non-array input
-    Given the JSON input for normalizeLinksForIni is:
+    Given JSON input for link normalization:
       """
       null
       """
-    When I normalize links with normalizeLinksForIni
+    When I normalize links for task card INI
     Then the JSON result should be:
       """
       []
       """
 
   Scenario: normalizeLinksForIni keeps entries with a URL and trims text
-    Given the JSON input for normalizeLinksForIni is:
+    Given JSON input for link normalization:
       """
       [{ "url": "http://a", "text": " A " }, { "url": "  ", "text": "x" }, "bad", { "url": "http://b" }]
       """
-    When I normalize links with normalizeLinksForIni
+    When I normalize links for task card INI
     Then the JSON result should be:
       """
       [{"text":"A","url":"http://a"},{"text":"","url":"http://b"}]
@@ -30,7 +30,7 @@ Feature: cardIni
       [{"index":2,"title":"Doing"},{"index":3,"title":"Done"}]
       """
     And the column index is 2
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       Doing
@@ -42,7 +42,7 @@ Feature: cardIni
       [{"index":5,"title":"First"},{"index":9,"title":"Last"}]
       """
     And the column index is 2
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       First
@@ -54,7 +54,7 @@ Feature: cardIni
       [{"index":4,"title":null}]
       """
     And the column index is 4
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       Column 4
@@ -66,7 +66,7 @@ Feature: cardIni
       []
       """
     And the column index is 7
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       7
@@ -78,7 +78,7 @@ Feature: cardIni
       null
       """
     And the column index is 3
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       3
@@ -90,7 +90,7 @@ Feature: cardIni
       [{"index":4,"title":"  "}]
       """
     And the column index is 99
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       Column 4
@@ -102,7 +102,7 @@ Feature: cardIni
       [{"index":6,"title":null}]
       """
     And the column index is 100
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       Column 6
@@ -114,7 +114,7 @@ Feature: cardIni
       [{"index":8}]
       """
     And the column index is 50
-    When I compute columnNameForIniItem
+    When I compute the column name for INI output
     Then the string result should be:
       """
       Column 8
@@ -126,7 +126,7 @@ Feature: cardIni
       []
       """
     And the swimlane index is 1
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the swimlane name result is undefined
 
   Scenario: swimlaneNameForIniItem returns the requested lane title
@@ -135,7 +135,7 @@ Feature: cardIni
       [{"index":2,"title":"Stream"}]
       """
     And the swimlane index is 2
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Stream
@@ -147,7 +147,7 @@ Feature: cardIni
       [{"index":3,"title":"Default"},{"index":5,"title":"Other"}]
       """
     And the swimlane index is 0
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Default
@@ -159,7 +159,7 @@ Feature: cardIni
       [{"index":1,"title":"  "}]
       """
     And the swimlane index is 1
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Lane 1
@@ -171,7 +171,7 @@ Feature: cardIni
       [{"index":2,"title":null}]
       """
     And the swimlane index is 2
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Lane 2
@@ -183,7 +183,7 @@ Feature: cardIni
       [{"index":3}]
       """
     And the swimlane index is 3
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Lane 3
@@ -195,7 +195,7 @@ Feature: cardIni
       null
       """
     And the swimlane index is 2
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the swimlane name result is undefined
 
   Scenario: swimlaneNameForIniItem falls back with Lane n when the default lane title is blank
@@ -204,7 +204,7 @@ Feature: cardIni
       [{"index":5,"title":null}]
       """
     And the swimlane index is 9
-    When I compute swimlaneNameForIniItem
+    When I compute the swimlane name for INI output
     Then the string result should be:
       """
       Lane 5
@@ -219,7 +219,7 @@ Feature: cardIni
       """
       [{"text":"L","url":"http://l"}]
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -244,7 +244,7 @@ Feature: cardIni
       """
       {"id":"n","title":"t","columnIndex":1,"description":null,"owner":null,"columns":[{"index":1,"title":"C"}],"swimlanes":[]}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -266,7 +266,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -285,7 +285,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -303,7 +303,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -320,7 +320,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -339,7 +339,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -354,7 +354,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -369,7 +369,7 @@ Feature: cardIni
       """
       {"id":"c1","title":"Card","columnIndex":2,"columns":[{"index":2,"title":"Doing"}],"swimlanes":[{"index":1,"title":"Lane1"}],"sortOrder":3.7,"links":[{"url":"http://x","text":"X"}]}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -393,7 +393,7 @@ Feature: cardIni
       """
       {"id":"x","title":"T","columnIndex":0,"columns":[{"index":1,"title":"C"}],"swimlanes":[]}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -410,7 +410,7 @@ Feature: cardIni
       """
       {"id":"x","title":"T","columnIndex":1,"swimlaneIndex":5,"columns":[{"index":1,"title":"C"}],"swimlanes":[{"index":3,"title":"Three"},{"index":5,"title":"Five"}]}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -429,7 +429,7 @@ Feature: cardIni
       """
       {"id":"s1","title":"Strategic card","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"strategic":true}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -448,7 +448,7 @@ Feature: cardIni
       """
       {"id":"s2","title":"Normal","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"strategic":false}
       """
-    When I serialize with serializeCardIni
+    When I serialize the card model to INI
     Then the card INI output should be:
       """
       [item]
@@ -470,7 +470,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]
@@ -493,7 +493,7 @@ Feature: cardIni
       """
       []
       """
-    When I serialize with serializeFullCardIni
+    When I serialize the full card to INI
     Then the card INI output should be:
       """
       [item]

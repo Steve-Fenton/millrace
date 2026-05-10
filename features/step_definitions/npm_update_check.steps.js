@@ -14,6 +14,7 @@ Then(
 
 Given("an Express app with mocked npm update check", async function () {
   const app = express();
+  app.use(express.json({ limit: "512kb" }));
   registerNpmUpdateRoutes(app, {
     runNpmUpdateCheck: async () => ({
       currentVersion: "0.0.1",
@@ -30,10 +31,68 @@ Given("an Express app with mocked npm update check", async function () {
   this.flowApiAgent = supertest(app);
 });
 
+Given(
+  "an Express app with npm update routes where runNpmUpdateCheck throws",
+  async function () {
+    const app = express();
+    app.use(express.json({ limit: "512kb" }));
+    registerNpmUpdateRoutes(app, {
+      runNpmUpdateCheck: async () => {
+        throw new Error("mock npm update check failure");
+      },
+    });
+    this.flowApiAgent = supertest(app);
+  }
+);
+
+Given(
+  "an Express app with npm update routes tracking cycle and install runners",
+  async function () {
+    const app = express();
+    app.use(express.json({ limit: "512kb" }));
+    /** @type {string | undefined} */
+    let cycleVersion;
+    registerNpmUpdateRoutes(app, {
+      runProjectCycleAfterUserConfirm: async (latestVersion, opts) => {
+        cycleVersion = latestVersion;
+        assert.strictEqual(opts?.deferCycle, true);
+        return { ok: true, cycleVersion: latestVersion };
+      },
+      runProjectInstallThenCycle: async () => ({
+        ok: true,
+        via: "install-sync",
+      }),
+    });
+    this.npmRoutesCycleVersion = () => cycleVersion;
+    this.flowApiAgent = supertest(app);
+  }
+);
+
+Given(
+  "an Express app with npm update routes where runProjectCycleAfterUserConfirm throws",
+  async function () {
+    const app = express();
+    app.use(express.json({ limit: "512kb" }));
+    registerNpmUpdateRoutes(app, {
+      runProjectCycleAfterUserConfirm: async () => {
+        throw new Error("mock cycle failure");
+      },
+    });
+    this.flowApiAgent = supertest(app);
+  }
+);
+
 Then(
   "semverIsNewer compares {string} and {string} expecting {word}",
   function (latest, current, expected) {
     const want = expected === "true";
     assert.strictEqual(semverIsNewer(latest, current), want);
+  }
+);
+
+Then(
+  "npm route cycle runner should have received latestVersion {string}",
+  function (expected) {
+    assert.strictEqual(this.npmRoutesCycleVersion(), expected);
   }
 );

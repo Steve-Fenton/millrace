@@ -12,7 +12,7 @@ BeforeAll(function () {
   ElementCtor = dom.window.Element;
 });
 
-/** Expand macros from html_element.feature */
+/** Expand macros from html_element_parse.feature */
 function expandElementMacros(s) {
   return String(s)
     .replaceAll("{SP4}", "    ")
@@ -26,7 +26,7 @@ Given("macro-encoded html for el is {string}", function (encoded) {
   this.htmlForEl = expandElementMacros(encoded);
 });
 
-When("I parse the html with el", function () {
+When("I parse the macro-encoded HTML", function () {
   this.elResult = el(this.htmlForEl);
 });
 

@@ -2,11 +2,11 @@ import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { serializeBoardIniFromModel } from "../../assets/js/ini/boardIni.js";
 
-Given("the board model JSON is:", function (docString) {
+Given("a board model:", function (docString) {
   this.boardModel = JSON.parse(docString.trim());
 });
 
-When("I serialize with serializeBoardIniFromModel", function () {
+When("I serialize the board model to tasks INI", function () {
   this.serializedIni = serializeBoardIniFromModel(this.boardModel);
 });
 

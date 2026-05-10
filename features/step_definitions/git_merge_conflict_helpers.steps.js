@@ -7,7 +7,7 @@ import {
   replaceFirstConflictHunk,
 } from "../../assets/js/git/conflictMerge.js";
 
-/** Expand macros from git_conflict_merge.feature */
+/** Expand macros from git_merge_conflict_helpers.feature */
 function expandConflictDoc(s) {
   return String(s)
     .replaceAll("{NL}", "\n")

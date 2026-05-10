@@ -1,11 +1,12 @@
-Feature: parseIni
-  Minimal INI parsing: [sections], key = value lines, ; comments, implicit _root.
+Feature: Minimal INI parser
+  Supports `[sections]`, `key = value` lines, `;` comments, and an implicit `_root`
+  bucket for keys before the first section header.
 
   Scenario: empty document yields only _root
     Given the INI text is:
       """
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{}}
@@ -18,7 +19,7 @@ Feature: parseIni
         
       	
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{}}
@@ -31,7 +32,7 @@ Feature: parseIni
       ; another
       alpha = 1
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"alpha":"1"}}
@@ -43,7 +44,7 @@ Feature: parseIni
       one = first
       two = second
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"one":"first","two":"second"}}
@@ -56,7 +57,7 @@ Feature: parseIni
       title = Hello
       owner = a@b.c
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{},"item":{"title":"Hello","owner":"a@b.c"}}
@@ -71,7 +72,7 @@ Feature: parseIni
       [columns.2]
       title = Done
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"board":"demo"},"columns.1":{"title":"To Do"},"columns.2":{"title":"Done"}}
@@ -83,7 +84,7 @@ Feature: parseIni
       not a key line
       real = value
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"real":"value"}}
@@ -94,7 +95,7 @@ Feature: parseIni
       """
       url = https://example.com?q=1&r=2
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"url":"https://example.com?q=1&r=2"}}
@@ -105,7 +106,7 @@ Feature: parseIni
       """
         spaced  =  out
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"spaced":"out"}}
@@ -117,7 +118,7 @@ Feature: parseIni
       x = one
       x = two
       """
-    When I parse with parseIni
+    When I parse the INI document
     Then the parsed JSON should be:
       """
       {"_root":{"x":"two"}}

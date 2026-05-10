@@ -1,5 +1,6 @@
-Feature: task model (INI)
-  Section extraction, [item] body parsing, and full task card INI parsing.
+Feature: Task card INI parsing and model
+  Extract sections from task card INI text, parse `[item]` body lines (including
+  multiline values), and build full card models with ordered link sections.
 
   Scenario: extractSectionLines returns empty array when the section is missing
     Given the task card INI text is:
@@ -7,7 +8,7 @@ Feature: task model (INI)
       hello = world
 
       """
-    When I extract section lines for "item"
+    When I extract lines for the "item" section
     Then the extracted section lines JSON should be:
       """
       []
@@ -25,7 +26,7 @@ Feature: task model (INI)
       url = http://x
 
       """
-    When I extract section lines for "item"
+    When I extract lines for the "item" section
     Then the extracted section lines JSON should be:
       """
       ["id = a","title = hello",""]
@@ -40,117 +41,117 @@ Feature: task model (INI)
       text=a
 
       """
-    When I extract section lines for "item"
+    When I extract lines for the "item" section
     Then the extracted section lines JSON should be:
       """
       ["x = 1"]
       """
 
   Scenario: parseItemSectionLines reads simple keys and skips lines without equals
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["id = 1","not a valid line","title = t"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"id":"1","title":"t"}
       """
 
   Scenario: parseItemSectionLines joins indented continuation lines onto the value
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["description = line1","    line2","owner = o"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"description":"line1\nline2","owner":"o"}
       """
 
   Scenario: parseItemSectionLines strips a single leading tab from continuation lines
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["description = line1","\tline2","owner = o"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"description":"line1\nline2","owner":"o"}
       """
 
   Scenario: parseItemSectionLines preserves indentation beyond the continuation marker
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["description = item","       - nested","owner = o"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"description":"item\n   - nested","owner":"o"}
       """
 
   Scenario: parseItemSectionLines stops a field when the next line starts a new key
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["a = 1","  cont","b = 2"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"a":"1\ncont","b":"2"}
       """
 
   Scenario: parseItemSectionLines skips leading blank lines in the outer loop
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["","  ","id = 1"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"id":"1"}
       """
 
   Scenario: parseItemSectionLines ends a multiline value when a blank is followed by the next key
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["description = hello","","id = 2"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"description":"hello","id":"2"}
       """
 
   Scenario: parseItemSectionLines skips multiple blank lines before an indented continuation
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["description = a","","","  more"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"description":"a\n\n\nmore"}
       """
 
   Scenario: parseItemSectionLines stops at a bracket section line when collecting a value
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["body = text","[other]","after = ignored"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"body":"text","after":"ignored"}
       """
 
   Scenario: parseItemSectionLines stops continuation when a non-indented non-key line appears
-    Given the item section lines array JSON is:
+    Given the item section lines as JSON:
       """
       ["a = 1","orphan line","b = 2"]
       """
-    When I parse the item section lines with parseItemSectionLines
+    When I parse item section lines into fields
     Then the parsed item fields JSON should be:
       """
       {"a":"1","b":"2"}
@@ -169,8 +170,8 @@ Feature: task model (INI)
       text=hi
 
       """
-    When I parse with parseTaskCardIniFull
-    Then the parseTaskCardIniFull result JSON should be:
+    When I parse the full task card INI
+    Then the full task card parse JSON should be:
       """
       {"item":{"id":"x\n"},"links":[{"text":"","url":"http://u"},{"text":"hi","url":""}]}
       """
@@ -191,8 +192,8 @@ Feature: task model (INI)
       url = http://a
 
       """
-    When I parse with parseTaskCardIniFull
-    Then the parseTaskCardIniFull result JSON should be:
+    When I parse the full task card INI
+    Then the full task card parse JSON should be:
       """
       {"item":{"id":"card1","title":"Hello\n"},"links":[{"text":"first","url":"http://a"},{"text":"second","url":"http://b"}]}
       """
@@ -203,8 +204,8 @@ Feature: task model (INI)
       orphan = only_in_root
 
       """
-    When I parse with parseTaskCardIniFull
-    Then the parseTaskCardIniFull result JSON should be:
+    When I parse the full task card INI
+    Then the full task card parse JSON should be:
       """
       {"item":{},"links":[]}
       """
@@ -228,8 +229,8 @@ Feature: task model (INI)
       url = http://z
 
       """
-    When I parse with parseTaskCardIni
-    Then the parseTaskCardIni result JSON should be:
+    When I parse the task card INI into model fields
+    Then the task card model JSON should be:
       """
       {"id":"card9","title":"Title","description":"Body","owner":"o@o.o","swimlane":"Lane1","column":"Col2","sort_order":"3","created":"2020-01-01","closed":"","links":[{"text":"T","url":"http://z"}]}
       """
@@ -240,8 +241,8 @@ Feature: task model (INI)
       root_only = 1
 
       """
-    When I parse with parseTaskCardIni
-    Then the parseTaskCardIni result JSON should be:
+    When I parse the task card INI into model fields
+    Then the task card model JSON should be:
       """
       {}
       """
@@ -253,8 +254,8 @@ Feature: task model (INI)
       strategic = yes
 
       """
-    When I parse with parseTaskCardIni
-    Then the parseTaskCardIni result JSON should be:
+    When I parse the task card INI into model fields
+    Then the task card model JSON should be:
       """
       {"strategic":true}
       """
@@ -266,50 +267,50 @@ Feature: task model (INI)
       strategic = maybe
 
       """
-    When I parse with parseTaskCardIni
-    Then the parseTaskCardIni result JSON should be:
+    When I parse the task card INI into model fields
+    Then the task card model JSON should be:
       """
       {"strategic":false}
       """
 
   Scenario: taskModel parseIniTruthy accepts short token y
-    When I call taskModel parseIniTruthy with "y"
-    Then the taskModel parseIniTruthy result should be true
+    When I evaluate the INI truthy token "y"
+    Then the INI truthy result should be true
 
   Scenario: taskModel parseIniTruthy rejects non-token strings
-    When I call taskModel parseIniTruthy with "maybe"
-    Then the taskModel parseIniTruthy result should be false
+    When I evaluate the INI truthy token "maybe"
+    Then the INI truthy result should be false
 
   Scenario: displayTaskTitle prefers trimmed title over filename
-    When I compute displayTaskTitle for JSON:
+    When I compute the display title from task fields:
       """
       { "title": "  Hello  ", "filename": "ignore.ini" }
       """
     Then the display title should be "Hello"
 
   Scenario: displayTaskTitle falls back to filename without extension
-    When I compute displayTaskTitle for JSON:
+    When I compute the display title from task fields:
       """
       { "filename": "card.INI" }
       """
     Then the display title should be "card"
 
   Scenario: displayTaskTitle uses Untitled when no title or filename
-    When I compute displayTaskTitle for JSON:
+    When I compute the display title from task fields:
       """
       {}
       """
     Then the display title should be "Untitled"
 
   Scenario: displayTaskTitle prefixes strategic cards
-    When I compute displayTaskTitle for JSON:
+    When I compute the display title from task fields:
       """
       { "title": "Goal", "strategic": true }
       """
     Then the display title should be "🎯 Goal"
 
   Scenario: displayTaskTitle falls back when title is whitespace-only
-    When I compute displayTaskTitle for JSON:
+    When I compute the display title from task fields:
       """
       { "title": "   ", "filename": "fallback.ini" }
       """
