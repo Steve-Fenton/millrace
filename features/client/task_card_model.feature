@@ -246,5 +246,74 @@ Feature: task model (INI)
       {}
       """
 
+  Scenario: parseTaskCardIni maps strategic=yes to true via parseIniTruthy
+    Given the task card INI text is:
+      """
+      [item]
+      strategic = yes
+
+      """
+    When I parse with parseTaskCardIni
+    Then the parseTaskCardIni result JSON should be:
+      """
+      {"strategic":true}
+      """
+
+  Scenario: parseTaskCardIni maps unknown strategic tokens to false
+    Given the task card INI text is:
+      """
+      [item]
+      strategic = maybe
+
+      """
+    When I parse with parseTaskCardIni
+    Then the parseTaskCardIni result JSON should be:
+      """
+      {"strategic":false}
+      """
+
+  Scenario: taskModel parseIniTruthy accepts short token y
+    When I call taskModel parseIniTruthy with "y"
+    Then the taskModel parseIniTruthy result should be true
+
+  Scenario: taskModel parseIniTruthy rejects non-token strings
+    When I call taskModel parseIniTruthy with "maybe"
+    Then the taskModel parseIniTruthy result should be false
+
+  Scenario: displayTaskTitle prefers trimmed title over filename
+    When I compute displayTaskTitle for JSON:
+      """
+      { "title": "  Hello  ", "filename": "ignore.ini" }
+      """
+    Then the display title should be "Hello"
+
+  Scenario: displayTaskTitle falls back to filename without extension
+    When I compute displayTaskTitle for JSON:
+      """
+      { "filename": "card.INI" }
+      """
+    Then the display title should be "card"
+
+  Scenario: displayTaskTitle uses Untitled when no title or filename
+    When I compute displayTaskTitle for JSON:
+      """
+      {}
+      """
+    Then the display title should be "Untitled"
+
+  Scenario: displayTaskTitle prefixes strategic cards
+    When I compute displayTaskTitle for JSON:
+      """
+      { "title": "Goal", "strategic": true }
+      """
+    Then the display title should be "🎯 Goal"
+
+  Scenario: displayTaskTitle falls back when title is whitespace-only
+    When I compute displayTaskTitle for JSON:
+      """
+      { "title": "   ", "filename": "fallback.ini" }
+      """
+    Then the display title should be "fallback"
+
   Scenario: stripDescriptionContinuation handles nullish input and leading tabs
     Then stripDescriptionContinuation should normalize nullish and tab-prefixed lines

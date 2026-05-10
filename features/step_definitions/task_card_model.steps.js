@@ -1,7 +1,9 @@
 import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
 import {
+  displayTaskTitle,
   extractSectionLines,
+  parseIniTruthy,
   parseItemSectionLines,
   parseTaskCardIni,
   parseTaskCardIniFull,
@@ -50,6 +52,26 @@ When("I parse with parseTaskCardIniFull", function () {
 
 When("I parse with parseTaskCardIni", function () {
   this.taskCard = parseTaskCardIni(this.taskCardText);
+});
+
+When("I call taskModel parseIniTruthy with {string}", function (raw) {
+  this.iniTruthyResult = parseIniTruthy(raw);
+});
+
+Then("the taskModel parseIniTruthy result should be true", function () {
+  assert.strictEqual(this.iniTruthyResult, true);
+});
+
+Then("the taskModel parseIniTruthy result should be false", function () {
+  assert.strictEqual(this.iniTruthyResult, false);
+});
+
+When("I compute displayTaskTitle for JSON:", function (docString) {
+  this.displayTitle = displayTaskTitle(JSON.parse(docString.trim()));
+});
+
+Then("the display title should be {string}", function (expected) {
+  assert.strictEqual(this.displayTitle, expected);
 });
 
 Then("the extracted section lines JSON should be:", function (docString) {

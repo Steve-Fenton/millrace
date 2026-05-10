@@ -42,6 +42,13 @@ When("I set the flow document title to empty page without a board", function () 
   setFlowDocumentTitle("");
 });
 
+When(
+  "I set the flow document title with undefined page label without a board",
+  function () {
+    setFlowDocumentTitle(undefined);
+  }
+);
+
 Then("the document title should be {string}", function (expected) {
   assert.strictEqual(document.title, expected);
 });

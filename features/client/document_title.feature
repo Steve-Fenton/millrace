@@ -33,3 +33,8 @@ Feature: document tab title helper
     Given the document title is cleared
     When I set the flow document title to empty page without a board
     Then the document title should be "Millrace | Millrace"
+
+  Scenario: omitted page label matches empty string behavior
+    Given the document title is cleared
+    When I set the flow document title with undefined page label without a board
+    Then the document title should be "Millrace | Millrace"
