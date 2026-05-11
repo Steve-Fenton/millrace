@@ -1,4 +1,4 @@
-<svg width="100%" viewBox="-8 40 933 215" role="img" xmlns="http://www.w3.org/2000/svg">
+<svg width="100%" viewBox="-8 40 860 215" role="img" xmlns="http://www.w3.org/2000/svg">
   <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Millrace wordmark with water wheel</title>
   <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">The word &quot;millrace&quot; with the letter M replaced by a spinning water wheel. The millrace follows the western arc outside the wheel, then runs horizontally past the wordmark.</desc>
   <defs>
@@ -8,9 +8,9 @@
 
   <!-- Channel behind wheel + text (paint order); opaque strokes so arc/bottom overlap doesn’t stack alpha -->
   <g id="millrace-channel" aria-hidden="true">
-    <path d="M 69.425397 61 A 97 97 0 0 0 59.492269 234 L 872 234" fill="none" stroke="#075985" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:24px;stroke-linecap:round;stroke-linejoin:round;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <path d="M 69.425397 61 A 97 97 0 0 0 59.492269 234 L 830 234" fill="none" stroke="#075985" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:24px;stroke-linecap:round;stroke-linejoin:round;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
     <path d="M 69.425397 61 A 97 97 0 0 0 59.492269 234" fill="none" stroke="#075985" stroke-width="14" stroke-dasharray="12 6" stroke-linecap="round" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:14px;stroke-dasharray:12px, 6px;stroke-linecap:round;stroke-linejoin:miter;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <line x1="59.492269" y1="234" x2="872" y2="234" stroke="#075985" stroke-width="14" stroke-dasharray="12 6" stroke-linecap="round" mask="url(#imagine-text-gaps-kd530b)" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:14px;stroke-dasharray:12px, 6px;stroke-linecap:round;stroke-linejoin:miter;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+    <line x1="59.492269" y1="234" x2="830" y2="234" stroke="#075985" stroke-width="14" stroke-dasharray="12 6" stroke-linecap="round" mask="url(#imagine-text-gaps-kd530b)" style="fill:none;stroke:rgb(7, 89, 133);color:rgb(255, 255, 255);stroke-width:14px;stroke-dasharray:12px, 6px;stroke-linecap:round;stroke-linejoin:miter;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
   </g>
 
   <!-- ═══ WATER WHEEL centred at 108,150 r=90 ═══ -->
@@ -52,8 +52,8 @@
   </g>
 
   <!-- millrace (M = wheel) -->
-  <text x="232" y="207" font-family="Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" letter-spacing="-2" fill="#38bdf8" opacity="0.9" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:140px;font-weight:700;text-anchor:start;dominant-baseline:auto">millrace</text>
+  <text x="232" y="207" font-family="Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" letter-spacing="-8" fill="#38bdf8" opacity="0.9" style="fill:rgb(56, 189, 248);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:140px;font-weight:700;text-anchor:start;dominant-baseline:auto">millrace</text>
   <!-- i-dot matches channel (#075985); tuned for Georgia Bold 140px at x=232,y=207 -->
-  <circle cx="396" cy="112" r="16" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
+  <circle cx="390" cy="112" r="16" fill="#075985" opacity="1" style="fill:rgb(7, 89, 133);opacity:1" aria-hidden="true"/>
 
 </svg>
