@@ -67,8 +67,24 @@ export function swimlaneNameForIniItem(swimlanes, swimlaneIndex) {
 }
 
 /**
+ * Trim a YYYY-MM-DD date string (or any near-equivalent value the user typed).
+ * Returns the YYYY-MM-DD slice when it looks valid, otherwise an empty string.
+ * @param {unknown} raw
+ */
+export function normalizeNextActionDate(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!m) return "";
+  const ymd = m[1];
+  const ms = Date.parse(`${ymd}T00:00:00Z`);
+  if (!Number.isFinite(ms)) return "";
+  return ymd;
+}
+
+/**
  * Serialize a new task card as INI (matches README work-item shape).
- * @param {{ id: string, title: string, description?: string, note?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, strategic?: boolean, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
+ * @param {{ id: string, title: string, description?: string, note?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, strategic?: boolean, nextActionDate?: string, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
  */
 export function serializeCardIni({
   id,
@@ -80,6 +96,7 @@ export function serializeCardIni({
   swimlaneIndex,
   sortOrder,
   strategic,
+  nextActionDate,
   links,
   columns = [],
   swimlanes = [],
@@ -114,6 +131,10 @@ export function serializeCardIni({
   if (strategic) {
     item.strategic = "yes";
   }
+  const nad = normalizeNextActionDate(nextActionDate);
+  if (nad) {
+    item.next_action_date = nad;
+  }
   return serializeFullCardIni(item, normalizeLinksForIni(links));
 }
 
@@ -137,6 +158,7 @@ export function serializeFullCardIni(item, links) {
     "description",
     "owner",
     "note",
+    "next_action_date",
     "swimlane",
     "column",
     "sort_order",
@@ -148,6 +170,7 @@ export function serializeFullCardIni(item, links) {
     "id",
     "title",
     "note",
+    "next_action_date",
     "owner",
     "swimlane",
     "column",
@@ -180,6 +203,7 @@ export function serializeFullCardIni(item, links) {
     if (k === "sort_order" && String(v).trim() === "") continue;
     if (k === "strategic" && String(v).trim() === "") continue;
     if (k === "note" && String(v).trim() === "") continue;
+    if (k === "next_action_date" && String(v).trim() === "") continue;
     used.add(k);
     if (k === "description") {
       appendDescription(v);

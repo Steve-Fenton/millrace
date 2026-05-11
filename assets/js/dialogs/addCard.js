@@ -46,8 +46,18 @@ export function openAddCardDialog(ctx) {
   `);
   ownerField.root.insertAdjacentElement("afterend", noteFieldEl);
   const noteInput = noteFieldEl.querySelector('input[name="note"]');
+  const nextActionFieldEl = el(`
+    <label class="flow-field">
+      <span class="flow-field-label">Next action date</span>
+      <input class="flow-input" name="next_action_date" type="date" autocomplete="off" />
+    </label>
+  `);
+  noteFieldEl.insertAdjacentElement("afterend", nextActionFieldEl);
+  const nextActionInput = nextActionFieldEl.querySelector(
+    'input[name="next_action_date"]'
+  );
   const linksEditor = createLinksEditor([]);
-  noteFieldEl.insertAdjacentElement("afterend", linksEditor.root);
+  nextActionFieldEl.insertAdjacentElement("afterend", linksEditor.root);
 
   function focusTitle() {
     titleInput?.focus();
@@ -67,6 +77,7 @@ export function openAddCardDialog(ctx) {
       description: String(descInput.value ?? ""),
       note: String(noteInput?.value ?? "").trim(),
       owner: ownerField.getValue(),
+      nextActionDate: String(nextActionInput?.value ?? "").trim(),
       links: normalizeLinks(linksEditor.getLinks()),
     });
   }
@@ -118,6 +129,7 @@ export function openAddCardDialog(ctx) {
 
       const description = String(fd.get("description") || "");
       const note = String(fd.get("note") || "").trim();
+      const nextActionDate = String(fd.get("next_action_date") || "").trim();
       const owner = ownerField.getValue();
 
       try {
@@ -129,6 +141,7 @@ export function openAddCardDialog(ctx) {
           description,
           note,
           owner,
+          nextActionDate,
           links: linksEditor.getLinks(),
         });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));

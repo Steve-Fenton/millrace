@@ -2141,6 +2141,24 @@ a.column-done-truncation-link:focus-visible {
   word-break: break-word;
 }
 
+.column-card-next-action {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.column-card-next-action-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.column-card-next-action-date {
+  font-variant-numeric: tabular-nums;
+}
+
 .column-card-owner {
   display: flex;
   align-items: flex-start;

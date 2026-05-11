@@ -424,10 +424,10 @@ Feature: Task card INI helpers
 
       """
 
-  Scenario: serializeCardIni writes note after description when note is non-empty
+  Scenario: serializeCardIni writes note and next action date after description when both are non-empty
     Given the serializeCardIni fields JSON is:
       """
-      {"id":"n1","title":"With note","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"note":"Blocked on CI"}
+      {"id":"n1","title":"With note","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"note":"Blocked on CI","nextActionDate":"2025-08-01"}
       """
     When I serialize the card model to INI
     Then the card INI output should be:
@@ -438,15 +438,34 @@ Feature: Task card INI helpers
       description = 
       owner = 
       note = Blocked on CI
+      next_action_date = 2025-08-01
       column = C
       created = 2024-01-15T10:20:30.000Z
 
       """
 
-  Scenario: serializeFullCardIni writes note in the ordered item fields
+  Scenario: serializeCardIni omits next_action_date when nextActionDate is invalid or missing
+    Given the serializeCardIni fields JSON is:
+      """
+      {"id":"n3","title":"T","columnIndex":1,"columns":[{"index":1,"title":"C"}],"swimlanes":[],"nextActionDate":"not-a-date"}
+      """
+    When I serialize the card model to INI
+    Then the card INI output should be:
+      """
+      [item]
+      id = n3
+      title = T
+      description = 
+      owner = 
+      column = C
+      created = 2024-01-15T10:20:30.000Z
+
+      """
+
+  Scenario: serializeFullCardIni writes note and next action date in the ordered item fields
     Given the full card item JSON is:
       """
-      {"id":"f1","title":"T","description":"Body","note":"Waiting"}
+      {"id":"f1","title":"T","description":"Body","note":"Waiting","next_action_date":"2025-06-15"}
       """
     And the full card links JSON is:
       """
@@ -460,6 +479,7 @@ Feature: Task card INI helpers
       title = T
       description = Body
       note = Waiting
+      next_action_date = 2025-06-15
 
       """
 
@@ -523,10 +543,10 @@ Feature: Task card INI helpers
 
       """
 
-  Scenario: serializeFullCardIni skips blank strategic in the ordered pass then emits it from the rest loop
+  Scenario: serializeFullCardIni skips blank scalar fields in the ordered pass then emits them from the rest loop
     Given the full card item JSON is:
       """
-      {"id":"e1","title":"X","description":"","owner":"","created":"2024-01-01T00:00:00.000Z","strategic":""}
+      {"id":"e1","title":"X","description":"","owner":"","created":"2024-01-01T00:00:00.000Z","next_action_date":"","strategic":""}
       """
     And the full card links JSON is:
       """
@@ -541,6 +561,22 @@ Feature: Task card INI helpers
       description = 
       owner = 
       created = 2024-01-01T00:00:00.000Z
+      next_action_date = 
       strategic = 
 
       """
+
+  Scenario Outline: normalizeNextActionDate accepts YYYY-MM-DD and rejects everything else
+    When I normalize the next action date input "<input>"
+    Then the normalized next action date should be "<expected>"
+
+    Examples:
+      | case                              | input                | expected   |
+      | empty string                      |                      |            |
+      | trims surrounding whitespace      |   2025-06-15         | 2025-06-15 |
+      | valid YYYY-MM-DD                  | 2026-05-11           | 2026-05-11 |
+      | drops trailing time portion       | 2026-05-11T09:00:00Z | 2026-05-11 |
+      | rejects shorter date              | 2025-6-1             |            |
+      | rejects DD/MM/YYYY                | 11/05/2026           |            |
+      | rejects free-text                 | not-a-date           |            |
+      | rejects out-of-range month or day | 2026-13-40           |            |

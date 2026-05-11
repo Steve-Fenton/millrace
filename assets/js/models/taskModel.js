@@ -2,7 +2,7 @@ import { parseIni } from "../ini/parseIni.js";
 
 /**
  * @typedef {{ text: string, url: string }} TaskLink
- * @typedef {{ id?: string, title?: string, description?: string, note?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, strategic?: boolean, links: TaskLink[], filename?: string }} TaskCard
+ * @typedef {{ id?: string, title?: string, description?: string, note?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, next_action_date?: string, strategic?: boolean, links: TaskLink[], filename?: string }} TaskCard
  */
 
 /**
@@ -173,6 +173,7 @@ export function parseTaskCardIni(text) {
     sort_order: item.sort_order?.trim(),
     created: item.created?.trim(),
     closed: item.closed?.trim(),
+    next_action_date: item.next_action_date?.trim(),
     strategic: parseIniTruthy(item.strategic),
     links,
   };

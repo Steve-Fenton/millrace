@@ -3,6 +3,7 @@ import { Given, Then, When } from "@cucumber/cucumber";
 import {
   columnNameForIniItem,
   normalizeLinksForIni,
+  normalizeNextActionDate,
   serializeCardIni,
   serializeFullCardIni,
   swimlaneNameForIniItem,
@@ -129,3 +130,17 @@ When("I serialize the card model to INI", function () {
 Then("the card INI output should be:", function (docString) {
   assert.strictEqual(this.iniOutput, docString);
 });
+
+When(
+  "I normalize the next action date input {string}",
+  function (raw) {
+    this.nextActionDateResult = normalizeNextActionDate(raw);
+  }
+);
+
+Then(
+  "the normalized next action date should be {string}",
+  function (expected) {
+    assert.strictEqual(this.nextActionDateResult, expected);
+  }
+);

@@ -4,6 +4,7 @@ import path from "path";
 import {
   columnNameForIniItem,
   normalizeLinksForIni,
+  normalizeNextActionDate,
   serializeCardIni,
   serializeFullCardIni,
   swimlaneNameForIniItem,
@@ -275,6 +276,16 @@ app.put("/api/card", async (req, res) => {
       else delete item.strategic;
     }
 
+    if (
+      req.body &&
+      typeof req.body === "object" &&
+      "nextActionDate" in req.body
+    ) {
+      const nad = normalizeNextActionDate(req.body.nextActionDate);
+      if (nad) item.next_action_date = nad;
+      else delete item.next_action_date;
+    }
+
     const nextLinks = Array.isArray(req.body.links)
       ? normalizeLinksForIni(req.body.links)
       : parsedLinks;
@@ -349,6 +360,7 @@ app.post("/api/cards", async (req, res) => {
       note = "",
       owner = "",
       strategic,
+      nextActionDate,
       links: linksRaw,
     } = req.body ?? {};
 
@@ -399,6 +411,7 @@ app.post("/api/cards", async (req, res) => {
         Number.isInteger(laneNum) && laneNum >= 1 ? laneNum : undefined,
       sortOrder: maxSo + 10,
       strategic: Boolean(strategic),
+      nextActionDate: normalizeNextActionDate(nextActionDate),
       links: normalizeLinksForIni(linksRaw),
       columns: columnsDef,
       swimlanes: swimlanesDef,

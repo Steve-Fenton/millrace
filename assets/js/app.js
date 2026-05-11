@@ -1111,6 +1111,21 @@ function renderBoard(
           noteEl.textContent = noteLine;
           li.append(noteEl);
         }
+        const nextActionDate =
+          card.next_action_date && String(card.next_action_date).trim();
+        if (nextActionDate) {
+          const nextEl = document.createElement("div");
+          nextEl.className = "column-card-next-action";
+          const labelSpan = document.createElement("span");
+          labelSpan.className = "column-card-next-action-label";
+          labelSpan.textContent = "Next:";
+          const dateEl = document.createElement("time");
+          dateEl.className = "column-card-next-action-date";
+          dateEl.dateTime = nextActionDate;
+          dateEl.textContent = nextActionDate;
+          nextEl.append(labelSpan, dateEl);
+          li.append(nextEl);
+        }
         if (card.owner && String(card.owner).trim()) {
           const own = document.createElement("div");
           own.className = "column-card-owner";

@@ -574,7 +574,7 @@ export async function patchLocalUserMine(email) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, swimlaneIndex?: number, title: string, description?: string, note?: string, owner?: string, strategic?: boolean, links?: Array<{ text?: string, url?: string }> }} payload
+ * @param {{ boardSlug: string, columnIndex: number, swimlaneIndex?: number, title: string, description?: string, note?: string, owner?: string, strategic?: boolean, nextActionDate?: string, links?: Array<{ text?: string, url?: string }> }} payload
  */
 export async function createCard(payload) {
   const res = await fetch("/api/cards", {
@@ -635,7 +635,7 @@ export async function fetchCardGitHistory(args) {
 }
 
 /**
- * @param {{ boardSlug: string, columnIndex: number, filename: string, title: string, description?: string, note?: string, owner?: string, strategic?: boolean, links?: Array<{ text?: string, url?: string }> }} payload
+ * @param {{ boardSlug: string, columnIndex: number, filename: string, title: string, description?: string, note?: string, owner?: string, strategic?: boolean, nextActionDate?: string, links?: Array<{ text?: string, url?: string }> }} payload
  */
 export async function updateCard(payload) {
   const res = await fetch("/api/card", {

@@ -27,6 +27,7 @@ const FIELD_LABEL = {
   sort_order: "Sort order",
   created: "Created",
   closed: "Closed",
+  next_action_date: "Next action date",
   strategic: "Strategic",
 };
 
@@ -41,6 +42,7 @@ const ITEM_COMPARE_KEYS = [
   "id",
   "created",
   "closed",
+  "next_action_date",
   "strategic",
 ];
 

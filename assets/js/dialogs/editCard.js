@@ -340,10 +340,24 @@ export async function openCardEditorDialog(ctx) {
   const noteInput = noteFieldEl.querySelector('input[name="note"]');
   if (noteInput) noteInput.value = String(initial.note ?? "").trim();
 
+  const nextActionFieldEl = el(`
+    <label class="flow-field">
+      <span class="flow-field-label">Next action date</span>
+      <input class="flow-input" name="next_action_date" type="date" autocomplete="off" />
+    </label>
+  `);
+  noteFieldEl.insertAdjacentElement("afterend", nextActionFieldEl);
+  const nextActionInput = nextActionFieldEl.querySelector(
+    'input[name="next_action_date"]'
+  );
+  if (nextActionInput) {
+    nextActionInput.value = String(initial.next_action_date ?? "").trim();
+  }
+
   const linksEditor = createLinksEditor(
     Array.isArray(initial.links) ? initial.links : []
   );
-  noteFieldEl.insertAdjacentElement("afterend", linksEditor.root);
+  nextActionFieldEl.insertAdjacentElement("afterend", linksEditor.root);
 
   /** @type {boolean | null} */
   let showingDescriptionPreview = null;
@@ -474,6 +488,7 @@ export async function openCardEditorDialog(ctx) {
       note: String(noteInput?.value ?? "").trim(),
       owner: ownerField.getValue(),
       strategic: Boolean(strategicInput?.checked),
+      nextActionDate: String(nextActionInput?.value ?? "").trim(),
       links: normalizeLinks(linksEditor.getLinks()),
     });
   }
@@ -523,6 +538,7 @@ export async function openCardEditorDialog(ctx) {
 
       const description = String(fd.get("description") || "");
       const note = String(fd.get("note") || "").trim();
+      const nextActionDate = String(fd.get("next_action_date") || "").trim();
       const owner = ownerField.getValue();
 
       try {
@@ -535,6 +551,7 @@ export async function openCardEditorDialog(ctx) {
           note,
           owner,
           strategic: Boolean(strategicInput?.checked),
+          nextActionDate,
           links: linksEditor.getLinks(),
         });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
@@ -613,6 +630,7 @@ export async function openCardEditorDialog(ctx) {
         const newTitle = `${baseTitle} (copy)`;
         const description = String(descInput.value || "");
         const note = String(noteInput?.value || "").trim();
+        const nextActionDate = String(nextActionInput?.value || "").trim();
         const owner = ownerField.getValue();
         const links = linksEditor.getLinks();
         try {
@@ -625,6 +643,7 @@ export async function openCardEditorDialog(ctx) {
             note,
             owner,
             strategic: Boolean(strategicInput?.checked),
+            nextActionDate,
             links,
           });
           document.dispatchEvent(new CustomEvent("flow:refresh-board"));
