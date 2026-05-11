@@ -1,13 +1,15 @@
 Feature: Git history API with a repository
   Commit lists for board definitions and cards when the data root is a Git working tree.
 
-  Scenario: board definition git history returns commits
+  Scenario: board definition git history returns commits with board change summaries
     Given the Millrace integration server has profile "flow-board" with git history
     When I fetch JSON from "/api/board-definition/git-history?boardSlug=test&limit=10"
     Then the response status should be 200
     And the last JSON field "gitAvailable" should be boolean true
     And the last JSON field "path" should contain "tasks/test.ini"
     And the last JSON field "commits" should have array length at least 2
+    And the last JSON field "commits" commit at index 0 should have changeSummary containing "No tracked board changes"
+    And the last JSON field "commits" commit at index 1 should have changeSummary containing "New file in this commit."
 
   Scenario: board definition git history falls back to first catalog board for unknown slug
     Given the Millrace integration server has profile "flow-board" with git history

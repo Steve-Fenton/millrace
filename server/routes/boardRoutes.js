@@ -5,7 +5,7 @@ import {
   parseBoardIni,
   validateExactlyOneDoneColumn,
 } from "../../assets/js/models/boardModel.js";
-import { summarizeCardIniDiff } from "../../assets/js/git/taskDiff.js";
+import { summarizeBoardIniDiff } from "../../assets/js/git/boardDiff.js";
 import { BOARD_CATALOG_SECTION } from "../constants.js";
 import { boardCatalogIniPath, dataRoot, isBoardCatalogIniSection } from "../dataRoot.js";
 import {
@@ -367,7 +367,7 @@ app.get("/api/board-definition/git-history", async (req, res) => {
         slice.map(async (c) => {
           const afterText = await gitShowBlob(c.hash, norm);
           const beforeText = await gitShowBlob(`${c.hash}^`, norm);
-          const changeSummary = summarizeCardIniDiff(beforeText, afterText);
+          const changeSummary = summarizeBoardIniDiff(beforeText, afterText);
           return { ...c, changeSummary };
         })
       );
