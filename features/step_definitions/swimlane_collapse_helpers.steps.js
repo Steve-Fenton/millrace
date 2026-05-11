@@ -2,9 +2,11 @@ import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import {
   applySwimlaneCollapseUpdate,
+  isSwimlaneTitleStorable,
   nextSwimlaneCollapseMode,
   normalizeSwimlaneCollapseMode,
   readSwimlaneCollapseStates,
+  swimlaneCollapseModeForLane,
 } from "../../assets/js/ui/swimlaneCollapse.js";
 
 When("I normalize swimlane collapse mode {string}", function (raw) {
@@ -36,6 +38,25 @@ Then("the cycled modes should be {string}", function (expected) {
   );
 });
 
+Then("the swimlane title {string} should be storable", function (title) {
+  assert.strictEqual(
+    isSwimlaneTitleStorable(title),
+    true,
+    `expected ${JSON.stringify(title)} to be storable`
+  );
+});
+
+Then(
+  "the swimlane title {string} should not be storable",
+  function (title) {
+    assert.strictEqual(
+      isSwimlaneTitleStorable(title),
+      false,
+      `expected ${JSON.stringify(title)} to be rejected`
+    );
+  }
+);
+
 When(
   "I read swimlane collapse states from sections JSON:",
   function (docString) {
@@ -53,6 +74,18 @@ Then(
     );
   }
 );
+
+When("I look up swimlane mode JSON:", function (docString) {
+  const o = JSON.parse(docString.trim());
+  this.lookedUpSwimlaneMode = swimlaneCollapseModeForLane(
+    o.laneMap ?? {},
+    o.lane ?? {}
+  );
+});
+
+Then("the looked-up swimlane mode should be {string}", function (expected) {
+  assert.strictEqual(this.lookedUpSwimlaneMode, expected);
+});
 
 When(
   "I apply swimlane collapse update JSON to empty sections:",

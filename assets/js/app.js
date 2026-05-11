@@ -33,6 +33,7 @@ import {
 } from "./ui/filterByOwner.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import {
+  isSwimlaneTitleStorable,
   nextSwimlaneCollapseMode,
   swimlaneCollapseModeForLane,
   swimlaneCollapseNextActionLabel,
@@ -71,11 +72,17 @@ const CARD_NUDGE_SVG = {
   left: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>`,
 };
 
-/** Toggle icon shown on each swimlane label; reflects the current collapse mode. */
+/**
+ * Toggle icon shown on each swimlane label.
+ * Each icon depicts the next state, so users can preview the action the click performs:
+ *   - `open`      → 2 lines + ↑ chevron ("reduce height to scrollable")
+ *   - `scroll`    → 1 line  + ↑ chevron ("collapse to a single row")
+ *   - `collapsed` → 1 line  + ↓ chevron ("expand the swimlane back")
+ */
 const SWIMLANE_COLLAPSE_ICON = {
-  open: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="0.6" fill="currentColor"/></svg>`,
-  scroll: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="7" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="11" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="12.5" y="3" width="1.5" height="10" rx="0.75" fill="currentColor" opacity="0.55"/><rect x="12.5" y="3" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg>`,
-  collapsed: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/></svg>`,
+  open: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="1.6" rx="0.6" fill="currentColor"/><rect x="2" y="5" width="12" height="1.6" rx="0.6" fill="currentColor"/><path d="M4 12 L8 9 L12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  scroll: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="1.6" rx="0.6" fill="currentColor"/><path d="M4 12 L8 9 L12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  collapsed: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="1.6" rx="0.6" fill="currentColor"/><path d="M4 9 L8 12 L12 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
@@ -855,12 +862,11 @@ function renderBoard(
   kanban.style.gridTemplateColumns = `minmax(100px, 140px) repeat(${colCount}, minmax(140px, 1fr))`;
   const laneRowTracks = lanes
     .map((lane) => {
-      const mode = swimlaneCollapseModeForLane(
-        laneCollapseMap,
-        Number(lane.index)
-      );
+      const mode = swimlaneCollapseModeForLane(laneCollapseMap, lane);
       if (mode === "collapsed") return "auto";
-      if (mode === "scroll") return `minmax(7rem, ${SWIMLANE_SCROLL_MAX_VH}vh)`;
+      // Scroll mode is a max-height only — fit-content caps at the limit but
+      // lets short lanes stay at their natural height (never grows them).
+      if (mode === "scroll") return `fit-content(${SWIMLANE_SCROLL_MAX_VH}vh)`;
       return "minmax(7rem, auto)";
     })
     .join(" ");
@@ -913,10 +919,9 @@ function renderBoard(
 
   for (const lane of lanes) {
     const laneIdxForMode = Number(lane.index);
-    const laneMode = swimlaneCollapseModeForLane(
-      laneCollapseMap,
-      laneIdxForMode
-    );
+    const laneTitleTrimmed = String(lane.title ?? "").trim();
+    const laneCanPersist = isSwimlaneTitleStorable(laneTitleTrimmed);
+    const laneMode = swimlaneCollapseModeForLane(laneCollapseMap, lane);
     const laneIsCollapsed = laneMode === "collapsed";
     const laneIsScroll = laneMode === "scroll";
 
@@ -933,49 +938,52 @@ function renderBoard(
 
     const labelInner = document.createElement("div");
     labelInner.className = "swimlane-label-inner";
-    if (lane.title) {
+    if (laneTitleTrimmed) {
       const titleSpan = document.createElement("span");
       titleSpan.className = "swimlane-label-title";
-      titleSpan.textContent = lane.title;
+      titleSpan.textContent = laneTitleTrimmed;
       labelInner.append(titleSpan);
     }
 
-    const collapseBtn = document.createElement("button");
-    collapseBtn.type = "button";
-    collapseBtn.className = `swimlane-collapse-toggle swimlane-collapse-toggle--${laneMode}`;
-    collapseBtn.dataset.mode = laneMode;
-    collapseBtn.innerHTML = SWIMLANE_COLLAPSE_ICON[laneMode];
-    const nextLabel = swimlaneCollapseNextActionLabel(laneMode);
-    collapseBtn.setAttribute("aria-label", nextLabel);
-    collapseBtn.title = nextLabel;
-    collapseBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const next = nextSwimlaneCollapseMode(laneMode);
-      void (async () => {
-        try {
-          const result = await patchSwimlaneCollapse({
-            boardSlug,
-            laneIndex: laneIdxForMode,
-            mode: next,
-          });
-          boardCache.swimlaneCollapse =
-            result.swimlaneCollapse ?? boardCache.swimlaneCollapse;
-          void loadApp(false);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          await showFlowAlert(msg, {
-            title: "Could not change swimlane state",
-          });
-        }
-      })();
-    });
-    labelInner.append(collapseBtn);
+    if (laneCanPersist) {
+      const collapseBtn = document.createElement("button");
+      collapseBtn.type = "button";
+      collapseBtn.className = `swimlane-collapse-toggle swimlane-collapse-toggle--${laneMode}`;
+      collapseBtn.dataset.mode = laneMode;
+      collapseBtn.innerHTML = SWIMLANE_COLLAPSE_ICON[laneMode];
+      const nextLabel = swimlaneCollapseNextActionLabel(laneMode);
+      collapseBtn.setAttribute("aria-label", nextLabel);
+      collapseBtn.title = nextLabel;
+      collapseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = nextSwimlaneCollapseMode(laneMode);
+        void (async () => {
+          try {
+            const result = await patchSwimlaneCollapse({
+              boardSlug,
+              laneTitle: laneTitleTrimmed,
+              laneIndex: laneIdxForMode,
+              mode: next,
+            });
+            boardCache.swimlaneCollapse =
+              result.swimlaneCollapse ?? boardCache.swimlaneCollapse;
+            void loadApp(false);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            await showFlowAlert(msg, {
+              title: "Could not change swimlane state",
+            });
+          }
+        })();
+      });
+      labelInner.append(collapseBtn);
+    }
     label.append(labelInner);
 
     label.setAttribute(
       "aria-label",
-      lane.title ? `Swimlane ${lane.title}` : "Swimlane"
+      laneTitleTrimmed ? `Swimlane ${laneTitleTrimmed}` : "Swimlane"
     );
     laneRow.append(label);
 

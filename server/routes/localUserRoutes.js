@@ -7,6 +7,7 @@ import {
 } from "../localUserIni.js";
 import {
   applySwimlaneCollapseUpdate,
+  isSwimlaneTitleStorable,
   normalizeSwimlaneCollapseMode,
   readSwimlaneCollapseStates,
   SWIMLANE_COLLAPSE_MODES,
@@ -163,18 +164,12 @@ app.patch("/api/local-user", async (req, res) => {
     }
 
     if (swimlaneRaw !== undefined) {
-      const slugRaw =
-        swimlaneRaw && typeof swimlaneRaw === "object"
-          ? swimlaneRaw.boardSlug ?? swimlaneRaw.board_slug
-          : undefined;
-      const laneRaw =
-        swimlaneRaw && typeof swimlaneRaw === "object"
-          ? swimlaneRaw.laneIndex ?? swimlaneRaw.lane_index
-          : undefined;
-      const modeRaw =
-        swimlaneRaw && typeof swimlaneRaw === "object"
-          ? swimlaneRaw.mode
-          : undefined;
+      const obj =
+        swimlaneRaw && typeof swimlaneRaw === "object" ? swimlaneRaw : {};
+      const slugRaw = obj.boardSlug ?? obj.board_slug;
+      const titleRaw = obj.laneTitle ?? obj.lane_title;
+      const laneRaw = obj.laneIndex ?? obj.lane_index;
+      const modeRaw = obj.mode;
 
       const slug = String(slugRaw ?? "").trim();
       if (!slug || !/^[a-zA-Z0-9._-]+$/.test(slug)) {
@@ -184,13 +179,25 @@ app.patch("/api/local-user", async (req, res) => {
         });
         return;
       }
-      const laneIdx = Number(laneRaw);
-      if (!Number.isInteger(laneIdx) || laneIdx < 0) {
+      const title = String(titleRaw ?? "").trim();
+      if (!isSwimlaneTitleStorable(title)) {
         res.status(400).json({
           message:
-            "swimlaneCollapse.laneIndex must be a non-negative integer.",
+            "swimlaneCollapse.laneTitle must be a non-empty title with no '=', '[', ']' or newline characters.",
         });
         return;
+      }
+      let laneIndex = undefined;
+      if (laneRaw !== undefined) {
+        const n = Number(laneRaw);
+        if (!Number.isInteger(n) || n < 0) {
+          res.status(400).json({
+            message:
+              "swimlaneCollapse.laneIndex, when provided, must be a non-negative integer.",
+          });
+          return;
+        }
+        laneIndex = n;
       }
       const mode = String(modeRaw ?? "").trim().toLowerCase();
       if (!SWIMLANE_COLLAPSE_MODES.includes(mode)) {
@@ -201,7 +208,8 @@ app.patch("/api/local-user", async (req, res) => {
       }
       applySwimlaneCollapseUpdate(sections, {
         boardSlug: slug,
-        laneIndex: laneIdx,
+        laneTitle: title,
+        laneIndex,
         mode: normalizeSwimlaneCollapseMode(mode),
       });
     }

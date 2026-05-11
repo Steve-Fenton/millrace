@@ -212,29 +212,29 @@ Feature: Local user preferences API
       {}
       """
 
-  Scenario: PATCH /api/local-user writes swimlaneCollapse for a lane
+  Scenario: PATCH /api/local-user writes swimlaneCollapse keyed by title
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "scroll" } }
+      { "swimlaneCollapse": { "boardSlug": "project", "laneTitle": "Bugs / UX", "mode": "scroll" } }
       """
     Then the response status should be 200
     And the last JSON field "swimlaneCollapse" should deeply equal JSON:
       """
-      { "demo": { "1": "scroll" } }
+      { "project": { "Bugs / UX": "scroll" } }
       """
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "collapsed" } }
+      { "swimlaneCollapse": { "boardSlug": "project", "laneTitle": "Bugs / UX", "mode": "collapsed" } }
       """
     Then the response status should be 200
     And the last JSON field "swimlaneCollapse" should deeply equal JSON:
       """
-      { "demo": { "1": "collapsed" } }
+      { "project": { "Bugs / UX": "collapsed" } }
       """
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "open" } }
+      { "swimlaneCollapse": { "boardSlug": "project", "laneTitle": "Bugs / UX", "mode": "open" } }
       """
     Then the response status should be 200
     And the last JSON field "swimlaneCollapse" should deeply equal JSON:
@@ -242,19 +242,37 @@ Feature: Local user preferences API
       {}
       """
 
-  Scenario: PATCH /api/local-user rejects swimlaneCollapse with no body fields
+  Scenario: PATCH /api/local-user replaces a legacy index entry with a title entry
+    Given the Millrace integration server has profile "flow-board"
+    When I write integration tasks localuser.ini:
+      """
+      [swimlanes.project]
+      1 = scroll
+      """
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "project", "laneTitle": "Bugs / UX", "laneIndex": 1, "mode": "collapsed" } }
+      """
+    Then the response status should be 200
+    And the last JSON field "swimlaneCollapse" should deeply equal JSON:
+      """
+      { "project": { "Bugs / UX": "collapsed" } }
+      """
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with no laneTitle
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo" } }
+      { "swimlaneCollapse": { "boardSlug": "demo", "mode": "scroll" } }
       """
     Then the response status should be 400
+    And the last JSON field "message" should contain "laneTitle"
 
   Scenario: PATCH /api/local-user rejects swimlaneCollapse with invalid slug
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "../etc", "laneIndex": 0, "mode": "scroll" } }
+      { "swimlaneCollapse": { "boardSlug": "../etc", "laneTitle": "Default", "mode": "scroll" } }
       """
     Then the response status should be 400
 
@@ -262,14 +280,23 @@ Feature: Local user preferences API
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 0, "mode": "fancy" } }
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneTitle": "Default", "mode": "fancy" } }
       """
     Then the response status should be 400
 
-  Scenario: PATCH /api/local-user rejects swimlaneCollapse with negative lane
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with unsafe laneTitle
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user" with JSON body:
       """
-      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": -1, "mode": "scroll" } }
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneTitle": "with = equals", "mode": "scroll" } }
+      """
+    Then the response status should be 400
+    And the last JSON field "message" should contain "laneTitle"
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with negative laneIndex
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneTitle": "Default", "laneIndex": -1, "mode": "scroll" } }
       """
     Then the response status should be 400

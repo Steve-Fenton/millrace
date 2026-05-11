@@ -241,7 +241,7 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
 }
 
 /**
- * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<number, "scroll" | "collapsed">> }>}
+ * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<string, "scroll" | "collapsed">> }>}
  */
 export async function fetchLocalUserProfile() {
   const empty = {
@@ -251,7 +251,7 @@ export async function fetchLocalUserProfile() {
     pendingSync: false,
     /** @type {"automatic" | "manual"} */
     syncMode: /** @type {"automatic" | "manual"} */ ("automatic"),
-    /** @type {Record<string, Record<number, "scroll" | "collapsed">>} */
+    /** @type {Record<string, Record<string, "scroll" | "collapsed">>} */
     swimlaneCollapse: {},
   };
   try {
@@ -273,23 +273,26 @@ export async function fetchLocalUserProfile() {
 }
 
 /**
+ * Server may key entries by swimlane title (preferred) or by a legacy numeric
+ * index. We preserve whatever the server sent so the UI can match by title
+ * first and fall back to index for older `tasks/localuser.ini` files.
  * @param {unknown} raw
- * @returns {Record<string, Record<number, "scroll" | "collapsed">>}
+ * @returns {Record<string, Record<string, "scroll" | "collapsed">>}
  */
 function normalizeSwimlaneCollapsePayload(raw) {
   if (!raw || typeof raw !== "object") return {};
-  /** @type {Record<string, Record<number, "scroll" | "collapsed">>} */
+  /** @type {Record<string, Record<string, "scroll" | "collapsed">>} */
   const out = {};
   for (const slug of Object.keys(raw)) {
     const lanes = /** @type {Record<string, unknown>} */ (raw[slug]);
     if (!lanes || typeof lanes !== "object") continue;
-    /** @type {Record<number, "scroll" | "collapsed">} */
+    /** @type {Record<string, "scroll" | "collapsed">} */
     const map = {};
     for (const key of Object.keys(lanes)) {
-      const idx = Number(key);
-      if (!Number.isInteger(idx)) continue;
+      const k = String(key).trim();
+      if (!k) continue;
       const v = String(lanes[key] ?? "").trim().toLowerCase();
-      if (v === "scroll" || v === "collapsed") map[idx] = v;
+      if (v === "scroll" || v === "collapsed") map[k] = v;
     }
     if (Object.keys(map).length > 0) out[slug] = map;
   }
@@ -298,19 +301,24 @@ function normalizeSwimlaneCollapsePayload(raw) {
 
 /**
  * Update a single lane's collapse mode in `tasks/localuser.ini`.
- * @param {{ boardSlug: string, laneIndex: number, mode: "open" | "scroll" | "collapsed" }} payload
+ * Storage is keyed by `laneTitle`. `laneIndex` is optional and lets the server
+ * clean up any legacy index-keyed entry for the same lane.
+ * @param {{ boardSlug: string, laneTitle: string, laneIndex?: number, mode: "open" | "scroll" | "collapsed" }} payload
  */
 export async function patchSwimlaneCollapse(payload) {
+  /** @type {Record<string, unknown>} */
+  const swimlaneBody = {
+    boardSlug: String(payload.boardSlug ?? "").trim(),
+    laneTitle: String(payload.laneTitle ?? "").trim(),
+    mode: payload.mode,
+  };
+  if (payload.laneIndex != null && Number.isFinite(Number(payload.laneIndex))) {
+    swimlaneBody.laneIndex = Number(payload.laneIndex);
+  }
   const res = await fetch("/api/local-user", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      swimlaneCollapse: {
-        boardSlug: String(payload.boardSlug ?? "").trim(),
-        laneIndex: Number(payload.laneIndex),
-        mode: payload.mode,
-      },
-    }),
+    body: JSON.stringify({ swimlaneCollapse: swimlaneBody }),
     ...NO_STORE,
   });
   const data = await res.json().catch(() => ({}));

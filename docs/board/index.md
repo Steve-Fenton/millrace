@@ -16,7 +16,7 @@ Each swimlane label has a small toggle button. Click it to cycle through three d
 2. **Scrolling** — the swimlane is capped to roughly half the viewport and scrolls vertically when there are more cards.
 3. **Fully collapsed** — a thin row that hides the cards and shows a count badge for each column.
 
-Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<board-slug>]`, so they survive page reloads and stay personal to your machine (the file is git-ignored).
+Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<board-slug>]`, keyed by swimlane name (for example `Bugs / UX = scroll`). They survive page reloads and stay personal to your machine (the file is git-ignored).
 
 ## Edit task cards
 
