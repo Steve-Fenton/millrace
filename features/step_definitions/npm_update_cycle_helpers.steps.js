@@ -13,6 +13,7 @@ import {
   readProjectHasCycleScript,
   runProjectCycleAfterUserConfirm,
   runProjectInstallThenCycle,
+  setProjectCyclePnpmArtifactCommitterForTesting,
   setProjectCyclePnpmRunnerForTesting,
 } from "../../server/projectCycleAfterUpdate.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
@@ -139,6 +140,16 @@ Given("project cycle pnpm is mocked to fail on first call", function () {
     if (n === 1) {
       throw new Error("mock pnpm failure");
     }
+  });
+});
+
+Given("project cycle git artifact committer is mocked", function () {
+  /** @type {{ root: string, message: string }[]} */
+  const calls = [];
+  this.pnpmArtifactCommitCalls = calls;
+  setProjectCyclePnpmArtifactCommitterForTesting(async (root, message) => {
+    calls.push({ root, message });
+    return true;
   });
 });
 
@@ -287,7 +298,34 @@ Then("mocked pnpm should have run install then cycle", function () {
   assert.deepStrictEqual(calls[1].args, ["cycle"]);
 });
 
+Then(
+  "the pnpm artifact committer should have been called once with message {string}",
+  function (expected) {
+    const calls = this.pnpmArtifactCommitCalls ?? [];
+    assert.strictEqual(
+      calls.length,
+      1,
+      `expected exactly 1 commit call, got ${calls.length}`
+    );
+    assert.strictEqual(calls[0].message, expected);
+    assert.strictEqual(calls[0].root, NPM_UNIT_ROOT);
+  }
+);
+
+Then(
+  "the pnpm artifact committer should not have been called",
+  function () {
+    const calls = this.pnpmArtifactCommitCalls ?? [];
+    assert.strictEqual(
+      calls.length,
+      0,
+      `expected no commit calls, got ${calls.length}`
+    );
+  }
+);
+
 After(function () {
   setProjectCyclePnpmRunnerForTesting(null);
+  setProjectCyclePnpmArtifactCommitterForTesting(null);
   setMillraceDataRootForTesting(INTEGRATION_DATA_ROOT);
 });

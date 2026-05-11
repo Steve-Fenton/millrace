@@ -1,7 +1,13 @@
+import { existsSync } from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { spawn } from "node:child_process";
 import { dataRoot } from "./dataRoot.js";
+import {
+  commitPnpmUpdateArtifactsIfChanged,
+  gitChildEnv,
+  runGitSerialized,
+} from "./gitOps.js";
 import {
   readLocalUserIniSections,
   writeLocalUserIniSections,
@@ -21,6 +27,48 @@ let pnpmRunnerOverride = null;
 /** @param {null | ((args: string[], cwd: string) => Promise<void>)} fn */
 export function setProjectCyclePnpmRunnerForTesting(fn) {
   pnpmRunnerOverride = fn;
+}
+
+/**
+ * When set (tests only), replaces the real `git add` + `git commit` of `package.json` /
+ * `pnpm-lock.yaml`. Returns whether the override pretended to make a commit.
+ * @type {null | ((root: string, message: string) => Promise<boolean>)}
+ */
+let pnpmArtifactCommitterOverride = null;
+
+/** @param {null | ((root: string, message: string) => Promise<boolean>)} fn */
+export function setProjectCyclePnpmArtifactCommitterForTesting(fn) {
+  pnpmArtifactCommitterOverride = fn;
+}
+
+/**
+ * Commit `package.json` + `pnpm-lock.yaml` (when the data root is a Git repo and the files
+ * actually changed) so the next `/api/git/sync` push carries the in-app pnpm update.
+ * @param {string} root
+ * @param {string} message
+ * @returns {Promise<boolean>}
+ */
+async function commitPnpmArtifactsAfterPnpm(root, message) {
+  if (pnpmArtifactCommitterOverride) {
+    return pnpmArtifactCommitterOverride(root, message);
+  }
+  if (!existsSync(path.join(root, ".git"))) return false;
+  const opts = {
+    cwd: root,
+    env: gitChildEnv(),
+    maxBuffer: 10 * 1024 * 1024,
+  };
+  try {
+    return await runGitSerialized(() =>
+      commitPnpmUpdateArtifactsIfChanged(opts, message)
+    );
+  } catch (e) {
+    console.warn(
+      "[millrace] could not commit package.json/pnpm-lock.yaml after pnpm:",
+      e
+    );
+    return false;
+  }
 }
 
 /**
@@ -183,6 +231,10 @@ async function executeInstallThenCycleSteps(opts = {}) {
 
   try {
     await runPnpm(["install"], root);
+    await commitPnpmArtifactsAfterPnpm(
+      root,
+      "Millrace: pnpm install (sync lockfile)"
+    );
     if (deferCycle) {
       const rootRef = root;
       setImmediate(() => {
@@ -270,6 +322,10 @@ async function executeProjectCycleSteps(registryLatestVersion, opts = {}) {
 
   try {
     await runPnpm(["update", "--latest"], root);
+    await commitPnpmArtifactsAfterPnpm(
+      root,
+      `Millrace: pnpm update --latest (registry v${registryLatestVersion})`
+    );
     if (deferCycle) {
       await markAutoCycleEvaluated(registryLatestVersion);
       const rootRef = root;

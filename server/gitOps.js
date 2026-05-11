@@ -138,6 +138,34 @@ export async function commitOutstandingTasksDir(opts) {
 }
 
 /**
+ * Stage `package.json` and `pnpm-lock.yaml` (whichever exist at `opts.cwd`) and create one
+ * commit if there are staged changes. Used after the in-app `pnpm update --latest` /
+ * `pnpm install` flow so the next git sync push carries the lockfile/package change.
+ * Returns whether a commit was actually written.
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ * @param {string} message
+ * @returns {Promise<boolean>}
+ */
+export async function commitPnpmUpdateArtifactsIfChanged(opts, message) {
+  const candidates = ["package.json", "pnpm-lock.yaml"];
+  /** @type {string[]} */
+  const present = [];
+  for (const rel of candidates) {
+    try {
+      await fs.access(path.join(opts.cwd, rel));
+      present.push(rel);
+    } catch {
+      /* file absent — skip from `git add` so it does not error */
+    }
+  }
+  if (present.length === 0) return false;
+  await execFileAsync("git", ["add", "--", ...present], opts);
+  if (!(await gitIndexHasStagedChanges(opts))) return false;
+  await execFileAsync("git", ["commit", "-m", message], opts);
+  return true;
+}
+
+/**
  * `git pull --autostash` when available (Git 2.14+), else plain pull.
  * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
  */

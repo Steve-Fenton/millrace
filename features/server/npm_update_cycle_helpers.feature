@@ -102,6 +102,24 @@ Feature: NPM update check and project cycle helpers
     And localuser.ini should record npm_auto_cycle_for as "2.3.4"
     And mocked pnpm should have run update-latest then cycle
 
+  Scenario: runProjectCycleAfterUserConfirm commits package.json + pnpm-lock.yaml after pnpm update
+    Given the npm cycle fixture data root is prepared
+    And package.json includes a cycle script for the npm cycle fixture
+    And project cycle pnpm is mocked to succeed
+    And project cycle git artifact committer is mocked
+    When I run project cycle after confirm for version "2.3.4"
+    Then project cycle result ok should be true
+    And the pnpm artifact committer should have been called once with message "Millrace: pnpm update --latest (registry v2.3.4)"
+
+  Scenario: runProjectCycleAfterUserConfirm skips the artifact commit when pnpm update fails
+    Given the npm cycle fixture data root is prepared
+    And package.json includes a cycle script for the npm cycle fixture
+    And project cycle pnpm is mocked to fail on first call
+    And project cycle git artifact committer is mocked
+    When I run project cycle after confirm for version "1.0.0"
+    Then project cycle result ok should be false
+    And the pnpm artifact committer should not have been called
+
   Scenario: runProjectCycleAfterUserConfirm returns pnpm_failed when mock rejects
     Given the npm cycle fixture data root is prepared
     And package.json includes a cycle script for the npm cycle fixture
@@ -163,3 +181,12 @@ Feature: NPM update check and project cycle helpers
     When I run project install cycle after confirm
     Then project cycle result ok should be true
     And mocked pnpm should have run install then cycle
+
+  Scenario: runProjectInstallThenCycle commits package.json + pnpm-lock.yaml after pnpm install
+    Given the npm cycle fixture data root is prepared
+    And package.json includes a cycle script for the npm cycle fixture
+    And project cycle pnpm is mocked to succeed
+    And project cycle git artifact committer is mocked
+    When I run project install cycle after confirm
+    Then project cycle result ok should be true
+    And the pnpm artifact committer should have been called once with message "Millrace: pnpm install (sync lockfile)"
