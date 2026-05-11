@@ -1699,7 +1699,7 @@ dialog.git-conflict-dialog::backdrop {
 
 .swimlane-label-inner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.4rem;
   width: 100%;
   min-width: 0;
@@ -1814,6 +1814,28 @@ dialog.git-conflict-dialog::backdrop {
 .column-cell--scroll {
   min-height: 0;
   overflow: hidden;
+}
+
+/*
+ * Soft fade at the bottom of a scrolling column so it visually "continues".
+ * Applied only when the body is overflowing AND not scrolled to the bottom
+ * (the `.column-cell--fade-bottom` class is toggled by JS on each scroll/resize).
+ * Uses mask-image on the body so the cell's own background (including hover and
+ * WIP-over gradients) shows through cleanly under the faded content.
+ */
+.column-cell--scroll.column-cell--fade-bottom .column-cell-body--scroll {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 28px),
+    transparent 100%
+  );
 }
 
 /* Collapsed mode: lane row is a thin strip with just a per-column count. */

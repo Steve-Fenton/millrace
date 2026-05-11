@@ -396,6 +396,31 @@ async function performCardNudge(direction, cardCtx) {
 }
 
 /**
+ * Toggle `.column-cell--fade-bottom` on a scroll-mode cell so its body shows a
+ * soft fade at the bottom while there is more content to scroll into view.
+ * @param {HTMLElement} cell
+ * @param {HTMLElement} body
+ */
+function attachSwimlaneScrollFade(cell, body) {
+  function update() {
+    if (!body.isConnected) return;
+    const overflowing = body.scrollHeight - body.clientHeight > 1;
+    const atBottom =
+      body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
+    cell.classList.toggle(
+      "column-cell--fade-bottom",
+      overflowing && !atBottom
+    );
+  }
+  body.addEventListener("scroll", update, { passive: true });
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(update);
+    ro.observe(body);
+  }
+  requestAnimationFrame(update);
+}
+
+/**
  * Close move compasses on pointerdown outside the active card (see board shell listener).
  * @param {HTMLElement} boardShell
  */
@@ -1464,6 +1489,8 @@ function renderBoard(
           }
         })();
       });
+
+      if (laneIsScroll) attachSwimlaneScrollFade(cell, body);
 
       laneRow.append(cell);
     }
