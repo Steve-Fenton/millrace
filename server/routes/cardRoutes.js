@@ -73,7 +73,12 @@ app.get("/api/card", async (req, res) => {
 
 /**
  * Query: boardSlug, columnIndex, filename, optional limit (default 40, max 100).
- * Returns `git log --follow` for the resolved task INI under `tasks/` (requires `.git` at data root).
+ * Returns `git log` for the resolved task INI under `tasks/` (requires `.git` at data root).
+ *
+ * Intentionally does NOT pass `--follow`: card filenames are stable random IDs that the app
+ * never renames, and `--follow` uses similarity heuristics that splice a source card's history
+ * onto a freshly-duplicated card (the new file shares description/owner/links so it matches as
+ * a copy of the original).
  */
 app.get("/api/card/git-history", async (req, res) => {
   try {
@@ -138,7 +143,6 @@ app.get("/api/card/git-history", async (req, res) => {
         "git",
         [
           "log",
-          "--follow",
           `-n${limit}`,
           "--format=%H%x1f%h%x1f%ai%x1f%an%x1f%s",
           "--",
