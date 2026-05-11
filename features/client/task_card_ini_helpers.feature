@@ -580,3 +580,20 @@ Feature: Task card INI helpers
       | rejects DD/MM/YYYY                | 11/05/2026           |            |
       | rejects free-text                 | not-a-date           |            |
       | rejects out-of-range month or day | 2026-13-40           |            |
+
+  Scenario Outline: daysUntilNextActionDate counts whole calendar days and isNextActionDateImminent flags <= 2 days
+    When I evaluate next action imminence for date "<input>" with today "<today>"
+    Then the days until the next action date should be "<daysUntil>"
+    And the next action imminence result should be "<expected>"
+
+    Examples:
+      | case                  | input      | today      | daysUntil | expected     |
+      | three days out        | 2026-05-14 | 2026-05-11 | 3         | not imminent |
+      | exactly two days out  | 2026-05-13 | 2026-05-11 | 2         | imminent     |
+      | tomorrow              | 2026-05-12 | 2026-05-11 | 1         | imminent     |
+      | today                 | 2026-05-11 | 2026-05-11 | 0         | imminent     |
+      | yesterday is overdue  | 2026-05-10 | 2026-05-11 | -1        | imminent     |
+      | last month is overdue | 2026-04-01 | 2026-05-11 | -40       | imminent     |
+      | empty input           |            | 2026-05-11 | null      | not imminent |
+      | invalid input         | not-a-date | 2026-05-11 | null      | not imminent |
+      | crosses month end     | 2026-06-02 | 2026-05-31 | 2         | imminent     |

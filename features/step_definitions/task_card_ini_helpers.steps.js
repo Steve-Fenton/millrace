@@ -2,6 +2,8 @@ import assert from "node:assert";
 import { Given, Then, When } from "@cucumber/cucumber";
 import {
   columnNameForIniItem,
+  daysUntilNextActionDate,
+  isNextActionDateImminent,
   normalizeLinksForIni,
   normalizeNextActionDate,
   serializeCardIni,
@@ -142,5 +144,45 @@ Then(
   "the normalized next action date should be {string}",
   function (expected) {
     assert.strictEqual(this.nextActionDateResult, expected);
+  }
+);
+
+When(
+  "I evaluate next action imminence for date {string} with today {string}",
+  function (raw, todayYmd) {
+    const [y, m, d] = String(todayYmd).split("-").map((n) => Number.parseInt(n, 10));
+    const todayMs = new Date(y, m - 1, d, 12, 0, 0).getTime();
+    this.nextActionDaysUntilResult = daysUntilNextActionDate(raw, todayMs);
+    this.nextActionImminentResult = isNextActionDateImminent(raw, todayMs);
+  }
+);
+
+Then(
+  "the days until the next action date should be {string}",
+  function (expected) {
+    const want = String(expected).trim();
+    if (want === "null") {
+      assert.strictEqual(this.nextActionDaysUntilResult, null);
+      return;
+    }
+    const wantNum = Number.parseInt(want, 10);
+    assert.ok(
+      Number.isFinite(wantNum),
+      `Expected an integer or "null", got "${expected}"`
+    );
+    assert.strictEqual(this.nextActionDaysUntilResult, wantNum);
+  }
+);
+
+Then(
+  "the next action imminence result should be {string}",
+  function (expected) {
+    const want = String(expected).trim().toLowerCase();
+    if (want !== "imminent" && want !== "not imminent") {
+      throw new Error(
+        `Expected token must be "imminent" or "not imminent", got "${expected}"`
+      );
+    }
+    assert.strictEqual(this.nextActionImminentResult, want === "imminent");
   }
 );

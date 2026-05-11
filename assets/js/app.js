@@ -31,6 +31,7 @@ import {
   readStoredOwnerFilter,
   filterCardsByOwner as filterCardsByOwnerWithFilter,
 } from "./ui/filterByOwner.js";
+import { daysUntilNextActionDate } from "./ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import {
   isSwimlaneTitleStorable,
@@ -63,6 +64,9 @@ const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" 
 
 /** Next to assignee name on kanban cards (decorative). */
 const COLUMN_CARD_OWNER_ICON = `<svg class="column-card-owner-icon-svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+
+/** Shown to the left of the Next label when the next action date is within two days (decorative). */
+const NEXT_ACTION_CLOCK_ICON = `<svg class="column-card-next-action-icon-svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>`;
 
 /** Small chevrons for in-card move compass (up / right / down / left). */
 const CARD_NUDGE_SVG = {
@@ -1116,6 +1120,20 @@ function renderBoard(
         if (nextActionDate) {
           const nextEl = document.createElement("div");
           nextEl.className = "column-card-next-action";
+          const daysUntilNext = daysUntilNextActionDate(nextActionDate);
+          if (daysUntilNext !== null && daysUntilNext <= 2) {
+            nextEl.classList.add("column-card-next-action--imminent");
+            const iconWrap = document.createElement("span");
+            iconWrap.className = "column-card-next-action-icon";
+            iconWrap.setAttribute("aria-hidden", "true");
+            iconWrap.innerHTML = NEXT_ACTION_CLOCK_ICON;
+            nextEl.append(iconWrap);
+          }
+          if (daysUntilNext === 1) {
+            nextEl.classList.add("column-card-next-action--due-tomorrow");
+          } else if (daysUntilNext !== null && daysUntilNext <= 0) {
+            nextEl.classList.add("column-card-next-action--due-now");
+          }
           const labelSpan = document.createElement("span");
           labelSpan.className = "column-card-next-action-label";
           labelSpan.textContent = "Next:";

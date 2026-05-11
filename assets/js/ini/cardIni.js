@@ -83,6 +83,41 @@ export function normalizeNextActionDate(raw) {
 }
 
 /**
+ * Whole calendar days from `todayMs` (local time) to the parsed YYYY-MM-DD, or
+ * `null` when `raw` does not parse. Negative values mean the date is overdue,
+ * `0` is today, `1` tomorrow, and so on.
+ * @param {unknown} raw
+ * @param {number} [todayMs] — defaults to `Date.now()` so callers can keep this pure for tests
+ * @returns {number | null}
+ */
+export function daysUntilNextActionDate(raw, todayMs = Date.now()) {
+  const ymd = normalizeNextActionDate(raw);
+  if (!ymd) return null;
+  const [y, mo, d] = ymd.split("-").map((n) => Number.parseInt(n, 10));
+  const targetMs = new Date(y, mo - 1, d).getTime();
+  const now = new Date(todayMs);
+  const todayStartMs = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  return Math.round((targetMs - todayStartMs) / dayMs);
+}
+
+/**
+ * True when `raw` parses to a YYYY-MM-DD that is at most two days from `todayMs`
+ * (in the local time zone), including the day itself and any past dates.
+ * Used by the board to flag cards whose next action is due soon or overdue.
+ * @param {unknown} raw
+ * @param {number} [todayMs] — defaults to `Date.now()` so callers can keep this pure for tests
+ */
+export function isNextActionDateImminent(raw, todayMs = Date.now()) {
+  const days = daysUntilNextActionDate(raw, todayMs);
+  return days !== null && days <= 2;
+}
+
+/**
  * Serialize a new task card as INI (matches README work-item shape).
  * @param {{ id: string, title: string, description?: string, note?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, strategic?: boolean, nextActionDate?: string, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
  */

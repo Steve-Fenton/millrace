@@ -2143,10 +2143,20 @@ a.column-done-truncation-link:focus-visible {
 
 .column-card-next-action {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.3rem;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.column-card-next-action-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.column-card-next-action-icon-svg {
+  display: block;
 }
 
 .column-card-next-action-label {
@@ -2157,6 +2167,29 @@ a.column-done-truncation-link:focus-visible {
 
 .column-card-next-action-date {
   font-variant-numeric: tabular-nums;
+}
+
+/* Day before the date: bring the whole row up to the card title color. */
+.column-card-next-action--due-tomorrow {
+  color: var(--text);
+}
+
+.column-card-next-action--due-tomorrow .column-card-next-action-icon {
+  color: var(--text);
+}
+
+/* On the date or overdue: invert the whole row — light background, dark text. */
+.column-card-next-action--due-now {
+  padding-block: 0.12rem;
+  padding-inline: 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.column-card-next-action--due-now .column-card-next-action-icon {
+  color: var(--bg);
 }
 
 .column-card-owner {
