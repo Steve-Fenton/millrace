@@ -58,6 +58,11 @@ test.describe("doc screenshots", () => {
   });
 
   test("demo board — edit card dialog", async ({ page }) => {
+    /** The dialog caps at `calc(100dvh - 2rem)` and starts scrolling on the default
+     *  1024×768 viewport, which crops the Links row in the screenshot. Give the page
+     *  a tall viewport so the full dialog fits without internal scrolling. */
+    await page.setViewportSize({ width: 1024, height: 1400 });
+
     await page.goto("/");
     await page.waitForSelector(".board-shell", { timeout: 30_000 });
 
