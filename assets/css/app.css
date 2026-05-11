@@ -3104,6 +3104,29 @@ input[type="checkbox"]:disabled {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.flow-next-action-date-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.flow-next-action-date-row .flow-next-action-date-input {
+  width: auto;
+  flex: 0 0 auto;
+  min-width: 9.5rem;
+}
+
+.flow-btn.flow-btn-icon.flow-next-action-date-today,
+.flow-btn.flow-btn-icon.flow-next-action-date-clear {
+  width: 2rem;
+  height: 2rem;
+}
+
+.flow-next-action-date-today-icon,
+.flow-next-action-date-clear-icon {
+  display: block;
+}
+
 .flow-modal-actions {
   display: flex;
   justify-content: flex-end;

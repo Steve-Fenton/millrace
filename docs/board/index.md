@@ -12,9 +12,9 @@ Task cards are arranged on the board and you can drag and drop them to a new loc
 
 Each swimlane label has a small toggle button. Click it to cycle through three display modes:
 
-1. **Fully open** — the swimlane grows to fit its cards (default).
-2. **Scrolling** — the swimlane is capped to roughly half the viewport and scrolls vertically when there are more cards.
-3. **Fully collapsed** — a thin row that hides the cards and shows a count badge for each column.
+1. **Fully open**: The swimlane grows to fit its cards (default).
+2. **Scrolling**: The swimlane is capped to roughly half the viewport and scrolls vertically when there are more cards.
+3. **Fully collapsed**: A thin row that hides the cards and shows a count badge for each column.
 
 Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<board-slug>]`, keyed by swimlane name (for example `Bugs / UX = scroll`). They survive page reloads and stay personal to your machine (the file is git-ignored).
 
@@ -30,12 +30,18 @@ You'll notice several icons on the card editor.
 
 Along the top:
 
-- **Duplicate**: Creates a copy of the card
-- **History**: Shows changes made to the card
+- **Duplicate**: Creates a copy of the card.
+- **History**: Shows changes made to the card.
 
 Along the bottom:
 
 - **Delete**: Deletes the card (after double-checking with you) 
+
+### Useful card features
+
+- **Strategic**: Tick this box for crucial tasks, they get a target icon and extra highlighting.
+- **Notes**: A short text field for useful contextual information, which is shown on the card.
+- **Next action date**: Add a next action date to bring cards to your attention.
 
 ## Version control sync
 

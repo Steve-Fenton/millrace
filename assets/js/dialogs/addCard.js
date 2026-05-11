@@ -1,4 +1,5 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
+import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
 import { createCard, readLocalUserIni } from "../client.js";
 import { el } from "../html/element.js";
@@ -46,18 +47,11 @@ export function openAddCardDialog(ctx) {
   `);
   ownerField.root.insertAdjacentElement("afterend", noteFieldEl);
   const noteInput = noteFieldEl.querySelector('input[name="note"]');
-  const nextActionFieldEl = el(`
-    <label class="flow-field">
-      <span class="flow-field-label">Next action date</span>
-      <input class="flow-input" name="next_action_date" type="date" autocomplete="off" />
-    </label>
-  `);
-  noteFieldEl.insertAdjacentElement("afterend", nextActionFieldEl);
-  const nextActionInput = nextActionFieldEl.querySelector(
-    'input[name="next_action_date"]'
-  );
+  const nextActionField = createNextActionDateField("");
+  noteFieldEl.insertAdjacentElement("afterend", nextActionField.root);
+  const nextActionInput = nextActionField.input;
   const linksEditor = createLinksEditor([]);
-  nextActionFieldEl.insertAdjacentElement("afterend", linksEditor.root);
+  nextActionField.root.insertAdjacentElement("afterend", linksEditor.root);
 
   function focusTitle() {
     titleInput?.focus();

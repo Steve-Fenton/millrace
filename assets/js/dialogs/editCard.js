@@ -1,6 +1,7 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
 import { renderLimitedMarkdown } from "../ui/limitedMarkdown.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
+import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
 import {
   createCard,
@@ -340,24 +341,16 @@ export async function openCardEditorDialog(ctx) {
   const noteInput = noteFieldEl.querySelector('input[name="note"]');
   if (noteInput) noteInput.value = String(initial.note ?? "").trim();
 
-  const nextActionFieldEl = el(`
-    <label class="flow-field">
-      <span class="flow-field-label">Next action date</span>
-      <input class="flow-input" name="next_action_date" type="date" autocomplete="off" />
-    </label>
-  `);
-  noteFieldEl.insertAdjacentElement("afterend", nextActionFieldEl);
-  const nextActionInput = nextActionFieldEl.querySelector(
-    'input[name="next_action_date"]'
+  const nextActionField = createNextActionDateField(
+    String(initial.next_action_date ?? "").trim()
   );
-  if (nextActionInput) {
-    nextActionInput.value = String(initial.next_action_date ?? "").trim();
-  }
+  noteFieldEl.insertAdjacentElement("afterend", nextActionField.root);
+  const nextActionInput = nextActionField.input;
 
   const linksEditor = createLinksEditor(
     Array.isArray(initial.links) ? initial.links : []
   );
-  nextActionFieldEl.insertAdjacentElement("afterend", linksEditor.root);
+  nextActionField.root.insertAdjacentElement("afterend", linksEditor.root);
 
   /** @type {boolean | null} */
   let showingDescriptionPreview = null;
