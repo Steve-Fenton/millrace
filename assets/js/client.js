@@ -241,20 +241,22 @@ export async function fetchColumnCards(boardSlug, columnIndex) {
 }
 
 /**
- * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean, syncMode: "automatic" | "manual" }>}
+ * @returns {Promise<{ owner: string, mine: string, chartsGranularity: string, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<number, "scroll" | "collapsed">> }>}
  */
 export async function fetchLocalUserProfile() {
+  const empty = {
+    owner: "",
+    mine: "",
+    chartsGranularity: "",
+    pendingSync: false,
+    /** @type {"automatic" | "manual"} */
+    syncMode: /** @type {"automatic" | "manual"} */ ("automatic"),
+    /** @type {Record<string, Record<number, "scroll" | "collapsed">>} */
+    swimlaneCollapse: {},
+  };
   try {
     const res = await fetch("/api/local-user", NO_STORE);
-    if (!res.ok) {
-      return {
-        owner: "",
-        mine: "",
-        chartsGranularity: "",
-        pendingSync: false,
-        syncMode: "automatic",
-      };
-    }
+    if (!res.ok) return empty;
     const data = await res.json();
     const sm = String(data.syncMode ?? "").trim().toLowerCase();
     return {
@@ -263,16 +265,66 @@ export async function fetchLocalUserProfile() {
       chartsGranularity: String(data.chartsGranularity ?? "").trim(),
       pendingSync: Boolean(data.pendingSync),
       syncMode: sm === "manual" ? "manual" : "automatic",
+      swimlaneCollapse: normalizeSwimlaneCollapsePayload(data.swimlaneCollapse),
     };
   } catch {
-    return {
-      owner: "",
-      mine: "",
-      chartsGranularity: "",
-      pendingSync: false,
-      syncMode: "automatic",
-    };
+    return empty;
   }
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {Record<string, Record<number, "scroll" | "collapsed">>}
+ */
+function normalizeSwimlaneCollapsePayload(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  /** @type {Record<string, Record<number, "scroll" | "collapsed">>} */
+  const out = {};
+  for (const slug of Object.keys(raw)) {
+    const lanes = /** @type {Record<string, unknown>} */ (raw[slug]);
+    if (!lanes || typeof lanes !== "object") continue;
+    /** @type {Record<number, "scroll" | "collapsed">} */
+    const map = {};
+    for (const key of Object.keys(lanes)) {
+      const idx = Number(key);
+      if (!Number.isInteger(idx)) continue;
+      const v = String(lanes[key] ?? "").trim().toLowerCase();
+      if (v === "scroll" || v === "collapsed") map[idx] = v;
+    }
+    if (Object.keys(map).length > 0) out[slug] = map;
+  }
+  return out;
+}
+
+/**
+ * Update a single lane's collapse mode in `tasks/localuser.ini`.
+ * @param {{ boardSlug: string, laneIndex: number, mode: "open" | "scroll" | "collapsed" }} payload
+ */
+export async function patchSwimlaneCollapse(payload) {
+  const res = await fetch("/api/local-user", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      swimlaneCollapse: {
+        boardSlug: String(payload.boardSlug ?? "").trim(),
+        laneIndex: Number(payload.laneIndex),
+        mode: payload.mode,
+      },
+    }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  return {
+    ok: Boolean(data.ok),
+    swimlaneCollapse: normalizeSwimlaneCollapsePayload(data.swimlaneCollapse),
+  };
 }
 
 /**

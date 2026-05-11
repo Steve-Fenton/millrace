@@ -8,6 +8,16 @@ Task cards are arranged on the board and you can drag and drop them to a new loc
 
 ![Screenshot: Card navigation controls](../screenshots/demo-card-move-icons.png)
 
+## Collapse a swimlane
+
+Each swimlane label has a small toggle button. Click it to cycle through three display modes:
+
+1. **Fully open** — the swimlane grows to fit its cards (default).
+2. **Scrolling** — the swimlane is capped to roughly half the viewport and scrolls vertically when there are more cards.
+3. **Fully collapsed** — a thin row that hides the cards and shows a count badge for each column.
+
+Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<board-slug>]`, so they survive page reloads and stay personal to your machine (the file is git-ignored).
+
 ## Edit task cards
 
 When you hover over a card, you can select the **Edit** icon to opent the card editor. From here you can update you task information, add links.

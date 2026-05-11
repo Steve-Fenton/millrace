@@ -5,6 +5,12 @@ import {
   syncModeFromPreferencesSection,
   writeLocalUserIniSections,
 } from "../localUserIni.js";
+import {
+  applySwimlaneCollapseUpdate,
+  normalizeSwimlaneCollapseMode,
+  readSwimlaneCollapseStates,
+  SWIMLANE_COLLAPSE_MODES,
+} from "../../assets/js/ui/swimlaneCollapse.js";
 
 /** @param {import("express").Application} app */
 export function registerLocalUserRoutes(app) {
@@ -28,6 +34,7 @@ app.get("/api/local-user", async (_req, res) => {
       chartsGranularity,
       pendingSync: pendingSyncFromSections(sections),
       syncMode: syncModeFromPreferencesSection(sections.preferences ?? {}),
+      swimlaneCollapse: readSwimlaneCollapseStates(sections),
     });
   } catch {
     res.json({
@@ -36,6 +43,7 @@ app.get("/api/local-user", async (_req, res) => {
       chartsGranularity: "",
       pendingSync: false,
       syncMode: "automatic",
+      swimlaneCollapse: {},
     });
   }
 });
@@ -87,15 +95,22 @@ app.patch("/api/local-user", async (req, res) => {
         : body.sync_mode !== undefined
           ? body.sync_mode
           : undefined;
+    const swimlaneRaw =
+      body.swimlaneCollapse !== undefined
+        ? body.swimlaneCollapse
+        : body.swimlane_collapse !== undefined
+          ? body.swimlane_collapse
+          : undefined;
 
     if (
       chartsRaw === undefined &&
       mineRaw === undefined &&
-      syncRaw === undefined
+      syncRaw === undefined &&
+      swimlaneRaw === undefined
     ) {
       res.status(400).json({
         message:
-          "Expected JSON body with chartsGranularity (weekly or monthly), mine (email), and/or syncMode (automatic or manual).",
+          "Expected JSON body with chartsGranularity (weekly or monthly), mine (email), syncMode (automatic or manual), and/or swimlaneCollapse { boardSlug, laneIndex, mode }.",
       });
       return;
     }
@@ -147,6 +162,50 @@ app.patch("/api/local-user", async (req, res) => {
       }
     }
 
+    if (swimlaneRaw !== undefined) {
+      const slugRaw =
+        swimlaneRaw && typeof swimlaneRaw === "object"
+          ? swimlaneRaw.boardSlug ?? swimlaneRaw.board_slug
+          : undefined;
+      const laneRaw =
+        swimlaneRaw && typeof swimlaneRaw === "object"
+          ? swimlaneRaw.laneIndex ?? swimlaneRaw.lane_index
+          : undefined;
+      const modeRaw =
+        swimlaneRaw && typeof swimlaneRaw === "object"
+          ? swimlaneRaw.mode
+          : undefined;
+
+      const slug = String(slugRaw ?? "").trim();
+      if (!slug || !/^[a-zA-Z0-9._-]+$/.test(slug)) {
+        res.status(400).json({
+          message:
+            "swimlaneCollapse.boardSlug must be a non-empty board slug.",
+        });
+        return;
+      }
+      const laneIdx = Number(laneRaw);
+      if (!Number.isInteger(laneIdx) || laneIdx < 0) {
+        res.status(400).json({
+          message:
+            "swimlaneCollapse.laneIndex must be a non-negative integer.",
+        });
+        return;
+      }
+      const mode = String(modeRaw ?? "").trim().toLowerCase();
+      if (!SWIMLANE_COLLAPSE_MODES.includes(mode)) {
+        res.status(400).json({
+          message: `swimlaneCollapse.mode must be one of: ${SWIMLANE_COLLAPSE_MODES.join(", ")}.`,
+        });
+        return;
+      }
+      applySwimlaneCollapseUpdate(sections, {
+        boardSlug: slug,
+        laneIndex: laneIdx,
+        mode: normalizeSwimlaneCollapseMode(mode),
+      });
+    }
+
     await writeLocalUserIniSections(sections);
 
     const out = await readLocalUserIniSections();
@@ -167,6 +226,7 @@ app.patch("/api/local-user", async (req, res) => {
       chartsGranularity,
       pendingSync: pendingSyncFromSections(out),
       syncMode: syncModeFromPreferencesSection(out.preferences ?? {}),
+      swimlaneCollapse: readSwimlaneCollapseStates(out),
     });
   } catch (e) {
     console.error(e);

@@ -12,6 +12,7 @@ import {
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
   fetchNpmUpdateCheck,
+  patchSwimlaneCollapse,
   postNpmInstallRunCycle,
   postNpmUpdateRunCycle,
   moveCard,
@@ -31,6 +32,12 @@ import {
   filterCardsByOwner as filterCardsByOwnerWithFilter,
 } from "./ui/filterByOwner.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
+import {
+  nextSwimlaneCollapseMode,
+  swimlaneCollapseModeForLane,
+  swimlaneCollapseNextActionLabel,
+  SWIMLANE_SCROLL_MAX_VH,
+} from "./ui/swimlaneCollapse.js";
 import { boardSlugFrom } from "./html/slug.js";
 import {
   createBoardTitlePicker,
@@ -62,6 +69,13 @@ const CARD_NUDGE_SVG = {
   right: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>`,
   down: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>`,
   left: `<svg class="column-card-nudge-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>`,
+};
+
+/** Toggle icon shown on each swimlane label; reflects the current collapse mode. */
+const SWIMLANE_COLLAPSE_ICON = {
+  open: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="0.6" fill="currentColor"/></svg>`,
+  scroll: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="7" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="2" y="11" width="9" height="2" rx="0.6" fill="currentColor"/><rect x="12.5" y="3" width="1.5" height="10" rx="0.75" fill="currentColor" opacity="0.55"/><rect x="12.5" y="3" width="1.5" height="4" rx="0.75" fill="currentColor"/></svg>`,
+  collapsed: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/></svg>`,
 };
 
 /** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
@@ -130,7 +144,7 @@ const emptyFlowCtx = () => ({
   activeSlug: "board",
 });
 
-/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean, syncMode: "automatic" | "manual" }} */
+/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<number, "scroll" | "collapsed">> }} */
 let boardCache = {
   model: null,
   cardsByColumn: null,
@@ -139,6 +153,7 @@ let boardCache = {
   flowCtx: null,
   pendingSync: false,
   syncMode: "automatic",
+  swimlaneCollapse: {},
 };
 
 /** Set on full board load; used when re-rendering after owner filter only. */
@@ -612,6 +627,7 @@ function attachKanbanHeaderDock(root, kanbanScroll, kanban, corner) {
 /**
  * @param {Map<number, Array<{ filename?: string, title?: string, owner?: string, swimlane?: string, links?: { text?: string, url?: string }[] }>>} cardsByColumn
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
+ * @param {Record<number, "scroll" | "collapsed"> | undefined} laneCollapseMap
  */
 function renderBoard(
   model,
@@ -619,7 +635,8 @@ function renderBoard(
   mineEmail,
   gitSyncOk,
   flowCtx,
-  pendingSync
+  pendingSync,
+  laneCollapseMap
 ) {
   const { board, columns, swimlanes } = model;
   const name = board.name?.trim() || "Board";
@@ -836,7 +853,18 @@ function renderBoard(
   }
   const colCount = columns.length;
   kanban.style.gridTemplateColumns = `minmax(100px, 140px) repeat(${colCount}, minmax(140px, 1fr))`;
-  kanban.style.gridTemplateRows = `auto repeat(${lanes.length}, minmax(7rem, auto))`;
+  const laneRowTracks = lanes
+    .map((lane) => {
+      const mode = swimlaneCollapseModeForLane(
+        laneCollapseMap,
+        Number(lane.index)
+      );
+      if (mode === "collapsed") return "auto";
+      if (mode === "scroll") return `minmax(7rem, ${SWIMLANE_SCROLL_MAX_VH}vh)`;
+      return "minmax(7rem, auto)";
+    })
+    .join(" ");
+  kanban.style.gridTemplateRows = `auto ${laneRowTracks}`;
   kanban.setAttribute("role", "grid");
   kanban.setAttribute("aria-label", `${name}, kanban`);
 
@@ -884,16 +912,67 @@ function renderBoard(
   kanban.append(headerRow);
 
   for (const lane of lanes) {
+    const laneIdxForMode = Number(lane.index);
+    const laneMode = swimlaneCollapseModeForLane(
+      laneCollapseMap,
+      laneIdxForMode
+    );
+    const laneIsCollapsed = laneMode === "collapsed";
+    const laneIsScroll = laneMode === "scroll";
+
     const laneRow = document.createElement("div");
     laneRow.className = "kanban-row";
+    if (laneIsCollapsed) laneRow.classList.add("kanban-row--collapsed");
+    if (laneIsScroll) laneRow.classList.add("kanban-row--scroll");
     laneRow.setAttribute("role", "row");
 
     const label = document.createElement("div");
     label.className = "swimlane-label";
+    if (laneIsCollapsed) label.classList.add("swimlane-label--collapsed");
     label.setAttribute("role", "rowheader");
+
+    const labelInner = document.createElement("div");
+    labelInner.className = "swimlane-label-inner";
     if (lane.title) {
-      label.innerHTML = `<span>${escapeHtml(lane.title)}</span>`;
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "swimlane-label-title";
+      titleSpan.textContent = lane.title;
+      labelInner.append(titleSpan);
     }
+
+    const collapseBtn = document.createElement("button");
+    collapseBtn.type = "button";
+    collapseBtn.className = `swimlane-collapse-toggle swimlane-collapse-toggle--${laneMode}`;
+    collapseBtn.dataset.mode = laneMode;
+    collapseBtn.innerHTML = SWIMLANE_COLLAPSE_ICON[laneMode];
+    const nextLabel = swimlaneCollapseNextActionLabel(laneMode);
+    collapseBtn.setAttribute("aria-label", nextLabel);
+    collapseBtn.title = nextLabel;
+    collapseBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const next = nextSwimlaneCollapseMode(laneMode);
+      void (async () => {
+        try {
+          const result = await patchSwimlaneCollapse({
+            boardSlug,
+            laneIndex: laneIdxForMode,
+            mode: next,
+          });
+          boardCache.swimlaneCollapse =
+            result.swimlaneCollapse ?? boardCache.swimlaneCollapse;
+          void loadApp(false);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          await showFlowAlert(msg, {
+            title: "Could not change swimlane state",
+          });
+        }
+      })();
+    });
+    labelInner.append(collapseBtn);
+    label.append(labelInner);
+
     label.setAttribute(
       "aria-label",
       lane.title ? `Swimlane ${lane.title}` : "Swimlane"
@@ -912,10 +991,13 @@ function renderBoard(
       const cell = document.createElement("div");
       cell.className = "column-cell";
       if (wipExceeded) cell.classList.add("column-cell--wip-over");
+      if (laneIsCollapsed) cell.classList.add("column-cell--collapsed");
+      if (laneIsScroll) cell.classList.add("column-cell--scroll");
       cell.setAttribute("role", "gridcell");
 
       const body = document.createElement("div");
       body.className = "column-cell-body";
+      if (laneIsScroll) body.classList.add("column-cell-body--scroll");
 
       const list = document.createElement("ul");
       list.className = "column-card-list";
@@ -930,6 +1012,24 @@ function renderBoard(
       cards = filterCardsBySearch(cards, boardCardSearch, model.users);
       const { display: displayCards, truncated: doneLaneTruncated } =
         cardsForDoneColumnDisplay(cards, col);
+
+      if (laneIsCollapsed) {
+        const countBadge = document.createElement("span");
+        countBadge.className = "column-cell-collapsed-count";
+        countBadge.textContent = String(cards.length);
+        const cardWord = cards.length === 1 ? "card" : "cards";
+        const tipBase = `${cards.length} ${cardWord} in ${col.title}`;
+        countBadge.title = lane.title
+          ? `${tipBase} · ${lane.title}`
+          : tipBase;
+        countBadge.setAttribute("aria-label", countBadge.title);
+        if (cards.length === 0) {
+          countBadge.classList.add("column-cell-collapsed-count--empty");
+        }
+        cell.append(countBadge);
+        laneRow.append(cell);
+        continue;
+      }
 
       for (const card of displayCards) {
         const li = document.createElement("li");
@@ -1435,13 +1535,15 @@ async function loadApp(fullReload = true) {
     );
     const scrollSnapshot = captureBoardViewScroll(mount);
     const shell = mount.querySelector(".board-shell");
+    const cachedSlug = boardSlugFrom(boardCache.model.board ?? {});
     const next = renderBoard(
       boardCache.model,
       boardCache.cardsByColumn,
       boardCache.mineEmail,
       gitRepoAvailable,
       boardCache.flowCtx ?? emptyFlowCtx(),
-      boardCache.pendingSync
+      boardCache.pendingSync,
+      boardCache.swimlaneCollapse[cachedSlug]
     );
     if (shell) shell.replaceWith(next);
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
@@ -1486,6 +1588,10 @@ async function loadApp(fullReload = true) {
     const defaultCardOwner = String(profile.owner ?? "").trim();
     const pendingSync = Boolean(profile.pendingSync);
     const syncMode = profile.syncMode === "manual" ? "manual" : "automatic";
+    const swimlaneCollapse =
+      profile.swimlaneCollapse && typeof profile.swimlaneCollapse === "object"
+        ? profile.swimlaneCollapse
+        : {};
 
     boardCache = {
       model,
@@ -1495,6 +1601,7 @@ async function loadApp(fullReload = true) {
       flowCtx,
       pendingSync,
       syncMode,
+      swimlaneCollapse,
     };
 
     applyStoredOwnerFilter();
@@ -1507,7 +1614,8 @@ async function loadApp(fullReload = true) {
         mineEmail,
         gitRepoAvailable,
         flowCtx,
-        pendingSync
+        pendingSync,
+        swimlaneCollapse[boardSlug]
       )
     );
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);

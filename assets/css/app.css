@@ -1697,10 +1697,70 @@ dialog.git-conflict-dialog::backdrop {
   writing-mode: horizontal-tb;
 }
 
-.swimlane-label span {
+.swimlane-label-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.swimlane-label-title {
   display: block;
   color: var(--text);
   font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swimlane-label--collapsed {
+  padding-block: 0.35rem;
+  padding-inline: 0.75rem;
+  align-items: center;
+}
+
+.swimlane-label--collapsed .swimlane-label-inner {
+  align-items: center;
+}
+
+.swimlane-collapse-toggle {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.18rem;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.swimlane-collapse-toggle:hover,
+.swimlane-collapse-toggle:focus-visible {
+  background: var(--surface-hover);
+  border-color: var(--border);
+  color: var(--text);
+  outline: none;
+}
+
+.swimlane-collapse-toggle--scroll {
+  color: var(--accent);
+}
+
+.swimlane-collapse-toggle--collapsed {
+  color: var(--text);
+}
+
+.swimlane-collapse-icon {
+  display: block;
 }
 
 .column-cell {
@@ -1741,6 +1801,50 @@ dialog.git-conflict-dialog::backdrop {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+/* Scroll mode: lane body is capped to a viewport-relative height and scrolls vertically. */
+.column-cell-body--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.column-cell--scroll {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Collapsed mode: lane row is a thin strip with just a per-column count. */
+.column-cell--collapsed {
+  padding-block: 0.25rem;
+  padding-inline: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 0;
+}
+
+.column-cell-collapsed-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--elevated);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.column-cell-collapsed-count--empty {
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .column-done-truncation-note {

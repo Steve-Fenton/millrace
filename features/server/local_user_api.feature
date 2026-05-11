@@ -202,3 +202,74 @@ Feature: Local user preferences API
     Then the response status should be 200
     When I fetch JSON from "/api/local-user"
     Then the last JSON field "chartsGranularity" should be "monthly"
+
+  Scenario: GET /api/local-user returns empty swimlaneCollapse on a fresh root
+    Given the Millrace integration server has profile "flow-board"
+    When I fetch JSON from "/api/local-user"
+    Then the response status should be 200
+    And the last JSON field "swimlaneCollapse" should deeply equal JSON:
+      """
+      {}
+      """
+
+  Scenario: PATCH /api/local-user writes swimlaneCollapse for a lane
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "scroll" } }
+      """
+    Then the response status should be 200
+    And the last JSON field "swimlaneCollapse" should deeply equal JSON:
+      """
+      { "demo": { "1": "scroll" } }
+      """
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "collapsed" } }
+      """
+    Then the response status should be 200
+    And the last JSON field "swimlaneCollapse" should deeply equal JSON:
+      """
+      { "demo": { "1": "collapsed" } }
+      """
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 1, "mode": "open" } }
+      """
+    Then the response status should be 200
+    And the last JSON field "swimlaneCollapse" should deeply equal JSON:
+      """
+      {}
+      """
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with no body fields
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo" } }
+      """
+    Then the response status should be 400
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with invalid slug
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "../etc", "laneIndex": 0, "mode": "scroll" } }
+      """
+    Then the response status should be 400
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with unknown mode
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": 0, "mode": "fancy" } }
+      """
+    Then the response status should be 400
+
+  Scenario: PATCH /api/local-user rejects swimlaneCollapse with negative lane
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user" with JSON body:
+      """
+      { "swimlaneCollapse": { "boardSlug": "demo", "laneIndex": -1, "mode": "scroll" } }
+      """
+    Then the response status should be 400
