@@ -6,6 +6,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 
 - Headings: `#`, `##`, `###`
 - Unordered lists: `- item` or `* item`
+- Checkbox lists: `- [ ]` pending, `- [x]` or `- [X]` done
 - Ordered lists: `1. item`
 - Nested lists: indent list items by 2+ spaces under a parent item
 - Paragraphs: plain text lines

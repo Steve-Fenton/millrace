@@ -1,6 +1,6 @@
 /**
  * Render a restricted markdown subset into `target`.
- * Supported blocks: headings (#..###), ordered/unordered lists, paragraphs.
+ * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), paragraphs.
  * Supported inline: **bold**, *italic*, ~~strikethrough~~, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
@@ -14,7 +14,7 @@ export function renderLimitedMarkdown(target, source) {
 
   /**
    * Active list stack from outermost to innermost depth.
-   * @type {Array<{ list: HTMLOListElement | HTMLUListElement, kind: "ol" | "ul", lastItem: HTMLLIElement | null }>}
+   * @type {Array<{ list: HTMLOListElement | HTMLUListElement, kind: "ol" | "ul", ulVariant: "bullet" | "task" | null, lastItem: HTMLLIElement | null }>}
    */
   let listStack = [];
 
@@ -25,11 +25,13 @@ export function renderLimitedMarkdown(target, source) {
   /**
    * @param {"ol" | "ul"} kind
    * @param {HTMLElement | DocumentFragment} parent
+   * @param {"bullet" | "task" | null} ulVariant list flavor when kind is `ul` (ignored for `ol`)
    * @returns {HTMLOListElement | HTMLUListElement}
    */
-  function createList(kind, parent) {
+  function createList(kind, parent, ulVariant) {
     const list = document.createElement(kind);
-    list.className = "flow-md-list";
+    list.className =
+      kind === "ul" && ulVariant === "task" ? "flow-md-list flow-md-list--task" : "flow-md-list";
     parent.append(list);
     return list;
   }
@@ -37,22 +39,35 @@ export function renderLimitedMarkdown(target, source) {
   /**
    * @param {"ol" | "ul"} kind
    * @param {number} depth 1-based list depth
+   * @param {"bullet" | "task"} [ulVariant] when kind is `ul`; defaults to `"bullet"`
    * @returns {HTMLOListElement | HTMLUListElement}
    */
-  function ensureListAtDepth(kind, depth) {
+  function ensureListAtDepth(kind, depth, ulVariant = "bullet") {
     const desiredDepth = Math.max(1, depth);
     while (listStack.length > desiredDepth) {
       listStack.pop();
     }
 
-    if (listStack.length === desiredDepth && listStack[listStack.length - 1]?.kind !== kind) {
-      listStack.pop();
+    if (listStack.length === desiredDepth) {
+      const top = listStack[listStack.length - 1];
+      if (top.kind !== kind) {
+        listStack.pop();
+      } else if (kind === "ul" && top.ulVariant !== ulVariant) {
+        listStack.pop();
+      }
     }
 
+    const effectiveUlVariant = kind === "ul" ? ulVariant : "bullet";
+
     while (listStack.length < desiredDepth) {
-      const parent = listStack[listStack.length - 1]?.lastItem ?? frag;
-      const next = createList(kind, parent);
-      listStack.push({ list: next, kind, lastItem: null });
+      const parentEl = listStack[listStack.length - 1]?.lastItem ?? frag;
+      const next = createList(kind, parentEl, kind === "ul" ? effectiveUlVariant : null);
+      listStack.push({
+        list: next,
+        kind,
+        ulVariant: kind === "ul" ? effectiveUlVariant : null,
+        lastItem: null,
+      });
     }
 
     return listStack[listStack.length - 1].list;
@@ -91,11 +106,32 @@ export function renderLimitedMarkdown(target, source) {
       continue;
     }
 
+    const taskMatch = /^[-*]\s+\[([ xX])\]\s*(.*)$/.exec(trimmedStart);
+    if (taskMatch) {
+      const checked = taskMatch[1] === "x" || taskMatch[1] === "X";
+      const li = document.createElement("li");
+      li.className = "flow-md-task-item";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.disabled = true;
+      cb.checked = checked;
+      cb.className = "flow-md-task-checkbox";
+      cb.setAttribute("aria-label", checked ? "Completed" : "Pending");
+      const body = document.createElement("span");
+      body.className = "flow-md-task-item-body";
+      appendInlineMarkdown(body, taskMatch[2]);
+      li.append(cb, body);
+      const list = ensureListAtDepth("ul", depth, "task");
+      list.append(li);
+      listStack[listStack.length - 1].lastItem = li;
+      continue;
+    }
+
     const unorderedMatch = /^[-*]\s+(.+)$/.exec(trimmedStart);
     if (unorderedMatch) {
       const li = document.createElement("li");
       appendInlineMarkdown(li, unorderedMatch[1]);
-      const list = ensureListAtDepth("ul", depth);
+      const list = ensureListAtDepth("ul", depth, "bullet");
       list.append(li);
       listStack[listStack.length - 1].lastItem = li;
       continue;

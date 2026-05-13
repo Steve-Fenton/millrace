@@ -2868,6 +2868,59 @@ dialog.flow-modal::backdrop {
   word-break: break-word;
 }
 
+.flow-description-preview .flow-md-list--task {
+  list-style: none;
+  padding-inline-start: 0.15rem;
+}
+
+.flow-description-preview .flow-md-list--task .flow-md-list--task {
+  margin-block-start: 0.2rem;
+  padding-inline-start: 1.35rem;
+}
+
+.flow-description-preview .flow-md-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  line-height: 1.4;
+}
+
+.flow-description-preview .flow-md-task-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin: 0;
+  /* Half line box (1.4 × font-size) minus half control height — matches list li line-height */
+  margin-block-start: calc(0.7em - 0.475rem);
+  font-size: 1em;
+  line-height: inherit;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 0.2rem;
+  border: 1.5px solid var(--text-muted);
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: 0;
+  cursor: default;
+}
+
+.flow-description-preview .flow-md-task-checkbox:checked {
+  border-color: #7dd3fc;
+  background-color: #7dd3fc;
+  /* Centered tick in a 12×12 viewBox */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M2.75 6.1 5.35 8.7 9.25 3.3'/%3E%3C/svg%3E");
+  background-size: 68% 68%;
+}
+
+.flow-description-preview .flow-md-task-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: inherit;
+}
+
 .flow-description-preview a {
   color: var(--accent);
   text-decoration: underline;
