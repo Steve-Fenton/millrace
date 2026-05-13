@@ -21,7 +21,7 @@ Add a `package.json` file. You can use this example.
     "cycle": "pm2 restart millrace-devrel"
   },
   "dependencies": {
-    "millrace": "^0.0.30"
+    "millrace": "^0.0.31"
   }
 }
 ```
