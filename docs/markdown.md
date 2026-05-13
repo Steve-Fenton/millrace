@@ -14,6 +14,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 
 - Bold: `**bold**`
 - Italic: `*italic*`
+- Strikethrough: `~~crossed out~~`
 - Links: `[label](https://example.com)`
 
 Only `http://` and `https://` links are rendered as clickable links.

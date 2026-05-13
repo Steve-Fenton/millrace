@@ -1,7 +1,7 @@
 /**
  * Render a restricted markdown subset into `target`.
  * Supported blocks: headings (#..###), ordered/unordered lists, paragraphs.
- * Supported inline: **bold**, *italic*, [text](https://example.com).
+ * Supported inline: **bold**, *italic*, ~~strikethrough~~, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
  * @param {HTMLElement} target
@@ -155,6 +155,18 @@ function appendInlineMarkdown(parent, raw) {
       }
     }
 
+    if (text.startsWith("~~", i)) {
+      const end = text.indexOf("~~", i + 2);
+      if (end > i + 2) {
+        const strike = document.createElement("s");
+        strike.className = "flow-md-strike";
+        appendInlineMarkdown(strike, text.slice(i + 2, end));
+        parent.append(strike);
+        i = end + 2;
+        continue;
+      }
+    }
+
     if (text[i] === "*") {
       const end = text.indexOf("*", i + 1);
       if (end > i + 1) {
@@ -200,9 +212,10 @@ function appendInlineMarkdown(parent, raw) {
  */
 function findNextInlineTokenStart(text, from) {
   const nextBold = text.indexOf("**", from);
+  const nextStrike = text.indexOf("~~", from);
   const nextStar = text.indexOf("*", from);
   const nextLink = text.indexOf("[", from);
-  const idx = [nextBold, nextStar, nextLink]
+  const idx = [nextBold, nextStrike, nextStar, nextLink]
     .filter((v) => v >= 0)
     .sort((a, b) => a - b)[0];
   return idx == null ? text.length : idx;
