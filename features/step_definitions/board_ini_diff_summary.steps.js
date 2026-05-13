@@ -14,6 +14,10 @@ Given("the earlier board INI text is null", function () {
   this.boardDiffBefore = null;
 });
 
+Given("the earlier board INI text has a UTF-8 BOM prefix and content:", function (docString) {
+  this.boardDiffBefore = `\uFEFF${docString}`;
+});
+
 Given("the later board INI text is undefined", function () {
   this.boardDiffAfter = undefined;
 });

@@ -733,6 +733,274 @@ Feature: Board INI change summary
     When I summarize the board INI diff
     Then the board diff summary JSON should have at most 14 lines
 
+  Scenario: swimlane removed
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+
+      [swimlanes.1]
+      title = Alpha
+
+      [swimlanes.2]
+      title = Beta
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+
+      [swimlanes.1]
+      title = Alpha
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["Swimlane removed: Beta"]
+      """
+
+  Scenario: column WIP limit added where there was none
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Doing
+
+      [columns.3]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Doing
+      wip_limit = 4
+
+      [columns.3]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["WIP limit (Doing): — → 4"]
+      """
+
+  Scenario: leading BOM on earlier text is ignored when content matches
+    Given the earlier board INI text has a UTF-8 BOM prefix and content:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["(No tracked board changes — whitespace or comments only.)"]
+      """
+
+  Scenario: duplicate user emails in earlier file collapse to one removal
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+
+      [users.1]
+      email = dup@example.com
+      name = Dup One
+
+      [users.2]
+      email = dup@example.com
+      name = Dup Two
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["User removed: dup@example.com"]
+      """
+
+  Scenario: board name appears when earlier file had no name key
+    Given the earlier board INI text is:
+      """
+      [board]
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Named later
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["Board name: ∅ → Named later"]
+      """
+
+  Scenario: duplicate user emails in later file collapse to one user added
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+
+      [users.1]
+      email = join@example.com
+      name = Join A
+
+      [users.2]
+      email = join@example.com
+      name = Join B
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["User added: join@example.com"]
+      """
+
+  Scenario: duplicate column titles are ignored for attribute map
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = Lane
+
+      [columns.2]
+      title = Lane
+
+      [columns.3]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = Lane
+
+      [columns.2]
+      title = Lane
+
+      [columns.3]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["(No tracked board changes — whitespace or comments only.)"]
+      """
+
   Scenario: column added and renamed in the same edit
     Given the earlier board INI text is:
       """
