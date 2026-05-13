@@ -1,5 +1,5 @@
 import { createLinksEditor } from "../ui/cardLinks.js";
-import { renderLimitedMarkdown } from "../ui/limitedMarkdown.js";
+import { renderLimitedMarkdown, toggleMarkdownTaskLine } from "../ui/limitedMarkdown.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
@@ -378,8 +378,48 @@ export async function openCardEditorDialog(ctx) {
   }
 
   function refreshDescriptionPreview() {
-    renderLimitedMarkdown(descPreview, descInput.value);
+    renderLimitedMarkdown(descPreview, descInput.value, {
+      interactiveTaskCheckboxes: true,
+    });
   }
+
+  function toggleDescriptionTaskFromPreview(cb) {
+    if (!(cb instanceof HTMLInputElement) || cb.type !== "checkbox") return;
+    if (!cb.classList.contains("flow-md-task-checkbox--interactive")) return;
+    const li = cb.closest(".flow-md-task-item");
+    const rawIdx = li?.dataset?.flowTaskLine;
+    if (rawIdx == null) return;
+    const lineIndex = Number(rawIdx);
+    if (!Number.isFinite(lineIndex)) return;
+    const next = toggleMarkdownTaskLine(descInput.value, lineIndex);
+    if (next === descInput.value) return;
+    descInput.value = next;
+    refreshDescriptionPreview();
+    requestAnimationFrame(() => {
+      const again = descPreview.querySelector(
+        `.flow-md-task-item[data-flow-task-line="${lineIndex}"] .flow-md-task-checkbox--interactive`
+      );
+      again?.focus();
+    });
+  }
+
+  descPreview.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (!(t instanceof HTMLInputElement)) return;
+    if (!t.classList.contains("flow-md-task-checkbox--interactive")) return;
+    ev.preventDefault();
+    toggleDescriptionTaskFromPreview(t);
+  });
+
+  descPreview.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter") return;
+    const t = ev.target;
+    if (!(t instanceof HTMLInputElement) || t.type !== "checkbox") return;
+    if (!t.classList.contains("flow-md-task-checkbox--interactive")) return;
+    ev.preventDefault();
+    toggleDescriptionTaskFromPreview(t);
+  });
+
   function syncDescriptionPreviewHeight(editorHeightPx) {
     const resolvedHeight =
       Number.isFinite(editorHeightPx) && editorHeightPx > 0

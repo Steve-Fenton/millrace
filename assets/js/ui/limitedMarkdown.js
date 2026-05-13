@@ -6,10 +6,12 @@
  *
  * @param {HTMLElement} target
  * @param {string} source
+ * @param {{ interactiveTaskCheckboxes?: boolean }} [options]
  */
-export function renderLimitedMarkdown(target, source) {
+export function renderLimitedMarkdown(target, source, options) {
   const raw = String(source ?? "").replace(/\r\n?/g, "\n");
   const lines = raw.split("\n");
+  const interactiveTasks = options?.interactiveTaskCheckboxes === true;
   const frag = document.createDocumentFragment();
 
   /**
@@ -73,7 +75,8 @@ export function renderLimitedMarkdown(target, source) {
     return listStack[listStack.length - 1].list;
   }
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
     const trimmed = line.trim();
     if (!trimmed) {
       closeLists();
@@ -111,12 +114,24 @@ export function renderLimitedMarkdown(target, source) {
       const checked = taskMatch[1] === "x" || taskMatch[1] === "X";
       const li = document.createElement("li");
       li.className = "flow-md-task-item";
+      if (interactiveTasks) li.dataset.flowTaskLine = String(lineIndex);
       const cb = document.createElement("input");
       cb.type = "checkbox";
-      cb.disabled = true;
+      cb.disabled = !interactiveTasks;
       cb.checked = checked;
-      cb.className = "flow-md-task-checkbox";
-      cb.setAttribute("aria-label", checked ? "Completed" : "Pending");
+      cb.className = interactiveTasks
+        ? "flow-md-task-checkbox flow-md-task-checkbox--interactive"
+        : "flow-md-task-checkbox";
+      cb.setAttribute(
+        "aria-label",
+        interactiveTasks
+          ? checked
+            ? "Mark as not done"
+            : "Mark as done"
+          : checked
+            ? "Completed"
+            : "Pending"
+      );
       const body = document.createElement("span");
       body.className = "flow-md-task-item-body";
       appendInlineMarkdown(body, taskMatch[2]);
@@ -255,4 +270,27 @@ function findNextInlineTokenStart(text, from) {
     .filter((v) => v >= 0)
     .sort((a, b) => a - b)[0];
   return idx == null ? text.length : idx;
+}
+
+/** Same task-line shape as the list parser (full physical line, incl. indent). */
+const TASK_LINE_TOGGLE = /^(\s*[-*]\s+\[)([ xX])(\]\s*.*)$/;
+
+/**
+ * Flip `[ ]` ↔ `[x]` on one line (supports `-` / `*` bullets). No-op if the line is not a task item.
+ *
+ * @param {string} source
+ * @param {number} lineIndex 0-based line index after `\r\n?` → `\n` normalization.
+ * @returns {string}
+ */
+export function toggleMarkdownTaskLine(source, lineIndex) {
+  const original = String(source ?? "");
+  const raw = original.replace(/\r\n?/g, "\n");
+  const lines = raw.split("\n");
+  if (lineIndex < 0 || lineIndex >= lines.length) return original;
+  const m = TASK_LINE_TOGGLE.exec(lines[lineIndex]);
+  if (!m) return original;
+  const inner = m[2];
+  const nextInner = inner === "x" || inner === "X" ? " " : "x";
+  lines[lineIndex] = m[1] + nextInner + m[3];
+  return lines.join("\n");
 }

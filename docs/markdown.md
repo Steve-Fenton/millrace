@@ -25,6 +25,7 @@ Only `http://` and `https://` links are rendered as clickable links.
 - Raw HTML is not rendered.
 - Empty lines split paragraphs and lists.
 - Unsupported syntax is shown as plain text.
+- In the card editor’s **Preview** tab, task checkboxes update the description text (`[ ]` ↔ `[x]`).
 
 Example nested list:
 
