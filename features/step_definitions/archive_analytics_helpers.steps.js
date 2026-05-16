@@ -2,9 +2,11 @@ import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import {
   bucketStartMsForGranularity,
+  completedClosedInWhenRange,
   completedRowMatchesSearch,
   legacySwimlaneFilterCandidates,
   medianSample,
+  parseCompletedWhenFilter,
   parseIsoMs,
   resolveCompletedLaneFilterIndices,
   sampleStdDev,
@@ -12,6 +14,35 @@ import {
   utcMonthBucketMs,
   utcWeekBucketStartMs,
 } from "../../server/archiveAnalytics.js";
+
+When("I call parseCompletedWhenFilter with {string}", function (raw) {
+  this.completedWhenFilter = parseCompletedWhenFilter(raw);
+});
+
+Then("the completed when filter should be {string}", function (expected) {
+  assert.strictEqual(this.completedWhenFilter, expected);
+});
+
+When(
+  "I check completedClosedInWhenRange with when {string} and closed {string} at now {string}",
+  function (when, closed, nowIso) {
+    this.closedWhenRangeMatch = completedClosedInWhenRange(
+      closed,
+      /** @type {import("../../server/archiveAnalytics.js").CompletedWhenFilter} */ (
+        when
+      ),
+      Date.parse(nowIso)
+    );
+  }
+);
+
+Then("the closed when range match should be true", function () {
+  assert.strictEqual(this.closedWhenRangeMatch, true);
+});
+
+Then("the closed when range match should be false", function () {
+  assert.strictEqual(this.closedWhenRangeMatch, false);
+});
 
 When("I call parseIsoMs with {string}", function (raw) {
   this.parsedMs = parseIsoMs(raw);

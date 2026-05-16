@@ -7,9 +7,11 @@ import {
   aggregateCompletionSwimlaneStack,
   buildCardAgeDistribution,
   buildCycleTimeScatter,
+  completedClosedInWhenRange,
   completedRowMatchesSearch,
   gatherCompletedArchiveAndOptionalCold,
   legacySwimlaneFilterCandidates,
+  parseCompletedWhenFilter,
   resolveCompletedLaneFilterIndices,
 } from "../archiveAnalytics.js";
 import { resolveBoardIniPathForSlug, sanitizeSegment } from "../boardCatalog.js";
@@ -59,6 +61,7 @@ app.get("/api/completed-cards", async (req, res) => {
 
     const searchLower = String(req.query.q ?? "").trim().toLowerCase();
     const laneRaw = String(req.query.lane ?? "").trim();
+    const whenFilter = parseCompletedWhenFilter(req.query.when);
 
     const all = await gatherCompletedArchiveAndOptionalCold(slug, includeCold);
 
@@ -137,6 +140,15 @@ app.get("/api/completed-cards", async (req, res) => {
 
     if (searchLower) {
       filtered = filtered.filter((r) => completedRowMatchesSearch(r, searchLower));
+    }
+
+    if (whenFilter !== "all") {
+      filtered = filtered.filter((r) =>
+        completedClosedInWhenRange(
+          /** @type {string | undefined} */ (r.closed),
+          whenFilter
+        )
+      );
     }
 
     const total = filtered.length;

@@ -183,6 +183,26 @@ Feature: Completed archive analytics helpers
       ["Gamma Lane"]
       """
 
+  Scenario: parseCompletedWhenFilter defaults to all
+    When I call parseCompletedWhenFilter with ""
+    Then the completed when filter should be "all"
+
+  Scenario: parseCompletedWhenFilter accepts hyphenated this-week
+    When I call parseCompletedWhenFilter with "this-week"
+    Then the completed when filter should be "this_week"
+
+  Scenario: completedClosedInWhenRange includes closed in this UTC week
+    When I check completedClosedInWhenRange with when "this_week" and closed "2024-03-06T12:00:00.000Z" at now "2024-03-07T00:00:00.000Z"
+    Then the closed when range match should be true
+
+  Scenario: completedClosedInWhenRange excludes closed in last UTC week when viewing this week
+    When I check completedClosedInWhenRange with when "this_week" and closed "2024-02-26T12:00:00.000Z" at now "2024-03-07T00:00:00.000Z"
+    Then the closed when range match should be false
+
+  Scenario: completedClosedInWhenRange includes closed in last UTC month
+    When I check completedClosedInWhenRange with when "last_month" and closed "2024-02-15T12:00:00.000Z" at now "2024-03-07T00:00:00.000Z"
+    Then the closed when range match should be true
+
   Scenario: legacySwimlaneFilterCandidates returns all distinct strings when board has no swimlanes
     When I call legacySwimlaneFilterCandidates with rows JSON:
       """

@@ -74,6 +74,23 @@ function swimlaneFilterToken(l, swimlanesSorted) {
  * @param {Array<{ index: number, title?: string }>} swimlanesSorted
  * @returns {string | null}
  */
+/** @param {string | null | undefined} raw */
+function parseWhenParamFromUrl(raw) {
+  const v = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (
+    v === "this_week" ||
+    v === "this_month" ||
+    v === "last_week" ||
+    v === "last_month"
+  ) {
+    return v;
+  }
+  return "all";
+}
+
 function canonicalLaneParamFromUrl(raw, swimlanesSorted) {
   if (raw == null || String(raw).trim() === "") return null;
   const decoded = String(raw).trim();
@@ -113,7 +130,7 @@ function canonicalLaneParamFromUrl(raw, swimlanesSorted) {
  * @param {number} page
  * @param {{ mode: "all" | "mine" | "owner"; owner: string }} filter
  * @param {string} mineEmail `[user] mine` for API `me` when filter is Mine
- * @param {{ q?: string, deep?: boolean, lane?: string | null }} [searchOpts]
+ * @param {{ q?: string, deep?: boolean, lane?: string | null, when?: string }} [searchOpts]
  */
 async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts = {}) {
   const q = new URLSearchParams({
@@ -138,6 +155,8 @@ async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts
   if (searchOpts.deep) q.set("deep", "1");
   const laneStr = String(searchOpts.lane ?? "").trim();
   if (laneStr) q.set("lane", laneStr);
+  const whenStr = String(searchOpts.when ?? "").trim();
+  if (whenStr && whenStr !== "all") q.set("when", whenStr);
   const res = await fetch(`/api/completed-cards?${q}`, NO_STORE);
   const ct = res.headers.get("content-type") ?? "";
   /** @type {Record<string, unknown>} */
@@ -171,6 +190,7 @@ async function fetchCompletedPage(boardSlug, page, filter, mineEmail, searchOpts
  * @param {string} searchQuery
  * @param {boolean} deepSearch
  * @param {string | null} swimlaneFilterParam — canonical lane token from URL, or null for all
+ * @param {string} whenFilterParam — `all` | `this_week` | `this_month` | `last_week` | `last_month`
  */
 function renderCompleteShell(
   model,
@@ -181,7 +201,8 @@ function renderCompleteShell(
   flowCtx,
   searchQuery,
   deepSearch,
-  swimlaneFilterParam
+  swimlaneFilterParam,
+  whenFilterParam
 ) {
   const name = model.board.name?.trim() || "Board";
   setFlowDocumentTitle("Completed", name);
@@ -320,6 +341,43 @@ function renderCompleteShell(
 
   filterWrap.append(filterLabel, ownerSelect);
 
+  const whenWrap = document.createElement("div");
+  whenWrap.className = "board-owner-filter";
+  const whenLabel = document.createElement("label");
+  whenLabel.className = "board-owner-filter-label";
+  whenLabel.htmlFor = "flow-complete-when-filter";
+  whenLabel.textContent = "Closed";
+  const whenSelect = document.createElement("select");
+  whenSelect.id = "flow-complete-when-filter";
+  whenSelect.className = "board-owner-filter-select";
+  whenSelect.setAttribute("aria-label", "Filter completed cards by close date");
+  /** @type {Array<{ value: string, label: string }>} */
+  const whenOptions = [
+    { value: "all", label: "All" },
+    { value: "this_week", label: "This week" },
+    { value: "this_month", label: "This month" },
+    { value: "last_week", label: "Last week" },
+    { value: "last_month", label: "Last month" },
+  ];
+  for (const { value, label } of whenOptions) {
+    const o = document.createElement("option");
+    o.value = value;
+    o.textContent = label;
+    whenSelect.append(o);
+  }
+  const validWhen = new Set(whenOptions.map((x) => x.value));
+  whenSelect.value = validWhen.has(whenFilterParam) ? whenFilterParam : "all";
+  whenSelect.addEventListener("change", () => {
+    const u = new URL(window.location.href);
+    const v = whenSelect.value;
+    if (v === "all") u.searchParams.delete("when");
+    else u.searchParams.set("when", v);
+    u.searchParams.set("page", "1");
+    window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+    void main();
+  });
+  whenWrap.append(whenLabel, whenSelect);
+
   const swimlanesSorted = [...(model.swimlanes ?? [])].sort(
     (a, b) => a.index - b.index
   );
@@ -401,7 +459,7 @@ function renderCompleteShell(
 
   const filterPanel = document.createElement("div");
   filterPanel.className = "complete-filters-panel";
-  filterPanel.append(filterWrap);
+  filterPanel.append(filterWrap, whenWrap);
   const showLaneFilter =
     swimlanesSorted.length > 0 || legacySwimlaneFilters.length > 0;
   if (showLaneFilter) {
@@ -656,13 +714,16 @@ function renderCompleteShell(
     const td = document.createElement("td");
     td.colSpan = 6;
     td.className = "complete-empty";
+    const hasListFilters =
+      ownerFilter.mode !== "all" ||
+      whenFilterParam !== "all" ||
+      Boolean(String(searchQuery ?? "").trim()) ||
+      swimlaneFilterParam != null;
     td.textContent =
       total === 0
-        ? ownerFilter.mode === "all"
-          ? String(searchQuery ?? "").trim()
-            ? "No cards match your search."
-            : "No completed cards yet."
-          : "No cards match this filter."
+        ? hasListFilters
+          ? "No cards match this filter."
+          : "No completed cards yet."
         : "No cards on this page.";
     tr.append(td);
     tbody.append(tr);
@@ -723,6 +784,7 @@ async function main() {
   const searchQuery = params.get("q") ?? "";
   const deepSearch =
     params.get("deep") === "1" || params.get("deep") === "true";
+  const whenFilterParam = parseWhenParamFromUrl(params.get("when"));
 
   setFlowDocumentTitle("Completed");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
@@ -787,6 +849,7 @@ async function main() {
       q: searchQuery,
       deep: deepSearch,
       lane: swimlaneFilterParam,
+      when: whenFilterParam,
     });
     let ownerNames =
       boardOwnerKeys.length > 0
@@ -809,6 +872,7 @@ async function main() {
         q: searchQuery,
         deep: deepSearch,
         lane: swimlaneFilterParam,
+        when: whenFilterParam,
       });
     }
 
@@ -837,7 +901,8 @@ async function main() {
         flowCtx,
         searchQuery,
         deepSearch,
-        swimlaneFilterParam
+        swimlaneFilterParam,
+        whenFilterParam
       )
     );
   } catch (e) {

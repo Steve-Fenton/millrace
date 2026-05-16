@@ -91,3 +91,13 @@ Feature: Charts and completed-work APIs
     When I fetch JSON from "/api/completed-cards?boardSlug=test&limit=999"
     Then the response status should be 200
     And the last JSON field "pageSize" should equal number 100
+
+  Scenario: completed cards includes fixture closed this week
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&when=this_week"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 1
+
+  Scenario: completed cards excludes fixture when filtered to last month
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&when=last_month"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 0
