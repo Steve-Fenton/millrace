@@ -31,7 +31,10 @@ import {
   readStoredOwnerFilter,
   filterCardsByOwner as filterCardsByOwnerWithFilter,
 } from "./ui/filterByOwner.js";
-import { daysUntilNextActionDate } from "./ini/cardIni.js";
+import {
+  daysUntilNextActionDate,
+  sortCardsWithNextActionTodayFirst,
+} from "./ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "./ini/swimlaneResolve.js";
 import {
   isSwimlaneTitleStorable,
@@ -263,12 +266,21 @@ function ownerFilterKeys(model, cardsByColumn) {
  * @param {number} laneIdx
  * @param {Array<{ index: number, title: string }>} swimlanes
  */
-function filenamesInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
+function cardsInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
   const cards = cardsByColumn.get(colIdx) ?? [];
-  /** @type {string[]} */
-  const out = [];
+  /** @type {object[]} */
+  const laneCards = [];
   for (const c of cards) {
     if (resolveCardSwimlaneIndex(c.swimlane, swimlanes) !== laneIdx) continue;
+    laneCards.push(c);
+  }
+  return sortCardsWithNextActionTodayFirst(laneCards);
+}
+
+function filenamesInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
+  /** @type {string[]} */
+  const out = [];
+  for (const c of cardsInCell(cardsByColumn, colIdx, laneIdx, swimlanes)) {
     const fn = c.filename && String(c.filename).trim();
     if (fn) out.push(fn);
   }
@@ -1047,6 +1059,7 @@ function renderBoard(
       );
       cards = filterCardsByOwnerWithFilter(cards, mineEmail, ownerFilter);
       cards = filterCardsBySearch(cards, boardCardSearch, model.users);
+      cards = sortCardsWithNextActionTodayFirst(cards);
       const { display: displayCards, truncated: doneLaneTruncated } =
         cardsForDoneColumnDisplay(cards, col);
 

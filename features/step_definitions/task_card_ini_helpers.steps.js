@@ -6,6 +6,8 @@ import {
   isNextActionDateImminent,
   normalizeLinksForIni,
   normalizeNextActionDate,
+  shouldFloatNextActionTodayCard,
+  sortCardsWithNextActionTodayFirst,
   serializeCardIni,
   serializeFullCardIni,
   swimlaneNameForIniItem,
@@ -184,5 +186,49 @@ Then(
       );
     }
     assert.strictEqual(this.nextActionImminentResult, want === "imminent");
+  }
+);
+
+When(
+  "I evaluate next action today float with closed {string} next action {string} and today {string}",
+  function (closed, nextAction, todayYmd) {
+    /** @type {{ closed?: string, next_action_date?: string }} */
+    const card = {};
+    const closedVal = String(closed ?? "").trim();
+    const nextVal = String(nextAction ?? "").trim();
+    if (closedVal) card.closed = closedVal;
+    if (nextVal) card.next_action_date = nextVal;
+    const [y, m, d] = String(todayYmd).split("-").map((n) => Number.parseInt(n, 10));
+    const todayMs = new Date(y, m - 1, d, 12, 0, 0).getTime();
+    this.nextActionTodayFloatResult = shouldFloatNextActionTodayCard(card, todayMs);
+  }
+);
+
+Then(
+  "the next action today float result should be {string}",
+  function (expected) {
+    const want = String(expected).trim().toLowerCase();
+    if (want !== "yes" && want !== "no") {
+      throw new Error(`Expected token must be "yes" or "no", got "${expected}"`);
+    }
+    assert.strictEqual(this.nextActionTodayFloatResult, want === "yes");
+  }
+);
+
+When(
+  "I sort cards for next action today display with today {string}:",
+  function (todayYmd, docString) {
+    const cards = JSON.parse(docString);
+    const [y, m, d] = String(todayYmd).split("-").map((n) => Number.parseInt(n, 10));
+    const todayMs = new Date(y, m - 1, d, 12, 0, 0).getTime();
+    this.nextActionTodaySortResult = sortCardsWithNextActionTodayFirst(cards, todayMs);
+  }
+);
+
+Then(
+  "the sorted card ids for next action today display should be {string}",
+  function (expected) {
+    const ids = this.nextActionTodaySortResult.map((c) => c.id).join(",");
+    assert.strictEqual(ids, expected);
   }
 );

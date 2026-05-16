@@ -597,3 +597,28 @@ Feature: Task card INI helpers
       | empty input           |            | 2026-05-11 | null      | not imminent |
       | invalid input         | not-a-date | 2026-05-11 | null      | not imminent |
       | crosses month end     | 2026-06-02 | 2026-05-31 | 2         | imminent     |
+
+  Scenario Outline: shouldFloatNextActionTodayCard is true only for open cards due today
+    When I evaluate next action today float with closed "<closed>" next action "<nextAction>" and today "<today>"
+    Then the next action today float result should be "<expected>"
+
+    Examples:
+      | case                        | closed                     | nextAction | today      | expected |
+      | open card due today         |                            | 2026-05-11 | 2026-05-11 | yes      |
+      | open card due tomorrow      |                            | 2026-05-12 | 2026-05-11 | no       |
+      | open card overdue           |                            | 2026-05-10 | 2026-05-11 | no       |
+      | closed card due today       | 2026-05-10T12:00:00.000Z   | 2026-05-11 | 2026-05-11 | no       |
+      | open card without next date |                            |            | 2026-05-11 | no       |
+
+  Scenario: sortCardsWithNextActionTodayFirst floats today cards to the top stably
+    When I sort cards for next action today display with today "2026-05-11":
+      """
+      [
+        {"id":"a","sort_order":"10","next_action_date":"2026-05-12"},
+        {"id":"b","sort_order":"20","next_action_date":"2026-05-11"},
+        {"id":"c","sort_order":"30"},
+        {"id":"d","sort_order":"40","next_action_date":"2026-05-11"},
+        {"id":"e","sort_order":"50","closed":"2026-05-09T00:00:00.000Z","next_action_date":"2026-05-11"}
+      ]
+      """
+    Then the sorted card ids for next action today display should be "b,d,a,c,e"

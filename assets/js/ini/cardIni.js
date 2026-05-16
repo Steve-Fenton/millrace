@@ -118,6 +118,37 @@ export function isNextActionDateImminent(raw, todayMs = Date.now()) {
 }
 
 /**
+ * True when an open card's next action date is today (local time).
+ * @param {{ closed?: string, next_action_date?: string }} card
+ * @param {number} [todayMs]
+ */
+export function shouldFloatNextActionTodayCard(card, todayMs = Date.now()) {
+  if (String(card?.closed ?? "").trim()) return false;
+  const nad = normalizeNextActionDate(card?.next_action_date);
+  if (!nad) return false;
+  return daysUntilNextActionDate(nad, todayMs) === 0;
+}
+
+/**
+ * Stable display order: open cards with next action today float to the top.
+ * @param {object[]} cards
+ * @param {number} [todayMs]
+ */
+export function sortCardsWithNextActionTodayFirst(cards, todayMs = Date.now()) {
+  if (!Array.isArray(cards) || cards.length < 2) return cards;
+  const tagged = cards.map((c, i) => ({
+    c,
+    i,
+    float: shouldFloatNextActionTodayCard(c, todayMs),
+  }));
+  tagged.sort((a, b) => {
+    if (a.float !== b.float) return a.float ? -1 : 1;
+    return a.i - b.i;
+  });
+  return tagged.map((t) => t.c);
+}
+
+/**
  * Serialize a new task card as INI (matches README work-item shape).
  * @param {{ id: string, title: string, description?: string, note?: string, owner?: string, columnIndex: number, swimlaneIndex?: number, sortOrder?: number, strategic?: boolean, nextActionDate?: string, links?: unknown, columns?: Array<{ index: number, title: string }>, swimlanes?: Array<{ index: number, title: string }> }} fields
  */
