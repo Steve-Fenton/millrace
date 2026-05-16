@@ -2,8 +2,10 @@ import fs from "fs/promises";
 import { boardOwnerEmailsForFilter, parseBoardIni } from "../../assets/js/models/boardModel.js";
 import { resolveCardSwimlaneIndex } from "../../assets/js/ini/swimlaneResolve.js";
 import {
+  aggregateColumnSwimlaneStack,
   aggregateCompletionBuckets,
   aggregateCompletionSwimlaneStack,
+  buildCardAgeDistribution,
   buildCycleTimeScatter,
   completedRowMatchesSearch,
   gatherCompletedArchiveAndOptionalCold,
@@ -218,6 +220,40 @@ app.get("/api/cycle-time-scatter", async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Failed to load cycle time data." });
+  }
+});
+
+/**
+ * Query: boardSlug.
+ * Open cards per column, counts stacked by swimlane (live board snapshot).
+ */
+app.get("/api/column-swimlane-stack", async (req, res) => {
+  try {
+    const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
+    const payload = await aggregateColumnSwimlaneStack(slug);
+    res.json({ boardSlug: slug, ...payload });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Failed to load column swimlane stack.",
+    });
+  }
+});
+
+/**
+ * Query: boardSlug.
+ * Histogram of open-card age in UTC days (today − created).
+ */
+app.get("/api/card-age-distribution", async (req, res) => {
+  try {
+    const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
+    const payload = await buildCardAgeDistribution(slug);
+    res.json({ boardSlug: slug, ...payload });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Failed to load card age distribution.",
+    });
   }
 });
 }

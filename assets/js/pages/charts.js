@@ -121,6 +121,56 @@ async function fetchCycleTimeScatter(boardSlug, granularity) {
  * @param {string} boardSlug
  * @param {Granularity} granularity
  */
+async function fetchColumnSwimlaneStack(boardSlug) {
+  const q = new URLSearchParams({ boardSlug });
+  const res = await fetch(`/api/column-swimlane-stack?${q}`, NO_STORE);
+  const ct = res.headers.get("content-type") ?? "";
+  /** @type {Record<string, unknown>} */
+  let data = {};
+  if (ct.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
+  } else {
+    await res.text().catch(() => {});
+  }
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed";
+    throw new Error(msg);
+  }
+  return data;
+}
+
+async function fetchCardAgeDistribution(boardSlug) {
+  const q = new URLSearchParams({ boardSlug });
+  const res = await fetch(`/api/card-age-distribution?${q}`, NO_STORE);
+  const ct = res.headers.get("content-type") ?? "";
+  /** @type {Record<string, unknown>} */
+  let data = {};
+  if (ct.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
+  } else {
+    await res.text().catch(() => {});
+  }
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed";
+    throw new Error(msg);
+  }
+  return data;
+}
+
 async function fetchCompletionSwimlaneStack(boardSlug, granularity) {
   const q = new URLSearchParams({ boardSlug, granularity });
   const res = await fetch(`/api/completion-swimlane-stack?${q}`, NO_STORE);
@@ -363,6 +413,287 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
     tip.textContent = `${s.label} — ${bits.join("; ") || "0"}`;
     path.append(tip);
     svg.append(path);
+  }
+
+  return svg;
+}
+
+/**
+ * @param {Record<string, unknown>} stackPayload
+ */
+function renderStackedColumnSvg(stackPayload) {
+  const series = Array.isArray(stackPayload.series)
+    ? /** @type {{ key: string, label: string, index: number }[]} */ (
+        stackPayload.series
+      )
+    : [];
+  const columns = Array.isArray(stackPayload.columns)
+    ? /** @type {{ key: string, label: string, counts: Record<string, number> }[]} */ (
+        stackPayload.columns
+      )
+    : [];
+
+  const vbW = 720;
+  const vbH = 360;
+  const padL = 52;
+  const padR = 20;
+  const padT = 28;
+  const padB = 64;
+  const plotW = vbW - padL - padR;
+  const plotH = vbH - padT - padB;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
+  svg.setAttribute("class", "charts-scatter-svg charts-column-stack-svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute(
+    "aria-label",
+    "Open cards per column stacked by swimlane"
+  );
+
+  let yMax = 1;
+  for (const col of columns) {
+    let sum = 0;
+    for (const s of series) {
+      sum += Number(col.counts[s.key] ?? 0) || 0;
+    }
+    yMax = Math.max(yMax, sum);
+  }
+
+  if (columns.length === 0 || yMax === 0) {
+    const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    msg.setAttribute("x", String(vbW / 2));
+    msg.setAttribute("y", String(vbH / 2));
+    msg.setAttribute("text-anchor", "middle");
+    msg.setAttribute("class", "charts-empty-label");
+    msg.textContent = "No open cards on the board.";
+    svg.append(msg);
+    return svg;
+  }
+
+  const yTop = yMax * 1.08;
+  /** @param {number} v */
+  const yAt = (v) => padT + plotH - (v / yTop) * plotH;
+
+  const axes = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  axes.setAttribute(
+    "d",
+    `M${padL} ${padT + plotH}L${padL + plotW} ${padT + plotH}M${padL} ${padT}L${padL} ${padT + plotH}`
+  );
+  axes.setAttribute("class", "charts-axis");
+  svg.append(axes);
+
+  const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  yLabel.setAttribute("x", String(14));
+  yLabel.setAttribute("y", String(padT + plotH / 2));
+  yLabel.setAttribute(
+    "transform",
+    `rotate(-90 14 ${padT + plotH / 2})`
+  );
+  yLabel.setAttribute("class", "charts-axis-title");
+  yLabel.textContent = "Cards";
+  svg.append(yLabel);
+
+  const yTicks = Math.min(5, Math.max(2, Math.ceil(yMax)));
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (i / yTicks) * yTop;
+    const yy = yAt(v);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", String(padL));
+    line.setAttribute("x2", String(padL + plotW));
+    line.setAttribute("y1", String(yy));
+    line.setAttribute("y2", String(yy));
+    line.setAttribute("class", "charts-grid-line");
+    const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    lab.setAttribute("x", String(padL - 8));
+    lab.setAttribute("y", String(yy + 4));
+    lab.setAttribute("text-anchor", "end");
+    lab.setAttribute("class", "charts-tick-label");
+    lab.textContent = String(Math.round(v));
+    svg.append(line, lab);
+  }
+
+  const nCols = columns.length;
+  const nSeries = series.length;
+  const slotW = plotW / Math.max(nCols, 1);
+  const barW = Math.min(56, slotW * 0.55);
+
+  for (let ci = 0; ci < nCols; ci++) {
+    const col = columns[ci];
+    const xc = padL + (ci + 0.5) * slotW;
+
+    const xLab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xLab.setAttribute("x", String(xc));
+    xLab.setAttribute("y", String(padT + plotH + 22));
+    xLab.setAttribute("text-anchor", "middle");
+    xLab.setAttribute("class", "charts-tick-label charts-tick-label--x");
+    const title =
+      col.label.length > 14 ? `${col.label.slice(0, 12)}…` : col.label;
+    xLab.textContent = title;
+    const tipCol = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    tipCol.textContent = col.label;
+    xLab.append(tipCol);
+    svg.append(xLab);
+
+    for (let si = 0; si < nSeries; si++) {
+      const s = series[si];
+      const count = Number(col.counts[s.key] ?? 0) || 0;
+      if (count <= 0) continue;
+
+      let y0 = 0;
+      for (let j = 0; j < si; j++) {
+        y0 += Number(col.counts[series[j].key] ?? 0) || 0;
+      }
+      const y1 = y0 + count;
+
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", String(xc - barW / 2));
+      rect.setAttribute("width", String(barW));
+      rect.setAttribute("y", String(Math.min(yAt(y0), yAt(y1))));
+      rect.setAttribute(
+        "height",
+        String(Math.max(1, Math.abs(yAt(y1) - yAt(y0))))
+      );
+      rect.setAttribute("fill", swimlaneStackFill(si, nSeries));
+      rect.setAttribute("class", "charts-stack-bar");
+      const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      tip.textContent = `${col.label} — ${s.label}: ${count}`;
+      rect.append(tip);
+      svg.append(rect);
+    }
+  }
+
+  return svg;
+}
+
+/**
+ * @param {Record<string, unknown>} distPayload
+ */
+function renderAgeDistributionSvg(distPayload) {
+  const bins = Array.isArray(distPayload.bins)
+    ? /** @type {{ lo: number, hi: number, n: number, label: string }[]} */ (
+        distPayload.bins
+      )
+    : [];
+
+  const vbW = 720;
+  const vbH = 360;
+  const padL = 52;
+  const padR = 20;
+  const padT = 28;
+  const padB = 64;
+  const plotW = vbW - padL - padR;
+  const plotH = vbH - padT - padB;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
+  svg.setAttribute("class", "charts-scatter-svg charts-histogram-svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute(
+    "aria-label",
+    "Distribution of open card age in days since created"
+  );
+
+  if (bins.length === 0) {
+    const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    msg.setAttribute("x", String(vbW / 2));
+    msg.setAttribute("y", String(vbH / 2));
+    msg.setAttribute("text-anchor", "middle");
+    msg.setAttribute("class", "charts-empty-label");
+    msg.textContent =
+      "No open cards with a created date on the board.";
+    svg.append(msg);
+    return svg;
+  }
+
+  let nMax = 1;
+  for (const b of bins) {
+    nMax = Math.max(nMax, Number(b.n) || 0);
+  }
+  const nTop = nMax * 1.08;
+
+  /** @param {number} n */
+  const yAt = (n) => padT + plotH - (n / nTop) * plotH;
+
+  const axes = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  axes.setAttribute(
+    "d",
+    `M${padL} ${padT + plotH}L${padL + plotW} ${padT + plotH}M${padL} ${padT}L${padL} ${padT + plotH}`
+  );
+  axes.setAttribute("class", "charts-axis");
+  svg.append(axes);
+
+  const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  yLabel.setAttribute("x", String(14));
+  yLabel.setAttribute("y", String(padT + plotH / 2));
+  yLabel.setAttribute(
+    "transform",
+    `rotate(-90 14 ${padT + plotH / 2})`
+  );
+  yLabel.setAttribute("class", "charts-axis-title");
+  yLabel.textContent = "Cards";
+  svg.append(yLabel);
+
+  const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  xLabel.setAttribute("x", String(padL + plotW / 2));
+  xLabel.setAttribute("y", String(vbH - 10));
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("class", "charts-axis-title");
+  xLabel.textContent = "Age (days, UTC)";
+  svg.append(xLabel);
+
+  const yTicks = Math.min(5, Math.max(2, nMax));
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (i / yTicks) * nTop;
+    const yy = yAt(v);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", String(padL));
+    line.setAttribute("x2", String(padL + plotW));
+    line.setAttribute("y1", String(yy));
+    line.setAttribute("y2", String(yy));
+    line.setAttribute("class", "charts-grid-line");
+    const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    lab.setAttribute("x", String(padL - 8));
+    lab.setAttribute("y", String(yy + 4));
+    lab.setAttribute("text-anchor", "end");
+    lab.setAttribute("class", "charts-tick-label");
+    lab.textContent = String(Math.round(v));
+    svg.append(line, lab);
+  }
+
+  const nBins = bins.length;
+  const slotW = plotW / Math.max(nBins, 1);
+  const barW = Math.min(48, slotW * 0.7);
+
+  for (let i = 0; i < nBins; i++) {
+    const b = bins[i];
+    const n = Number(b.n) || 0;
+    const xc = padL + (i + 0.5) * slotW;
+    const y0 = yAt(0);
+    const y1 = yAt(n);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", String(xc - barW / 2));
+    rect.setAttribute("width", String(barW));
+    rect.setAttribute("y", String(Math.min(y0, y1)));
+    rect.setAttribute("height", String(Math.max(1, Math.abs(y1 - y0))));
+    rect.setAttribute("class", "charts-hist-bar");
+    const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    tip.textContent = `${b.label}: ${n} card${n === 1 ? "" : "s"}`;
+    rect.append(tip);
+    svg.append(rect);
+
+    const xLab = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xLab.setAttribute("x", String(xc));
+    xLab.setAttribute("y", String(padT + plotH + 22));
+    xLab.setAttribute("text-anchor", "middle");
+    xLab.setAttribute("class", "charts-tick-label charts-tick-label--x");
+    const short =
+      b.label.length > 10 ? `${b.label.slice(0, 8)}…` : b.label;
+    xLab.textContent = short;
+    const tipX = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    tipX.textContent = b.label;
+    xLab.append(tipX);
+    svg.append(xLab);
   }
 
   return svg;
@@ -864,6 +1195,8 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
  * @param {{ buckets: { t: string, n: number }[] }} completionData
  * @param {Record<string, unknown>} cycleData
  * @param {Record<string, unknown>} swimlaneStackData
+ * @param {Record<string, unknown>} columnStackData
+ * @param {Record<string, unknown>} ageDistData
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
  */
 function renderChartsShell(
@@ -872,6 +1205,8 @@ function renderChartsShell(
   completionData,
   cycleData,
   swimlaneStackData,
+  columnStackData,
+  ageDistData,
   flowCtx
 ) {
   const name = model.board.name?.trim() || "Board";
@@ -895,6 +1230,10 @@ function renderChartsShell(
   const stdevDays =
     typeof cycleData.stdevDays === "number" ? cycleData.stdevDays : null;
   const cycleCount = Number(cycleData.count) || 0;
+  const totalOpenCards = Number(columnStackData.totalOpen) || 0;
+  const ageMedianDays =
+    typeof ageDistData.medianDays === "number" ? ageDistData.medianDays : null;
+  const ageCount = Number(ageDistData.count) || 0;
 
   const root = document.createElement("div");
   root.className = "board-shell charts-shell";
@@ -1046,9 +1385,61 @@ function renderChartsShell(
     afterChart: [stats],
   });
 
+  const svgColumnStack = renderStackedColumnSvg(columnStackData);
+  const columnLegend = renderSwimlaneStackLegend(columnStackData);
+  const columnStats = document.createElement("div");
+  columnStats.className = "charts-cycle-stats";
+  const columnOpenRow = document.createElement("span");
+  columnOpenRow.className = "charts-stat";
+  const columnOpenN = document.createElement("strong");
+  columnOpenN.textContent = String(totalOpenCards);
+  columnOpenRow.append("Total ", columnOpenN, " open cards");
+  columnStats.append(columnOpenRow);
+
+  const columnFooter = document.createElement("div");
+  columnFooter.className = "charts-column-footer";
+  columnFooter.append(columnLegend, columnStats);
+
+  const cardColumnStack = createChartCard({
+    title: "Cards by column",
+    note: "Open cards on the board, stacked by swimlane",
+    svgElement: svgColumnStack,
+    footer: columnFooter,
+    afterChart: [columnLegend, columnStats],
+  });
+
+  const svgAge = renderAgeDistributionSvg(ageDistData);
+  const ageStats = document.createElement("div");
+  ageStats.className = "charts-cycle-stats";
+  const ageMed = document.createElement("span");
+  ageMed.className = "charts-stat";
+  const ageMedK = document.createElement("strong");
+  ageMedK.textContent = fmtDays(ageMedianDays);
+  ageMed.append("Median ", ageMedK);
+  const ageN = document.createElement("span");
+  ageN.className = "charts-stat";
+  const ageNK = document.createElement("strong");
+  ageNK.textContent = String(ageCount);
+  ageN.append("n = ", ageNK);
+  ageStats.append(ageMed, ageN);
+
+  const cardAge = createChartCard({
+    title: "Card age",
+    note: "Age of open cards in UTC days (today − created)",
+    svgElement: svgAge,
+    footer: ageStats,
+    afterChart: [ageStats],
+  });
+
   const dashboard = document.createElement("div");
   dashboard.className = "charts-dashboard";
-  dashboard.append(cardScatter, cardStack, cardCycle);
+  dashboard.append(
+    cardScatter,
+    cardStack,
+    cardCycle,
+    cardColumnStack,
+    cardAge
+  );
 
   body.append(dashboard);
   root.append(top, body);
@@ -1091,10 +1482,18 @@ async function main() {
       return;
     }
     const boardSlug = boardSlugFrom(model.board);
-    const [completionData, cycleData, swimlaneStackData] = await Promise.all([
+    const [
+      completionData,
+      cycleData,
+      swimlaneStackData,
+      columnStackData,
+      ageDistData,
+    ] = await Promise.all([
       fetchCompletionBuckets(boardSlug, granularity),
       fetchCycleTimeScatter(boardSlug, granularity),
       fetchCompletionSwimlaneStack(boardSlug, granularity),
+      fetchColumnSwimlaneStack(boardSlug),
+      fetchCardAgeDistribution(boardSlug),
     ]);
 
     mount.replaceChildren();
@@ -1105,6 +1504,8 @@ async function main() {
         completionData,
         cycleData,
         swimlaneStackData,
+        columnStackData,
+        ageDistData,
         flowCtx
       )
     );

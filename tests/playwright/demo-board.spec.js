@@ -14,6 +14,12 @@ const CHART_EXPAND_SHOTS = [
   },{
     file: "demo-chart-expand-cycle-time.png",
     title: "Cycle time (created → closed)",
+  },{
+    file: "demo-chart-expand-column-stack.png",
+    title: "Cards by column",
+  },{
+    file: "demo-chart-expand-card-age.png",
+    title: "Card age",
   },
 ];
 

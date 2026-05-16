@@ -228,10 +228,40 @@ export async function writeMillraceProfile(profile, dataRoot = INTEGRATION_DATA_
     }
     case "charts": {
       await writeMillraceProfile("flow-board", dataRoot);
+      await fs.writeFile(
+        path.join(tasksRoot, "test.ini"),
+        boardIniTestWithSwimlanes(),
+        "utf8"
+      );
       await fs.mkdir(path.join(tasksRoot, "test"), { recursive: true });
       await fs.writeFile(
         path.join(tasksRoot, "test", "FLOW-chart-done.ini"),
         cardIniDoneWithClosed(),
+        "utf8"
+      );
+      const openCreated = new Date(
+        Date.now() - 10 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-chart-open-a.ini"),
+        `[item]
+id = FLOW-chart-open-a
+title = Chart Open Alpha
+column = To Do
+swimlane = Alpha
+created = ${openCreated}
+`,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-chart-open-b.ini"),
+        `[item]
+id = FLOW-chart-open-b
+title = Chart Open Beta
+column = To Do
+swimlane = Beta
+created = ${new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()}
+`,
         "utf8"
       );
       break;

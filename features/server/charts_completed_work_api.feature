@@ -48,6 +48,19 @@ Feature: Charts and completed-work APIs
     Then the response status should be 200
     And the last JSON field "granularity" should be "monthly"
 
+  Scenario: column swimlane stack returns open-card columns and series
+    When I fetch JSON from "/api/column-swimlane-stack?boardSlug=test"
+    Then the response status should be 200
+    And the last JSON field "series" should have array length at least 1
+    And the last JSON field "columns" should have array length at least 1
+    And the last JSON field "totalOpen" should equal number 2
+
+  Scenario: card age distribution returns bins for open cards
+    When I fetch JSON from "/api/card-age-distribution?boardSlug=test"
+    Then the response status should be 200
+    And the last JSON field "bins" should have array length at least 1
+    And the last JSON field "count" should equal number 2
+
   Scenario: completed cards filters by mine email
     When I fetch JSON from "/api/completed-cards?boardSlug=test&of=mine&me=charts@example.com&page=1&limit=10"
     Then the response status should be 200
