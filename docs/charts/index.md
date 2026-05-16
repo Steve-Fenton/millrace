@@ -31,11 +31,11 @@ For the selected granularity, this chart shows the time it took a card to be com
 
 ![Screenshot: Cycle times](../screenshots/demo-chart-expand-cycle-time.png)
 
-## Cards by column
+## Open cards by column
 
 A snapshot of open cards on the board: count per column, stacked by swimlane.
 
-## Card age
+## Age of open cards
 
 Distribution of how long open cards have been on the board, in UTC days (today − created date).
 

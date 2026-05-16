@@ -1230,7 +1230,6 @@ function renderChartsShell(
   const stdevDays =
     typeof cycleData.stdevDays === "number" ? cycleData.stdevDays : null;
   const cycleCount = Number(cycleData.count) || 0;
-  const totalOpenCards = Number(columnStackData.totalOpen) || 0;
   const ageMedianDays =
     typeof ageDistData.medianDays === "number" ? ageDistData.medianDays : null;
   const ageCount = Number(ageDistData.count) || 0;
@@ -1387,25 +1386,16 @@ function renderChartsShell(
 
   const svgColumnStack = renderStackedColumnSvg(columnStackData);
   const columnLegend = renderSwimlaneStackLegend(columnStackData);
-  const columnStats = document.createElement("div");
-  columnStats.className = "charts-cycle-stats";
-  const columnOpenRow = document.createElement("span");
-  columnOpenRow.className = "charts-stat";
-  const columnOpenN = document.createElement("strong");
-  columnOpenN.textContent = String(totalOpenCards);
-  columnOpenRow.append("Total ", columnOpenN, " open cards");
-  columnStats.append(columnOpenRow);
-
   const columnFooter = document.createElement("div");
   columnFooter.className = "charts-column-footer";
-  columnFooter.append(columnLegend, columnStats);
+  columnFooter.append(columnLegend);
 
   const cardColumnStack = createChartCard({
-    title: "Cards by column",
+    title: "Open cards by column",
     note: "Open cards on the board, stacked by swimlane",
     svgElement: svgColumnStack,
     footer: columnFooter,
-    afterChart: [columnLegend, columnStats],
+    afterChart: [columnLegend],
   });
 
   const svgAge = renderAgeDistributionSvg(ageDistData);
@@ -1424,7 +1414,7 @@ function renderChartsShell(
   ageStats.append(ageMed, ageN);
 
   const cardAge = createChartCard({
-    title: "Card age",
+    title: "Age of open cards",
     note: "Age of open cards in UTC days (today − created)",
     svgElement: svgAge,
     footer: ageStats,
