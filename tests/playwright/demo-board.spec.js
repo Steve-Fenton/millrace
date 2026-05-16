@@ -19,7 +19,7 @@ const CHART_EXPAND_SHOTS = [
     title: "Open cards by column",
   },{
     file: "demo-chart-expand-card-age.png",
-    title: "Open card age",
+    title: "Age of open cards",
   },
 ];
 
@@ -65,9 +65,9 @@ test.describe("doc screenshots", () => {
 
   test("demo board — edit card dialog", async ({ page }) => {
     /** The dialog caps at `calc(100dvh - 2rem)` and starts scrolling on the default
-     *  1024×768 viewport, which crops the Links row in the screenshot. Give the page
+     *  1280×800 viewport, which crops the Links row in the screenshot. Give the page
      *  a tall viewport so the full dialog fits without internal scrolling. */
-    await page.setViewportSize({ width: 1024, height: 1400 });
+    await page.setViewportSize({ width: 1280, height: 1400 });
 
     await page.goto("/");
     await page.waitForSelector(".board-shell", { timeout: 30_000 });

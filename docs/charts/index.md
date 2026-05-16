@@ -35,8 +35,12 @@ For the selected granularity, this chart shows the time it took a card to be com
 
 A snapshot of open cards on the board: count per column, stacked by swimlane.
 
+![Screenshot: Open cards by column](../screenshots/demo-chart-expand-column-stack.png)
+
 ## Age of open cards
 
 Distribution of how long open cards have been on the board, in UTC days (today − created date).
+
+![Screenshot: Age of open cards](../screenshots/demo-chart-expand-card-age.png)
 
 [← Millrace documentation](../index.md)
