@@ -1120,19 +1120,22 @@ function renderBoard(
         if (nextActionDate) {
           const nextEl = document.createElement("div");
           nextEl.className = "column-card-next-action";
+          const cardClosed = card.closed && String(card.closed).trim();
           const daysUntilNext = daysUntilNextActionDate(nextActionDate);
-          if (daysUntilNext !== null && daysUntilNext <= 2) {
-            nextEl.classList.add("column-card-next-action--imminent");
-            const iconWrap = document.createElement("span");
-            iconWrap.className = "column-card-next-action-icon";
-            iconWrap.setAttribute("aria-hidden", "true");
-            iconWrap.innerHTML = NEXT_ACTION_CLOCK_ICON;
-            nextEl.append(iconWrap);
-          }
-          if (daysUntilNext === 1) {
-            nextEl.classList.add("column-card-next-action--due-tomorrow");
-          } else if (daysUntilNext !== null && daysUntilNext <= 0) {
-            nextEl.classList.add("column-card-next-action--due-now");
+          if (!cardClosed) {
+            if (daysUntilNext !== null && daysUntilNext <= 2) {
+              nextEl.classList.add("column-card-next-action--imminent");
+              const iconWrap = document.createElement("span");
+              iconWrap.className = "column-card-next-action-icon";
+              iconWrap.setAttribute("aria-hidden", "true");
+              iconWrap.innerHTML = NEXT_ACTION_CLOCK_ICON;
+              nextEl.append(iconWrap);
+            }
+            if (daysUntilNext === 1) {
+              nextEl.classList.add("column-card-next-action--due-tomorrow");
+            } else if (daysUntilNext !== null && daysUntilNext <= 0) {
+              nextEl.classList.add("column-card-next-action--due-now");
+            }
           }
           const labelSpan = document.createElement("span");
           labelSpan.className = "column-card-next-action-label";
