@@ -839,7 +839,9 @@ export async function aggregateColumnSwimlaneStack(slug) {
         }))
       : [{ key: "0", label: "Cards", index: 0 }];
 
-  const colList = [...columns].sort((a, b) => a.index - b.index);
+  const colList = [...columns]
+    .filter((col) => !col.isDone)
+    .sort((a, b) => a.index - b.index);
   const columnPayload = colList.map((col) => {
     const inner = byColumn.get(col.index) ?? new Map();
     /** @type {Record<string, number>} */
