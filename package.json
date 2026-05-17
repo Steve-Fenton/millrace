@@ -29,7 +29,7 @@
     "start": "node server.js 7713",
     "test": "MILLRACE_TESTS_DISABLE_REGISTRY_FETCH=1 NODE_OPTIONS=--experimental-vm-modules c8 cucumber-js",
     "test:cucumber": "MILLRACE_TESTS_DISABLE_REGISTRY_FETCH=1 cucumber-js",
-    "screenshots": "playwright test",
+    "screenshots": "node scripts/reset-demo-board.mjs && playwright test",
     "screenshots:install": "playwright install chromium"
   },
   "engines": {
