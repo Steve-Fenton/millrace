@@ -16,7 +16,7 @@ This isn't a watefall. It's engineering.
 
 [Read the documentation](docs/index.md).
 
-# Automatic screenshots
+## Automatic screenshots
 
 This project uses Playwright to automate screenshots. They can be refreshed using these stps:
 
@@ -25,7 +25,21 @@ This project uses Playwright to automate screenshots. They can be refreshed usin
 1. Running the app `pnpm start`
 1. Running Playwright `pnpm screenshots`
 
-# App design
+This uses the test data reset script (see below).
+
+## Notes on testing
+
+There is a test data reset mechanism for the test board, "Demo".
+
+This lives within the `script` folder.
+
+- reset-demo-board.mjs
+  - Uses the set of INI files to reset the board
+  - Sets dates to be relative to now for easier testing
+- demo-board-template/
+  - Contains a set of INI files
+
+## App design
 
 We use the [Web UI Boilerplate Storybook](https://basher.github.io/Web-UI-Boilerplate/?path=/docs/web-ui-storybook-introduction--docs) by [Basher](https://basher.biz) for guidance on accessible modern UI.
 
@@ -86,7 +100,7 @@ flowchart LR
   api --> git
 ```
 
-## `assets/js`
+### `assets/js`
 
 Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `client.js`, and `flow*.js`).
 

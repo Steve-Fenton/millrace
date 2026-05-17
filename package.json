@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "sync-docs": "node scripts/sync-docs-version.mjs",
+    "reset-demo": "node scripts/reset-demo-board.mjs",
     "prepublishOnly": "node scripts/sync-docs-version.mjs",
     "version": "node scripts/sync-docs-version.mjs",
     "start": "node server.js 7713",
