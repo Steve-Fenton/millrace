@@ -1,3 +1,4 @@
+import { createCardDescriptionEditor } from "../ui/cardDescriptionEditor.js";
 import { createLinksEditor } from "../ui/cardLinks.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
@@ -12,17 +13,23 @@ import { showFlowConfirm } from "../ui/showMessage.js";
  */
 export function openAddCardDialog(ctx) {
   const modal = el(`
-    <dialog class="flow-modal" aria-labelledby="flow-add-card-title" aria-describedby="flow-add-card-context">
-      <h2 id="flow-add-card-title" class="flow-modal-title">New card</h2>
+    <dialog class="flow-modal flow-modal--edit-card" aria-labelledby="flow-add-card-title" aria-describedby="flow-add-card-context">
+      <div class="flow-modal-header flow-modal-header--edit-card">
+        <h2 id="flow-add-card-title" class="flow-modal-title">New card</h2>
+      </div>
       <p id="flow-add-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
       <form class="flow-modal-form">
         <label class="flow-field">
           <span class="flow-field-label">Title</span>
           <input class="flow-input" name="title" type="text" required autocomplete="off" placeholder="What needs doing?" />
         </label>
+        <label class="flow-field flow-field--checkbox">
+          <input type="checkbox" name="strategic" />
+          <span class="flow-field-label">Strategic / critical priority</span>
+        </label>
         <label class="flow-field">
           <span class="flow-field-label">Description</span>
-          <textarea class="flow-input flow-textarea" name="description" rows="3" placeholder="Optional"></textarea>
+          <textarea class="flow-input flow-textarea flow-textarea--edit-description" name="description" rows="12" placeholder="Optional"></textarea>
         </label>
         <div class="flow-modal-actions">
           <button type="button" class="flow-btn flow-btn-ghost flow-cancel">Cancel</button>
@@ -36,6 +43,7 @@ export function openAddCardDialog(ctx) {
 
   const form = modal.querySelector("form");
   const titleInput = modal.querySelector('input[name="title"]');
+  const strategicInput = modal.querySelector('input[name="strategic"]');
   const descInput = modal.querySelector('textarea[name="description"]');
   const ownerField = createOwnerField(ctx.boardUsers, "");
   descInput?.closest(".flow-field")?.insertAdjacentElement("afterend", ownerField.root);
@@ -52,6 +60,8 @@ export function openAddCardDialog(ctx) {
   const nextActionInput = nextActionField.input;
   const linksEditor = createLinksEditor([]);
   nextActionField.root.insertAdjacentElement("afterend", linksEditor.root);
+
+  createCardDescriptionEditor({ modal, descInput });
 
   function focusTitle() {
     titleInput?.focus();
@@ -71,6 +81,7 @@ export function openAddCardDialog(ctx) {
       description: String(descInput.value ?? ""),
       note: String(noteInput?.value ?? "").trim(),
       owner: ownerField.getValue(),
+      strategic: Boolean(strategicInput?.checked),
       nextActionDate: String(nextActionInput?.value ?? "").trim(),
       links: normalizeLinks(linksEditor.getLinks()),
     });
@@ -135,6 +146,7 @@ export function openAddCardDialog(ctx) {
           description,
           note,
           owner,
+          strategic: Boolean(strategicInput?.checked),
           nextActionDate,
           links: linksEditor.getLinks(),
         });
