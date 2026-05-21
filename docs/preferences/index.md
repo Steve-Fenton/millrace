@@ -2,7 +2,7 @@
 
 The **Preferences** view edits settings stored in **`tasks/localuser.ini`** (machine-local; keep that file gitignored). Changes apply across views after you save.
 
-![](../screenshots/demo-preferences-full.png)
+![Screenshot: The preferences screen has options you can tailor](../screenshots/demo-preferences-full.png)
 
 ## Settings
 
