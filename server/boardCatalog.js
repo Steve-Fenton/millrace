@@ -127,6 +127,22 @@ export async function readBoardCatalogIniBasenames() {
 }
 
 /**
+ * @param {{ slug: string, name?: string }[]} entries
+ * @returns {{ slug: string, name?: string, file?: string, kind?: string }[]}
+ */
+export function sortBoardCatalogEntries(entries) {
+  return [...entries].sort((a, b) => {
+    const na = String(a.name ?? a.slug ?? "").trim();
+    const nb = String(b.name ?? b.slug ?? "").trim();
+    const byName = na.localeCompare(nb, undefined, { sensitivity: "base" });
+    if (byName !== 0) return byName;
+    return String(a.slug ?? "").localeCompare(String(b.slug ?? ""), undefined, {
+      sensitivity: "base",
+    });
+  });
+}
+
+/**
  * Boards from `tasks/.millrace.ini` (`[millrace]` / legacy `[flow]` `boards =`) with parsed slug and display name.
  * @returns {Promise<{ file: string, slug: string, name: string, kind?: string }[]>}
  */
@@ -161,7 +177,7 @@ export async function loadBoardCatalog() {
       /* no board definitions */
     }
   }
-  return out;
+  return sortBoardCatalogEntries(out);
 }
 
 /**
