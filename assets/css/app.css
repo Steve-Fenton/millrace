@@ -11,14 +11,98 @@
   --text-muted: #a1a1aa;
   --accent: #38bdf8;
   --accent-dim: rgba(56, 189, 248, 0.12);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --accent-hover: #7dd3fc;
+  --error: #f87171;
+  --error-soft: #fca5a5;
+  --error-pale: #fecaca;
+  --success: #86efac;
+  --warning: #fbbf24;
+  --purple: #c4b5fd;
+  --blue-soft: #93c5fd;
+
+  --overlay-backdrop: rgba(15, 23, 42, 0.72);
+  --overlay-panel: rgba(30, 41, 59, 0.95);
+  --overlay-accent-panel: rgba(30, 58, 95, 0.95);
+  --overlay-border-muted: rgba(148, 163, 184, 0.45);
+
+  --elevated-a22: rgba(39, 39, 42, 0.22);
+  --elevated-a25: rgba(39, 39, 42, 0.25);
+  --elevated-a35: rgba(39, 39, 42, 0.35);
+  --elevated-a45: rgba(39, 39, 42, 0.45);
+  --surface-a35: rgba(24, 24, 27, 0.35);
+  --surface-a45: rgba(24, 24, 27, 0.45);
+  --surface-a50: rgba(24, 24, 27, 0.5);
+
+  --white-a02: rgba(255, 255, 255, 0.02);
+  --white-a03: rgba(255, 255, 255, 0.03);
+  --white-a06: rgba(255, 255, 255, 0.06);
+  --white-a10: rgba(255, 255, 255, 0.1);
+  --white-a12: rgba(255, 255, 255, 0.12);
+  --text-a55: rgba(250, 250, 250, 0.55);
+
+  --black-a28: rgba(0, 0, 0, 0.28);
+  --black-a35: rgba(0, 0, 0, 0.35);
+  --black-a38: rgba(0, 0, 0, 0.38);
+  --black-a42: rgba(0, 0, 0, 0.42);
+  --black-a45: rgba(0, 0, 0, 0.45);
+  --black-a55: rgba(0, 0, 0, 0.55);
+
+  --accent-a06: rgba(56, 189, 248, 0.06);
+  --accent-a08: rgba(56, 189, 248, 0.08);
+  --accent-a10: rgba(56, 189, 248, 0.1);
+  --accent-a15: rgba(56, 189, 248, 0.15);
+  --accent-a20: rgba(56, 189, 248, 0.2);
+  --accent-a22: rgba(56, 189, 248, 0.22);
+  --accent-a25: rgba(56, 189, 248, 0.25);
+  --accent-a32: rgba(56, 189, 248, 0.32);
+  --accent-a35: rgba(56, 189, 248, 0.35);
+  --accent-a45: rgba(56, 189, 248, 0.45);
+  --accent-a55: rgba(56, 189, 248, 0.55);
+  --accent-a65: rgba(56, 189, 248, 0.65);
+  --accent-a85: rgba(56, 189, 248, 0.85);
+  --accent-a90: rgba(56, 189, 248, 0.9);
+
+  --error-a07: rgba(248, 113, 113, 0.07);
+  --error-a10: rgba(248, 113, 113, 0.1);
+  --error-a12: rgba(248, 113, 113, 0.12);
+  --error-a14: rgba(248, 113, 113, 0.14);
+  --error-a18: rgba(248, 113, 113, 0.18);
+  --error-a25: rgba(248, 113, 113, 0.25);
+  --error-a28: rgba(248, 113, 113, 0.28);
+  --error-a35: rgba(248, 113, 113, 0.35);
+  --error-a45: rgba(248, 113, 113, 0.45);
+  --error-a55: rgba(248, 113, 113, 0.55);
+  --error-a65: rgba(248, 113, 113, 0.65);
+
+  --purple-a10: rgba(167, 139, 250, 0.1);
+  --purple-a12: rgba(167, 139, 250, 0.12);
+  --purple-a35: rgba(167, 139, 250, 0.35);
+  --purple-a45: rgba(167, 139, 250, 0.45);
+  --purple-fill-a35: rgba(196, 181, 253, 0.35);
+  --purple-fill-a55: rgba(196, 181, 253, 0.55);
+
+  --blue-soft-a12: rgba(147, 197, 253, 0.12);
+  --blue-soft-a40: rgba(147, 197, 253, 0.4);
+
+  --shadow-dock: 0 3px 14px var(--black-a45);
+  --shadow-dropdown: 0 8px 28px var(--black-a28);
+  --shadow-popover: 0 8px 24px var(--black-a35);
+  --shadow-modal-panel: 0 24px 48px var(--black-a35);
+  --shadow-accent-ring: 0 0 0 1px var(--accent-a20);
+  --shadow-accent-glow:
+    0 0 0 2px var(--accent-a45),
+    0 0 18px var(--accent-a45);
+  --shadow-error-inset-soft: inset 0 1px 0 var(--error-a07);
+  --shadow-error-inset: inset 0 1px 0 var(--error-a10);
+  --shadow: 0 4px 24px var(--black-a35);
   /* Layered elevation for modal dialogs (stronger than --shadow) */
   --shadow-modal:
-    0 2px 6px rgba(0, 0, 0, 0.28),
-    0 12px 36px rgba(0, 0, 0, 0.42),
-    0 28px 72px rgba(0, 0, 0, 0.38);
+    0 2px 6px var(--black-a28),
+    0 12px 36px var(--black-a42),
+    0 28px 72px var(--black-a38);
+
+  --radius: 12px;
+  --radius-sm: 8px;
   font-synthesis: none;
 }
 
@@ -70,7 +154,7 @@ body {
 }
 
 .app-error {
-  color: #f87171;
+  color: var(--error);
 }
 
 .board-shell {
@@ -138,7 +222,7 @@ body {
   position: absolute;
   top: 0;
   overflow: hidden;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-dock);
 }
 
 .kanban-header-dock-inner {
@@ -157,7 +241,7 @@ body {
   padding-block: 1.25rem;
   padding-inline: 1.5rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(39, 39, 42, 0.35);
+  background: var(--elevated-a35);
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
@@ -188,7 +272,7 @@ body {
 }
 
 .millrace-brand:hover {
-  color: #7dd3fc;
+  color: var(--accent-hover);
   background: var(--accent-dim);
 }
 
@@ -292,7 +376,7 @@ body {
 
 .board-owner-filter-select:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: var(--accent-a55);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -327,7 +411,7 @@ body {
 
 .board-card-search-input:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: var(--accent-a55);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -403,7 +487,7 @@ body {
 .board-card-search-btn--icon.flow-btn-primary:hover,
 .complete-search-btn--icon.flow-btn-primary:hover {
   background: var(--surface-hover);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
 }
 
 .flow-search-submit-icon {
@@ -442,7 +526,7 @@ body {
 
 .complete-search-input:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: var(--accent-a55);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -536,7 +620,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow-dropdown);
 }
 
 .board-title-picker__option {
@@ -589,7 +673,7 @@ body {
   padding-block: 0;
   padding-inline: 0.65rem;
   border-radius: 999px;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid var(--accent-a25);
   white-space: nowrap;
 }
 
@@ -619,7 +703,7 @@ body {
 
 .board-sync-btn:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
 }
 
 .board-sync-btn:focus-visible {
@@ -640,9 +724,9 @@ body {
     box-shadow: none;
   }
   50% {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: rgba(56, 189, 248, 0.55);
-    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2);
+    background: var(--accent-a22);
+    border-color: var(--accent-a55);
+    box-shadow: var(--shadow-accent-ring);
   }
 }
 
@@ -670,7 +754,7 @@ dialog.git-conflict-dialog {
 }
 
 dialog.git-conflict-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--overlay-backdrop);
   backdrop-filter: blur(4px);
 }
 
@@ -679,10 +763,10 @@ dialog.git-conflict-dialog::backdrop {
   flex-direction: column;
   width: min(56rem, 100%);
   max-height: 100%;
-  background: var(--surface, #1e293b);
-  border: 1px solid var(--border, #334155);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md, 10px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-modal-panel);
   overflow: hidden;
 }
 
@@ -690,7 +774,7 @@ dialog.git-conflict-dialog::backdrop {
   flex-shrink: 0;
   padding-block: 1rem;
   padding-inline: 1.25rem;
-  border-bottom: 1px solid var(--border, #334155);
+  border-bottom: 1px solid var(--border);
 }
 
 .git-conflict-title {
@@ -703,7 +787,7 @@ dialog.git-conflict-dialog::backdrop {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.45;
-  color: var(--muted, #94a3b8);
+  color: var(--text-muted);
 }
 
 .git-conflict-scroll {
@@ -741,8 +825,8 @@ dialog.git-conflict-dialog::backdrop {
   font-size: 0.8rem;
   line-height: 1.4;
   color: inherit;
-  background: var(--elevated, #0f172a);
-  border: 1px solid var(--border, #334155);
+  background: var(--elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
   resize: vertical;
 }
@@ -754,8 +838,8 @@ dialog.git-conflict-dialog::backdrop {
   gap: 0.5rem;
   padding-block: 0.85rem;
   padding-inline: 1.25rem;
-  border-top: 1px solid var(--border, #334155);
-  background: var(--surface, #1e293b);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .git-conflict-file-wrap {
@@ -767,16 +851,16 @@ dialog.git-conflict-dialog::backdrop {
 .git-conflict-hunk-tools {
   padding-block: 0.85rem;
   padding-inline: 1rem;
-  border: 1px solid var(--border, #334155);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
-  background: var(--elevated, #0f172a);
+  background: var(--elevated);
 }
 
 .git-conflict-hunk-meta {
   margin-block-end: 0.75rem;
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--muted, #94a3b8);
+  color: var(--text-muted);
 }
 
 .git-conflict-hunk-columns {
@@ -816,7 +900,7 @@ dialog.git-conflict-dialog::backdrop {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--muted, #94a3b8);
+  color: var(--text-muted);
   word-break: break-word;
 }
 
@@ -832,15 +916,15 @@ dialog.git-conflict-dialog::backdrop {
   white-space: pre-wrap;
   word-break: break-word;
   color: inherit;
-  background: var(--surface, #1e293b);
-  border: 1px solid var(--border, #334155);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
 }
 
 .git-conflict-editor-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--muted, #94a3b8);
+  color: var(--text-muted);
 }
 
 /* Header hamburger: Board / Completed */
@@ -870,7 +954,7 @@ dialog.git-conflict-dialog::backdrop {
 
 .flow-nav-menu__trigger:hover {
   background: var(--surface-hover);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
 }
 
 .flow-nav-menu__trigger:focus-visible {
@@ -893,7 +977,7 @@ dialog.git-conflict-dialog::backdrop {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-popover);
   z-index: 50;
 }
 
@@ -951,7 +1035,7 @@ dialog.git-conflict-dialog::backdrop {
 
 .flow-nav-menu__item--current {
   color: var(--accent);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--accent-a08);
 }
 
 /* Completed list view (/complete/) */
@@ -969,7 +1053,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.85rem;
   padding-inline: 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(39, 39, 42, 0.22);
+  background: var(--elevated-a22);
 }
 
 .complete-list-wrap {
@@ -1087,15 +1171,15 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .complete-table__row:hover .complete-table__td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--white-a02);
 }
 
 .complete-table__row--strategic .complete-table__td {
-  background: rgba(56, 189, 248, 0.06);
+  background: var(--accent-a06);
 }
 
 .complete-table__row--strategic:hover .complete-table__td {
-  background: rgba(56, 189, 248, 0.1);
+  background: var(--accent-a10);
 }
 
 .complete-table__row--editable {
@@ -1117,15 +1201,15 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .complete-source-badge--archive {
-  color: #c4b5fd;
-  border-color: rgba(167, 139, 250, 0.35);
-  background: rgba(167, 139, 250, 0.1);
+  color: var(--purple);
+  border-color: var(--purple-a35);
+  background: var(--purple-a10);
 }
 
 .complete-source-badge--cold {
-  color: #93c5fd;
-  border-color: rgba(147, 197, 253, 0.4);
-  background: rgba(147, 197, 253, 0.12);
+  color: var(--blue-soft);
+  border-color: var(--blue-soft-a40);
+  background: var(--blue-soft-a12);
 }
 
 .complete-empty {
@@ -1146,7 +1230,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.85rem 1.1rem;
   padding-inline: 1.25rem;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(39, 39, 42, 0.25);
+  background: var(--elevated-a25);
 }
 
 .complete-pagination-range {
@@ -1409,7 +1493,7 @@ dialog.git-conflict-dialog::backdrop {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   background: var(--elevated);
-  color: #86efac;
+  color: var(--success);
   font-size: 0.9rem;
   line-height: 1.35;
   box-shadow: var(--shadow);
@@ -1428,7 +1512,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-inline: 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: rgba(24, 24, 27, 0.45);
+  background: var(--surface-a45);
 }
 
 .admin-add-board__label {
@@ -1451,7 +1535,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .admin-add-board__input:focus {
-  outline: 2px solid rgba(56, 189, 248, 0.45);
+  outline: 2px solid var(--accent-a45);
   outline-offset: 1px;
 }
 
@@ -1462,14 +1546,14 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.4rem;
   padding-inline: 0.85rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--accent-a45);
+  background: var(--accent-dim);
   color: var(--text);
   cursor: pointer;
 }
 
 .admin-add-board__btn:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.22);
+  background: var(--accent-a22);
 }
 
 .admin-add-board__btn:disabled {
@@ -1532,7 +1616,7 @@ dialog.git-conflict-dialog::backdrop {
   width: 100%;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: rgba(24, 24, 27, 0.5);
+  background: var(--surface-a50);
   padding-block: 0.75rem;
   padding-inline: 1rem;
 }
@@ -1546,14 +1630,14 @@ dialog.git-conflict-dialog::backdrop {
 
 .charts-stack-area {
   opacity: 0.9;
-  stroke: rgba(255, 255, 255, 0.12);
+  stroke: var(--white-a12);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
 
 .charts-stack-bar {
   opacity: 0.9;
-  stroke: rgba(255, 255, 255, 0.12);
+  stroke: var(--white-a12);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
@@ -1561,7 +1645,7 @@ dialog.git-conflict-dialog::backdrop {
 .charts-hist-bar {
   fill: hsl(210 55% 52%);
   opacity: 0.88;
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: var(--white-a10);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
@@ -1596,7 +1680,7 @@ dialog.git-conflict-dialog::backdrop {
   width: 0.65rem;
   height: 0.65rem;
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--white-a12);
 }
 
 .charts-axis {
@@ -1606,7 +1690,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-grid-line {
-  stroke: rgba(255, 255, 255, 0.06);
+  stroke: var(--white-a06);
   stroke-width: 1;
 }
 
@@ -1628,23 +1712,23 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-point {
-  fill: rgba(56, 189, 248, 0.85);
-  stroke: rgba(56, 189, 248, 0.35);
+  fill: var(--accent-a85);
+  stroke: var(--accent-a35);
   stroke-width: 1.5;
 }
 
 .charts-point--cycle {
-  fill: rgba(196, 181, 253, 0.35);
-  stroke: rgba(167, 139, 250, 0.45);
+  fill: var(--purple-fill-a35);
+  stroke: var(--purple-a45);
   stroke-width: 1.25;
 }
 
 .charts-point--cycle:hover {
-  fill: rgba(196, 181, 253, 0.55);
+  fill: var(--purple-fill-a55);
 }
 
 .charts-point:hover {
-  fill: rgba(56, 189, 248, 1);
+  fill: var(--accent);
 }
 
 .charts-section-title {
@@ -1670,14 +1754,14 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-cycle-median-line {
-  stroke: rgba(250, 250, 250, 0.55);
+  stroke: var(--text-a55);
   stroke-width: 1.5;
   stroke-dasharray: 6 4;
   pointer-events: none;
 }
 
 .charts-cycle-sigma-band {
-  fill: rgba(167, 139, 250, 0.12);
+  fill: var(--purple-a12);
   stroke: none;
   pointer-events: none;
 }
@@ -1736,9 +1820,9 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .column-head--wip-over {
-  background: rgba(248, 113, 113, 0.14);
-  border-bottom-color: rgba(248, 113, 113, 0.55);
-  color: #fecaca;
+  background: var(--error-a14);
+  border-bottom-color: var(--error-a55);
+  color: var(--error-pale);
 }
 
 .swimlane-label {
@@ -1836,7 +1920,7 @@ dialog.git-conflict-dialog::backdrop {
     hsl(355 22% 11%) 0%,
     hsl(0 28% 8%) 100%
   );
-  box-shadow: inset 0 1px 0 rgba(248, 113, 113, 0.07);
+  box-shadow: var(--shadow-error-inset-soft);
 }
 
 .column-cell:hover {
@@ -1849,7 +1933,7 @@ dialog.git-conflict-dialog::backdrop {
     hsl(355 24% 13%) 0%,
     hsl(0 26% 10%) 100%
   );
-  box-shadow: inset 0 1px 0 rgba(248, 113, 113, 0.1);
+  box-shadow: var(--shadow-error-inset);
 }
 
 .column-cell-body {
@@ -1979,13 +2063,11 @@ a.column-done-truncation-link:focus-visible {
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    rgba(56, 189, 248, 0.15),
+    var(--accent-a15),
     var(--accent),
-    rgba(56, 189, 248, 0.15)
+    var(--accent-a15)
   );
-  box-shadow:
-    0 0 0 2px rgba(56, 189, 248, 0.45),
-    0 0 18px rgba(56, 189, 248, 0.45);
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .column-card-list:has(> .column-card-drop-marker:only-child) {
@@ -2068,8 +2150,8 @@ a.column-done-truncation-link:focus-visible {
 
 /** Strategic / critical cards — override background and border in your theme if needed */
 .column-card--strategic {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.32);
+  background: var(--accent-a10);
+  border-color: var(--accent-a32);
 }
 
 .column-card--compass-open {
@@ -2084,7 +2166,7 @@ a.column-done-truncation-link:focus-visible {
   box-sizing: border-box;
   padding: 0.35rem;
   border-radius: inherit;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--overlay-backdrop);
   backdrop-filter: blur(3px);
   place-items: center;
   justify-items: center;
@@ -2104,10 +2186,10 @@ a.column-done-truncation-link:focus-visible {
   min-height: 1.75rem;
   padding: 0.15rem;
   margin: 0;
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border: 1px solid var(--overlay-border-muted);
   border-radius: var(--radius-sm);
-  background: rgba(30, 41, 59, 0.95);
-  color: var(--text, #e2e8f0);
+  background: var(--overlay-panel);
+  color: var(--text);
   cursor: pointer;
   line-height: 0;
   transition:
@@ -2117,13 +2199,13 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-nudge:hover:not(:disabled) {
-  color: var(--accent, #38bdf8);
-  border-color: rgba(56, 189, 248, 0.55);
-  background: rgba(30, 58, 95, 0.95);
+  color: var(--accent);
+  border-color: var(--accent-a55);
+  background: var(--overlay-accent-panel);
 }
 
 .column-card-nudge:focus-visible {
-  outline: 2px solid var(--accent, #38bdf8);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -2170,9 +2252,9 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-cell--drop-target {
-  outline: 2px dashed rgba(56, 189, 248, 0.65);
+  outline: 2px dashed var(--accent-a65);
   outline-offset: -2px;
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--accent-a08);
 }
 
 .column-card:last-child {
@@ -2299,7 +2381,7 @@ a.column-done-truncation-link:focus-visible {
   color: var(--accent);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid var(--accent-a35);
   background: var(--accent-dim);
   transition:
     background 0.12s ease,
@@ -2343,8 +2425,8 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-link:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: rgba(56, 189, 248, 0.55);
+  background: var(--accent-a20);
+  border-color: var(--accent-a55);
 }
 
 .column-card-link:focus-visible {
@@ -2383,7 +2465,7 @@ a.column-done-truncation-link:focus-visible {
 
 .column-add:hover {
   color: var(--accent);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
   background: var(--accent-dim);
 }
 
@@ -2407,7 +2489,7 @@ dialog.flow-modal {
 }
 
 dialog.flow-modal::backdrop {
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--black-a55);
   backdrop-filter: blur(4px);
 }
 
@@ -2474,7 +2556,7 @@ dialog.flow-modal::backdrop {
   padding-inline: 0.4rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: rgba(24, 24, 27, 0.35);
+  background: var(--surface-a35);
 }
 
 .flow-board-sortable-row--swimlane {
@@ -2544,7 +2626,7 @@ dialog.flow-modal::backdrop {
 
 .flow-board-sort-dir:hover:not(:disabled) {
   color: var(--accent);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
   background: var(--surface-hover);
 }
 
@@ -2677,7 +2759,7 @@ dialog.flow-modal::backdrop {
 
 .flow-btn-icon:hover {
   background: var(--surface-hover);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
   color: var(--accent);
 }
 
@@ -2786,7 +2868,7 @@ dialog.flow-modal::backdrop {
   padding-block: 0.5rem 0.35rem;
   padding-inline: 0;
   border-bottom: 1px solid var(--border-subtle);
-  color: #fbbf24;
+  color: var(--warning);
 }
 
 .flow-modal-actions--history {
@@ -2857,7 +2939,7 @@ dialog.flow-modal::backdrop {
 
 .flow-description-tab:not(.flow-description-tab--active):hover {
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--white-a03);
 }
 
 /* When pointer is over the editor, suppress any lingering inactive-tab hover look. */
@@ -2963,8 +3045,8 @@ dialog.flow-modal::backdrop {
 }
 
 .flow-description-preview .flow-md-task-checkbox:checked {
-  border-color: #7dd3fc;
-  background-color: #7dd3fc;
+  border-color: var(--accent-hover);
+  background-color: var(--accent-hover);
   /* Centered tick in a 12×12 viewBox */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M2.75 6.1 5.35 8.7 9.25 3.3'/%3E%3C/svg%3E");
   background-size: 68% 68%;
@@ -2992,7 +3074,7 @@ dialog.flow-modal::backdrop {
 }
 
 .flow-description-preview a:hover {
-  color: #7dd3fc;
+  color: var(--accent-hover);
 }
 
 .flow-description-preview .flow-md-empty {
@@ -3051,7 +3133,7 @@ dialog.flow-modal::backdrop {
   padding-inline: 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: rgba(39, 39, 42, 0.45);
+  background: var(--elevated-a45);
   font-size: 0.78rem;
   line-height: 1.45;
   color: var(--text-muted);
@@ -3146,7 +3228,7 @@ dialog.flow-modal::backdrop {
 
 .flow-input:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: var(--accent-a55);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -3192,12 +3274,12 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:hover:not(:disabled):not(:checked) {
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: var(--accent-a45);
   background-color: var(--surface-hover);
 }
 
 input[type="checkbox"]:checked {
-  border-color: rgba(56, 189, 248, 0.9);
+  border-color: var(--accent-a90);
   background-color: var(--accent);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%2309090b' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' d='M3.75 8.25l2.9 2.9 6.7-7.9'/%3E%3C/svg%3E");
 }
@@ -3276,13 +3358,13 @@ input[type="checkbox"]:disabled {
 }
 
 .flow-btn-delete-icon:hover {
-  color: #f87171;
-  background: rgba(248, 113, 113, 0.12);
-  border-color: rgba(248, 113, 113, 0.28);
+  color: var(--error);
+  background: var(--error-a12);
+  border-color: var(--error-a28);
 }
 
 .flow-btn-delete-icon:focus-visible {
-  outline: 2px solid rgba(248, 113, 113, 0.65);
+  outline: 2px solid var(--error-a65);
   outline-offset: 2px;
 }
 
@@ -3308,7 +3390,7 @@ input[type="checkbox"]:disabled {
 .flow-btn-primary {
   background: var(--accent);
   color: var(--bg);
-  border-color: rgba(56, 189, 248, 0.35);
+  border-color: var(--accent-a35);
 }
 
 .flow-btn-primary:hover {
@@ -3316,13 +3398,13 @@ input[type="checkbox"]:disabled {
 }
 
 .flow-btn-danger {
-  background: rgba(248, 113, 113, 0.18);
-  color: #fca5a5;
-  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: var(--error-a18);
+  color: var(--error-soft);
+  border: 1px solid var(--error-a45);
 }
 
 .flow-btn-danger:hover {
-  background: rgba(248, 113, 113, 0.28);
+  background: var(--error-a28);
   filter: none;
 }
 
@@ -3343,9 +3425,9 @@ input[type="checkbox"]:disabled {
   padding-inline: 0.55rem;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
-  color: #fca5a5;
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  color: var(--error-soft);
+  background: var(--error-a12);
+  border: 1px solid var(--error-a25);
 }
 
 .flow-links-field {
@@ -3391,8 +3473,8 @@ input[type="checkbox"]:disabled {
 }
 
 .flow-link-remove:hover {
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.35);
+  color: var(--error);
+  border-color: var(--error-a35);
 }
 
 .flow-link-remove-icon {
