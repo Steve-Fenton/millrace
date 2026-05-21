@@ -17,7 +17,7 @@ const GIT_TEST_ENV = {
  */
 export async function gitInitWithFirstCommit(cwd) {
   const opts = { cwd, env: GIT_TEST_ENV };
-  await execFileAsync("git", ["init"], opts);
+  await execFileAsync("git", ["init", "--template="], opts);
   await execFileAsync(
     "git",
     ["-c", "user.email=test@example.com", "-c", "user.name=Millrace Test", "add", "-A"],
@@ -57,7 +57,7 @@ export async function gitInitBareUpstreamWithClone(parentDir) {
     cwd: upstream,
     env: GIT_TEST_ENV,
   });
-  await execFileAsync("git", ["init", "--quiet", clone], {
+  await execFileAsync("git", ["init", "--quiet", "--template=", clone], {
     cwd: parentDir,
     env: GIT_TEST_ENV,
   });

@@ -1,7 +1,7 @@
 import {
   COLUMN_TYPE_LABELS,
-  columnTypeOf,
   parseBoardIni,
+  parseColumnTypeRaw,
 } from "../models/boardModel.js";
 import { dispChange } from "./taskDiff.js";
 
@@ -85,6 +85,34 @@ function pushOrderedTitleDiff(out, label, before, after) {
 }
 
 /**
+ * Normalized column title for diff-time type hints (lowercase, collapsed spaces).
+ * @param {string | undefined} title
+ */
+function normalizeColumnTitle(title) {
+  return String(title ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Column type for git diff summaries — matches legacy `is_done` moves and common titles
+ * when `type` is omitted (e.g. "To Do" → To do, unmarked "Done" → To do).
+ * @param {{ title?: string, type?: string, isDone?: boolean }} col
+ * @returns {import("../models/boardModel.js").ColumnType}
+ */
+function columnTypeForDiffSummary(col) {
+  if (col?.isDone === true) return "done";
+  const parsed = parseColumnTypeRaw(col?.type);
+  if (parsed && parsed !== "in_progress") return parsed;
+  const t = normalizeColumnTitle(col?.title);
+  if (t === "to do" || t === "todo") return "to_do";
+  if (t === "done" || t === "complete" || t === "completed") return "to_do";
+  return parsed ?? "in_progress";
+}
+
+/**
  * Compare per-title column attributes (WIP limit, type) when both sides have a
  * column with the same trimmed lower-case title — only one entry per title (matches the
  * first occurrence the same way card column resolution does).
@@ -116,8 +144,8 @@ function collectColumnAttributeChanges(out, before, after) {
       const al = aw === undefined ? "—" : String(aw);
       out.push(`WIP limit (${dispChange(title)}): ${bl} → ${al}`);
     }
-    const bt = columnTypeOf(b);
-    const at = columnTypeOf(c);
+    const bt = columnTypeForDiffSummary(b);
+    const at = columnTypeForDiffSummary(c);
     if (bt !== at) {
       out.push(
         `Column type (${dispChange(title)}): ${COLUMN_TYPE_LABELS[bt]} → ${COLUMN_TYPE_LABELS[at]}`
