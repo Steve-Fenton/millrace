@@ -1,3 +1,7 @@
+import {
+  isAggregateBoard,
+  standardAggregateColumns,
+} from "../models/aggregateBoard.js";
 import { columnTypeOf } from "../models/boardModel.js";
 
 /**
@@ -15,12 +19,31 @@ export function serializeBoardIniFromModel(model) {
   if (name) lines.push(`name = ${name}`);
   const slug = String(b.slug ?? "").trim();
   if (slug) lines.push(`slug = ${slug}`);
+  const kind = String(b.kind ?? "").trim();
+  if (kind) lines.push(`kind = ${kind}`);
   lines.push("");
+
+  const sources = [...(model.sources ?? [])].sort((a, b) => a.index - b.index);
+  if (sources.length > 0) {
+    lines.push(
+      "; Aggregate boards include tasks from the listed source boards (by column type)."
+    );
+    for (let i = 0; i < sources.length; i++) {
+      const src = sources[i];
+      const idx = i + 1;
+      lines.push(`[sources.${idx}]`);
+      lines.push(`slug = ${String(src.slug ?? "").trim()}`);
+      lines.push("");
+    }
+  }
+
   lines.push(
     "; Columns appear in list order by section index (columns.1, columns.2, …)."
   );
 
-  const cols = [...(model.columns ?? [])].sort((a, b) => a.index - b.index);
+  const cols = (
+    isAggregateBoard(model) ? standardAggregateColumns() : model.columns ?? []
+  ).sort((a, b) => a.index - b.index);
   for (let i = 0; i < cols.length; i++) {
     const col = cols[i];
     const idx = i + 1;

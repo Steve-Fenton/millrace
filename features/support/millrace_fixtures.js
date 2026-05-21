@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { defaultAggregateBoardIniText } from "../../server/boardCatalog.js";
 
 /** Matches existing integration tests; cleared before each scenario. */
 const FIXTURES_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,40 @@ boards = test.ini
 export const CATALOG_TWO_BOARDS = `[millrace]
 boards = test.ini, other.ini
 `;
+
+export const CATALOG_AGGREGATE = `[millrace]
+boards = test.ini, other.ini, all.ini
+`;
+
+export function boardIniTestTypedForAggregate() {
+  return `[board]
+name = Test Board
+slug = test
+
+[columns.1]
+title = To Do
+type = to_do
+
+[columns.2]
+title = Done
+type = done
+`;
+}
+
+export function boardIniOtherTypedForAggregate() {
+  return `[board]
+name = Other Board
+slug = other
+
+[columns.1]
+title = Doing
+type = in_progress
+
+[columns.2]
+title = Done
+type = done
+`;
+}
 
 export function boardIniTest() {
   return `[board]
@@ -222,6 +257,53 @@ export async function writeMillraceProfile(profile, dataRoot = INTEGRATION_DATA_
       await fs.writeFile(
         path.join(tasksRoot, "other.ini"),
         boardIniOther(),
+        "utf8"
+      );
+      break;
+    }
+    case "aggregate-board": {
+      await fs.writeFile(
+        path.join(tasksRoot, ".millrace.ini"),
+        CATALOG_AGGREGATE,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "test.ini"),
+        boardIniTestTypedForAggregate(),
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "other.ini"),
+        boardIniOtherTypedForAggregate(),
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "all.ini"),
+        defaultAggregateBoardIniText("All Work", "all", ["test", "other"]),
+        "utf8"
+      );
+      await fs.mkdir(path.join(tasksRoot, "test"), { recursive: true });
+      await fs.mkdir(path.join(tasksRoot, "other"), { recursive: true });
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-agg-todo.ini"),
+        `[item]
+id = FLOW-agg-todo
+title = Todo On Test
+column = To Do
+sort_order = 10
+created = 2024-01-01T00:00:00.000Z
+`,
+        "utf8"
+      );
+      await fs.writeFile(
+        path.join(tasksRoot, "other", "FLOW-agg-doing.ini"),
+        `[item]
+id = FLOW-agg-doing
+title = Doing On Other
+column = Doing
+sort_order = 10
+created = 2024-01-02T00:00:00.000Z
+`,
         "utf8"
       );
       break;

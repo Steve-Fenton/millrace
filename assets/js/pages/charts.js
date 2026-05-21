@@ -2,6 +2,7 @@ import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import { parseBoardIni } from "../models/boardModel.js";
+import { enrichAggregateBoardModel } from "../models/aggregateBoard.js";
 import {
   fetchBoardIni,
   fetchLocalUserProfile,
@@ -1466,7 +1467,8 @@ async function main() {
     const { boards, activeSlug } = await resolveActiveBoardSelection();
     const flowCtx = { boards, activeSlug };
     const text = await fetchBoardIni(activeSlug);
-    const model = parseBoardIni(text);
+    let model = parseBoardIni(text);
+    model = enrichAggregateBoardModel(model, boards);
     if (model.columns.length === 0) {
       mount.innerHTML = `<div class="app-error">No columns found in board.ini.</div>`;
       return;

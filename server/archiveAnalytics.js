@@ -7,10 +7,17 @@ import { ensureDir } from "./fsUtil.js";
 import { resolveCardColumnIndex } from "../assets/js/ini/columnResolve.js";
 import { resolveCardSwimlaneIndex } from "../assets/js/ini/swimlaneResolve.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
-import { columnIsDone } from "../assets/js/models/boardModel.js";
+import { columnIsDone, parseBoardIni } from "../assets/js/models/boardModel.js";
+import {
+  aggregateColumnIndexForSourceColumn,
+  enrichAggregateBoardModel,
+  isAggregateBoard,
+  standardAggregateColumns,
+} from "../assets/js/models/aggregateBoard.js";
 import {
   loadBoardCatalog,
   loadBoardColumnAndSwimlaneDefsForSlug,
+  loadBoardModelForSlug,
 } from "./boardCatalog.js";
 
 export async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {
@@ -201,6 +208,69 @@ export async function moveStaleArchiveFilesToColdStorage(slug, ageMonths) {
  * @param {string} slug
  */
 export async function gatherCompletedAndArchiveRows(slug) {
+  let model;
+  try {
+    model = await loadBoardModelForSlug(slug);
+  } catch {
+    model = null;
+  }
+  if (model && isAggregateBoard(model)) {
+    return gatherAggregateCompletedAndArchiveRows(model);
+  }
+  return gatherPhysicalBoardCompletedAndArchiveRows(slug);
+}
+
+/**
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} model
+ */
+async function gatherAggregateCompletedAndArchiveRows(model) {
+  const catalog = await loadBoardCatalog();
+  const aggregateColumns = standardAggregateColumns();
+  /** @type {object[]} */
+  const merged = [];
+
+  for (const src of model.sources ?? []) {
+    const sourceSlug = String(src.slug ?? "").trim();
+    if (!sourceSlug) continue;
+    const hit = catalog.find((b) => b.slug === sourceSlug);
+    const sourceName = hit?.name?.trim() || sourceSlug;
+    const { columns: sourceColumns } =
+      await loadBoardColumnAndSwimlaneDefsForSlug(sourceSlug);
+    const rows = await gatherPhysicalBoardCompletedAndArchiveRows(sourceSlug);
+    for (const row of rows) {
+      const sourceColumnIndex = row.columnIndex;
+      let columnIndex = row.columnIndex;
+      if (columnIndex != null) {
+        columnIndex = aggregateColumnIndexForSourceColumn(
+          columnIndex,
+          sourceColumns,
+          aggregateColumns
+        );
+      }
+      merged.push({
+        ...row,
+        columnIndex,
+        sourceColumnIndex,
+        swimlane: sourceName,
+        sourceBoardSlug: sourceSlug,
+        sourceBoardName: sourceName,
+      });
+    }
+  }
+
+  merged.sort((a, b) => {
+    if (b.sortMs !== a.sortMs) return b.sortMs - a.sortMs;
+    const af = `${a.sourceBoardSlug ?? ""}/${a.filename}`;
+    const bf = `${b.sourceBoardSlug ?? ""}/${b.filename}`;
+    return af.localeCompare(bf);
+  });
+  return merged;
+}
+
+/**
+ * @param {string} slug physical board slug (task folder)
+ */
+async function gatherPhysicalBoardCompletedAndArchiveRows(slug) {
   const { columns: columnsDef } = await loadBoardColumnAndSwimlaneDefsForSlug(
     slug
   );
@@ -351,6 +421,66 @@ export async function gatherCompletedAndArchiveRows(slug) {
  * @param {string} slug
  */
 export async function gatherColdStorageCardRows(slug) {
+  let model;
+  try {
+    model = await loadBoardModelForSlug(slug);
+  } catch {
+    model = null;
+  }
+  if (model && isAggregateBoard(model)) {
+    return gatherAggregateColdStorageCardRows(model);
+  }
+  return gatherPhysicalColdStorageCardRows(slug);
+}
+
+/**
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} model
+ */
+async function gatherAggregateColdStorageCardRows(model) {
+  const catalog = await loadBoardCatalog();
+  const aggregateColumns = standardAggregateColumns();
+  /** @type {object[]} */
+  const merged = [];
+
+  for (const src of model.sources ?? []) {
+    const sourceSlug = String(src.slug ?? "").trim();
+    if (!sourceSlug) continue;
+    const hit = catalog.find((b) => b.slug === sourceSlug);
+    const sourceName = hit?.name?.trim() || sourceSlug;
+    const { columns: sourceColumns } =
+      await loadBoardColumnAndSwimlaneDefsForSlug(sourceSlug);
+    const rows = await gatherPhysicalColdStorageCardRows(sourceSlug);
+    for (const row of rows) {
+      const sourceColumnIndex = row.columnIndex;
+      let columnIndex = row.columnIndex;
+      if (columnIndex != null) {
+        columnIndex = aggregateColumnIndexForSourceColumn(
+          columnIndex,
+          sourceColumns,
+          aggregateColumns
+        );
+      }
+      merged.push({
+        ...row,
+        columnIndex,
+        sourceColumnIndex,
+        swimlane: sourceName,
+        sourceBoardSlug: sourceSlug,
+        sourceBoardName: sourceName,
+      });
+    }
+  }
+
+  merged.sort((a, b) => {
+    if (b.sortMs !== a.sortMs) return b.sortMs - a.sortMs;
+    const af = `${a.sourceBoardSlug ?? ""}/${a.filename}`;
+    const bf = `${b.sourceBoardSlug ?? ""}/${b.filename}`;
+    return af.localeCompare(bf);
+  });
+  return merged;
+}
+
+async function gatherPhysicalColdStorageCardRows(slug) {
   const boardRoot = path.join(dataRoot(), "tasks", slug);
   const coldRoot = path.join(boardRoot, "cold-storage");
   /** @type {object[]} */
@@ -787,6 +917,53 @@ function utcDayStartMs(ms) {
  * @param {string} slug
  */
 export async function gatherOpenBoardRows(slug) {
+  let model;
+  try {
+    model = await loadBoardModelForSlug(slug);
+  } catch {
+    model = null;
+  }
+  if (model && isAggregateBoard(model)) {
+    return gatherAggregateOpenBoardRows(model);
+  }
+  return gatherPhysicalOpenBoardRows(slug);
+}
+
+/**
+ * @param {import("../assets/js/models/boardModel.js").BoardModel} model
+ */
+async function gatherAggregateOpenBoardRows(model) {
+  const catalog = await loadBoardCatalog();
+  const aggregateColumns = standardAggregateColumns();
+  /** @type {object[]} */
+  const merged = [];
+
+  for (const src of model.sources ?? []) {
+    const sourceSlug = String(src.slug ?? "").trim();
+    if (!sourceSlug) continue;
+    const hit = catalog.find((b) => b.slug === sourceSlug);
+    const sourceName = hit?.name?.trim() || sourceSlug;
+    const { columns: sourceColumns } =
+      await loadBoardColumnAndSwimlaneDefsForSlug(sourceSlug);
+    const rows = await gatherPhysicalOpenBoardRows(sourceSlug);
+    for (const row of rows) {
+      merged.push({
+        ...row,
+        columnIndex: aggregateColumnIndexForSourceColumn(
+          row.columnIndex,
+          sourceColumns,
+          aggregateColumns
+        ),
+        swimlane: sourceName,
+        sourceBoardSlug: sourceSlug,
+        sourceBoardName: sourceName,
+      });
+    }
+  }
+  return merged;
+}
+
+async function gatherPhysicalOpenBoardRows(slug) {
   const { columns: columnsDef } = await loadBoardColumnAndSwimlaneDefsForSlug(slug);
   const boardRoot = path.join(dataRoot(), "tasks", slug);
 

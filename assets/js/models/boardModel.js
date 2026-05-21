@@ -53,8 +53,9 @@ export function columnIsDone(col) {
  * @typedef {{ index: number, title: string, type: ColumnType, isDone?: boolean, wipLimit?: number }} ColumnDef
  * @typedef {{ index: number, title: string }} SwimlaneDef
  * @typedef {{ index: number, email: string, name: string, active?: boolean }} BoardUserDef
- * @typedef {{ name?: string, slug?: string }} BoardMeta
- * @typedef {{ board: BoardMeta, columns: ColumnDef[], swimlanes: SwimlaneDef[], users: BoardUserDef[] }} BoardModel
+ * @typedef {{ index: number, slug: string }} AggregateSourceDef
+ * @typedef {{ name?: string, slug?: string, kind?: string }} BoardMeta
+ * @typedef {{ board: BoardMeta, columns: ColumnDef[], swimlanes: SwimlaneDef[], users: BoardUserDef[], sources?: AggregateSourceDef[] }} BoardModel
  */
 
 /**
@@ -160,8 +161,17 @@ export function sectionsToBoardModel(sections) {
   const swimlanes = [];
   /** @type {BoardUserDef[]} */
   const users = [];
+  /** @type {AggregateSourceDef[]} */
+  const sources = [];
 
   for (const name of Object.keys(sections)) {
+    const src = name.match(/^sources\.(\d+)$/);
+    if (src) {
+      const idx = Number(src[1]);
+      const slug = String(sections[name].slug ?? "").trim();
+      if (slug) sources.push({ index: idx, slug });
+      continue;
+    }
     const col = name.match(/^columns\.(\d+)$/);
     if (col) {
       const idx = Number(col[1]);
@@ -232,8 +242,12 @@ export function sectionsToBoardModel(sections) {
   columns.sort((a, b) => a.index - b.index);
   swimlanes.sort((a, b) => a.index - b.index);
   users.sort((a, b) => a.index - b.index);
+  sources.sort((a, b) => a.index - b.index);
 
-  return { board, columns, swimlanes, users };
+  /** @type {BoardModel} */
+  const out = { board, columns, swimlanes, users };
+  if (sources.length > 0) out.sources = sources;
+  return out;
 }
 
 /**

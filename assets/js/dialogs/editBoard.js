@@ -3,6 +3,12 @@ import {
   parseBoardIni,
   validateExactlyOneDoneColumn,
 } from "../models/boardModel.js";
+import {
+  AGGREGATE_BOARD_KIND,
+  isAggregateBoard,
+  standardAggregateColumns,
+  validateAggregateBoard,
+} from "../models/aggregateBoard.js";
 import { serializeBoardIniFromModel } from "../ini/boardIni.js";
 import {
   createSortableBoardUserList,
@@ -165,30 +171,36 @@ async function openBoardGitHistoryNested(ctx) {
  * @param {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} colRows
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
+ * @param {string[]} [sourceSlugs]
  */
-function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
-  const columns = colRows.map((r, i) => {
-    const wip = r.wipLimit.trim();
-    let wipLimit = undefined;
-    if (wip !== "") {
-      const n = Number(wip);
-      if (Number.isFinite(n) && n >= 0) wipLimit = n;
-    }
-    const type = columnTypeOf({ type: r.type });
-    /** @type {import("../models/boardModel.js").ColumnDef} */
-    const c = {
-      index: i + 1,
-      title: r.title.trim() || `Column ${i + 1}`,
-      type,
-    };
-    if (wipLimit !== undefined) c.wipLimit = wipLimit;
-    if (type === "done") c.isDone = true;
-    return c;
-  });
-  const swimlanes = swimRows.map((r, i) => ({
-    index: i + 1,
-    title: r.title.trim() || `Lane ${i + 1}`,
-  }));
+function buildModel(initialModel, boardName, colRows, swimRows, userRows, sourceSlugs) {
+  const aggregate = isAggregateBoard(initialModel);
+  const columns = aggregate
+    ? standardAggregateColumns()
+    : colRows.map((r, i) => {
+        const wip = r.wipLimit.trim();
+        let wipLimit = undefined;
+        if (wip !== "") {
+          const n = Number(wip);
+          if (Number.isFinite(n) && n >= 0) wipLimit = n;
+        }
+        const type = columnTypeOf({ type: r.type });
+        /** @type {import("../models/boardModel.js").ColumnDef} */
+        const c = {
+          index: i + 1,
+          title: r.title.trim() || `Column ${i + 1}`,
+          type,
+        };
+        if (wipLimit !== undefined) c.wipLimit = wipLimit;
+        if (type === "done") c.isDone = true;
+        return c;
+      });
+  const swimlanes = aggregate
+    ? []
+    : swimRows.map((r, i) => ({
+        index: i + 1,
+        title: r.title.trim() || `Lane ${i + 1}`,
+      }));
   /** @type {import("../models/boardModel.js").BoardUserDef[]} */
   const users = [];
   let userIdx = 1;
@@ -207,15 +219,25 @@ function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
   delete rest.updateFrequency;
   delete rest.sync_mode;
   delete rest.syncMode;
+  /** @type {import("../models/boardModel.js").AggregateSourceDef[]} */
+  const sources = [];
+  if (aggregate) {
+    (sourceSlugs ?? []).forEach((slug, i) => {
+      const s = String(slug ?? "").trim();
+      if (s) sources.push({ index: i + 1, slug: s });
+    });
+  }
   return {
     board: {
       ...rest,
       name: boardName.trim(),
       slug: String(ib.slug ?? "").trim(),
+      kind: aggregate ? AGGREGATE_BOARD_KIND : rest.kind,
     },
     columns,
     swimlanes,
     users,
+    sources,
   };
 }
 
@@ -244,19 +266,32 @@ export async function openBoardEditorDialog(ctx) {
     return false;
   }
 
-  const colSeeds = [...(initialModel.columns ?? [])]
+  const aggregate = isAggregateBoard(initialModel);
+  const initialSourceSlugs = [...(initialModel.sources ?? [])]
     .sort((a, b) => a.index - b.index)
-    .map((c) => ({
-      title: c.title,
-      wipLimit:
-        c.wipLimit != null && Number.isFinite(Number(c.wipLimit))
-          ? String(Math.round(Number(c.wipLimit)))
-          : "",
-      type: columnTypeOf(c),
-    }));
-  const swimSeeds = [...(initialModel.swimlanes ?? [])]
-    .sort((a, b) => a.index - b.index)
-    .map((l) => ({ title: l.title }));
+    .map((s) => s.slug);
+
+  const colSeeds = aggregate
+    ? standardAggregateColumns().map((c) => ({
+        title: c.title,
+        wipLimit: "",
+        type: columnTypeOf(c),
+      }))
+    : [...(initialModel.columns ?? [])]
+        .sort((a, b) => a.index - b.index)
+        .map((c) => ({
+          title: c.title,
+          wipLimit:
+            c.wipLimit != null && Number.isFinite(Number(c.wipLimit))
+              ? String(Math.round(Number(c.wipLimit)))
+              : "",
+          type: columnTypeOf(c),
+        }));
+  const swimSeeds = aggregate
+    ? []
+    : [...(initialModel.swimlanes ?? [])]
+        .sort((a, b) => a.index - b.index)
+        .map((l) => ({ title: l.title }));
   const userSeeds = [...(initialModel.users ?? [])]
     .sort((a, b) => a.index - b.index)
     .map((u) => ({
@@ -316,24 +351,108 @@ export async function openBoardEditorDialog(ctx) {
   slugInput.value = ctx.boardSlug;
 
   const sortWrap = modal.querySelector(".flow-board-editor-sortables");
-  const colEditor = createSortableColumnList(
-    colSeeds.length ? colSeeds : [{ title: "Backlog", wipLimit: "", type: "in_progress" }]
-  );
-  const swimEditor = createSortableSwimlaneList(swimSeeds);
+  const colEditor = aggregate
+    ? null
+    : createSortableColumnList(
+        colSeeds.length
+          ? colSeeds
+          : [{ title: "Backlog", wipLimit: "", type: "in_progress" }]
+      );
+  const swimEditor = aggregate ? null : createSortableSwimlaneList(swimSeeds);
   const userEditor = createSortableBoardUserList(userSeeds);
-  sortWrap.append(colEditor.root, swimEditor.root, userEditor.root);
+
+  /** @type {HTMLFieldSetElement | null} */
+  let sourceFieldset = null;
+  /** @type {Map<string, HTMLInputElement>} */
+  const sourceCheckboxes = new Map();
+
+  if (aggregate) {
+    const intro = document.createElement("p");
+    intro.className = "flow-modal-context flow-aggregate-board-intro";
+    intro.textContent =
+      "Aggregate board — shows tasks from selected boards using standard columns (Options, To do, In progress, Waiting, Done). Cards are grouped by source board. No task folder is used.";
+    sortWrap.append(intro);
+
+    sourceFieldset = document.createElement("fieldset");
+    sourceFieldset.className = "flow-aggregate-sources";
+    const legend = document.createElement("legend");
+    legend.className = "flow-field-label";
+    legend.textContent = "Source boards";
+    sourceFieldset.append(legend);
+
+    const loading = document.createElement("p");
+    loading.className = "flow-aggregate-sources-loading";
+    loading.textContent = "Loading boards…";
+    sourceFieldset.append(loading);
+    sortWrap.append(sourceFieldset);
+
+    void (async () => {
+      /** @type {{ slug: string, name: string, kind?: string }[]} */
+      let catalog = [];
+      try {
+        const res = await fetch("/api/flow", { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (Array.isArray(data.boards)) catalog = data.boards;
+      } catch {
+        /* ignore */
+      }
+      loading.remove();
+      const choices = catalog.filter(
+        (b) =>
+          b.slug &&
+          b.slug !== ctx.boardSlug &&
+          String(b.kind ?? "").trim().toLowerCase() !== AGGREGATE_BOARD_KIND
+      );
+      if (choices.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "flow-aggregate-sources-empty";
+        empty.textContent = "No other boards available to include.";
+        sourceFieldset.append(empty);
+        return;
+      }
+      for (const b of choices) {
+        const label = document.createElement("label");
+        label.className = "flow-aggregate-source-option";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = b.slug;
+        cb.checked = initialSourceSlugs.includes(b.slug);
+        sourceCheckboxes.set(b.slug, cb);
+        label.append(cb, document.createTextNode(` ${b.name} (${b.slug})`));
+        sourceFieldset.append(label);
+      }
+    })();
+  }
+
+  if (colEditor) sortWrap.append(colEditor.root);
+  if (swimEditor) sortWrap.append(swimEditor.root);
+  sortWrap.append(userEditor.root);
+
+  function getSelectedSourceSlugs() {
+    /** @type {string[]} */
+    const out = [];
+    for (const [slug, cb] of sourceCheckboxes) {
+      if (cb.checked) out.push(slug);
+    }
+    return out;
+  }
 
   function snapshotDraft() {
     return JSON.stringify({
       boardName: String(nameInput.value ?? "").trim(),
-      columns: colEditor.getRows().map((r) => ({
-        title: String(r.title ?? "").trim(),
-        wipLimit: String(r.wipLimit ?? "").trim(),
-        type: columnTypeOf({ type: r.type }),
-      })),
-      swimlanes: swimEditor.getRows().map((r) => ({
-        title: String(r.title ?? "").trim(),
-      })),
+      columns: colEditor
+        ? colEditor.getRows().map((r) => ({
+            title: String(r.title ?? "").trim(),
+            wipLimit: String(r.wipLimit ?? "").trim(),
+            type: columnTypeOf({ type: r.type }),
+          }))
+        : [],
+      swimlanes: swimEditor
+        ? swimEditor.getRows().map((r) => ({
+            title: String(r.title ?? "").trim(),
+          }))
+        : [],
+      sources: aggregate ? getSelectedSourceSlugs() : [],
       users: userEditor.getRows().map((r) => ({
         email: String(r.email ?? "").trim(),
         name: String(r.name ?? "").trim(),
@@ -370,21 +489,30 @@ export async function openBoardEditorDialog(ctx) {
         return false;
       }
 
-      const colRows = colEditor.getRows();
-      if (colRows.length === 0) {
+      const colRows = colEditor ? colEditor.getRows() : [];
+      if (!aggregate && colRows.length === 0) {
         await showFlowAlert("Add at least one column.", { title: "Edit board" });
         return false;
       }
-      for (const r of colRows) {
-        if (!String(r.title ?? "").trim()) {
-          await showFlowAlert("Each column must have a title.", {
-            title: "Edit board",
-          });
-          return false;
+      if (!aggregate) {
+        for (const r of colRows) {
+          if (!String(r.title ?? "").trim()) {
+            await showFlowAlert("Each column must have a title.", {
+              title: "Edit board",
+            });
+            return false;
+          }
         }
       }
 
-      const swimRows = swimEditor.getRows();
+      const swimRows = swimEditor ? swimEditor.getRows() : [];
+      const sourceSlugs = aggregate ? getSelectedSourceSlugs() : [];
+      if (aggregate && sourceSlugs.length === 0) {
+        await showFlowAlert("Select at least one source board.", {
+          title: "Edit board",
+        });
+        return false;
+      }
       const rawUserRows = userEditor.getRows();
       const seenEmails = new Set();
       for (const r of rawUserRows) {
@@ -421,12 +549,29 @@ export async function openBoardEditorDialog(ctx) {
         boardName,
         colRows,
         swimRows,
-        rawUserRows
+        rawUserRows,
+        sourceSlugs
       );
       const doneErr = validateExactlyOneDoneColumn(model);
       if (doneErr) {
         await showFlowAlert(doneErr, { title: "Edit board" });
         return false;
+      }
+      if (aggregate) {
+        /** @type {{ slug: string, name: string, kind?: string }[]} */
+        let catalog = [];
+        try {
+          const res = await fetch("/api/flow", { cache: "no-store" });
+          const data = await res.json().catch(() => ({}));
+          if (Array.isArray(data.boards)) catalog = data.boards;
+        } catch {
+          /* ignore */
+        }
+        const aggErr = validateAggregateBoard(model, catalog);
+        if (aggErr) {
+          await showFlowAlert(aggErr, { title: "Edit board" });
+          return false;
+        }
       }
       const text = serializeBoardIniFromModel(model);
 

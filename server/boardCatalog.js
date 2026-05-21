@@ -14,6 +14,10 @@ import {
   parseBoardIni,
   parseColumnTypeRaw,
 } from "../assets/js/models/boardModel.js";
+import {
+  enrichAggregateBoardModel,
+  isAggregateBoard,
+} from "../assets/js/models/aggregateBoard.js";
 import { parseIni } from "../assets/js/ini/parseIni.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
 import {
@@ -124,11 +128,11 @@ export async function readBoardCatalogIniBasenames() {
 
 /**
  * Boards from `tasks/.millrace.ini` (`[millrace]` / legacy `[flow]` `boards =`) with parsed slug and display name.
- * @returns {Promise<{ file: string, slug: string, name: string }[]>}
+ * @returns {Promise<{ file: string, slug: string, name: string, kind?: string }[]>}
  */
 export async function loadBoardCatalog() {
   const files = await readBoardCatalogIniBasenames();
-  /** @type {{ file: string, slug: string, name: string }[]} */
+  /** @type {{ file: string, slug: string, name: string, kind?: string }[]} */
   const out = [];
   for (const file of files) {
     const base = path.basename(String(file ?? "").trim());
@@ -139,7 +143,8 @@ export async function loadBoardCatalog() {
       const m = parseBoardIni(iniText);
       const slug = boardSlugFromMeta(m.board);
       const name = m.board.name?.trim() || slug || "Board";
-      out.push({ file: base, slug, name });
+      const kind = String(m.board.kind ?? "").trim() || undefined;
+      out.push({ file: base, slug, name, kind });
     } catch {
       console.warn(`[millrace] board catalog lists ${base} but it could not be read`);
     }
@@ -184,6 +189,64 @@ type = done
 [swimlanes.1]
 title = Default
 `;
+}
+
+/**
+ * Default aggregate board INI (standard columns, optional source slugs).
+ * @param {string} displayName
+ * @param {string} slug
+ * @param {string[]} [sourceSlugs]
+ */
+export function defaultAggregateBoardIniText(displayName, slug, sourceSlugs = []) {
+  const nameLine = String(displayName ?? "").trim().replace(/\r?\n/g, " ");
+  const safeName = nameLine || slug;
+  const lines = [
+    "[board]",
+    `name = ${safeName}`,
+    `slug = ${slug}`,
+    "kind = aggregate",
+    "",
+  ];
+  const sources = (sourceSlugs ?? [])
+    .map((s) => sanitizeSegment(s))
+    .filter(Boolean);
+  if (sources.length > 0) {
+    lines.push(
+      "; Source boards whose open and completed tasks appear on this aggregate view."
+    );
+    for (let i = 0; i < sources.length; i++) {
+      lines.push(`[sources.${i + 1}]`, `slug = ${sources[i]}`, "");
+    }
+  }
+  lines.push(
+    "; Aggregate columns are fixed by workflow type (cards map from each source board)."
+  );
+  lines.push("[columns.1]", "title = Options", "type = options", "");
+  lines.push("[columns.2]", "title = To do", "type = to_do", "");
+  lines.push("[columns.3]", "title = In progress", "type = in_progress", "");
+  lines.push("[columns.4]", "title = Waiting", "type = waiting", "");
+  lines.push(
+    "[columns.5]",
+    "title = Done",
+    "type = done",
+    ""
+  );
+  return lines.join("\n");
+}
+
+export async function loadBoardModelForSlug(slug) {
+  const boardPath = await resolveBoardIniPathForSlug(slug);
+  const text = await fs.readFile(boardPath, "utf8");
+  return parseBoardIni(text.replace(/^\uFEFF/, ""));
+}
+
+export async function boardIsAggregate(slug) {
+  try {
+    const model = await loadBoardModelForSlug(slug);
+    return isAggregateBoard(model);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -294,6 +357,11 @@ export async function loadBoardColumnAndSwimlaneDefsForSlug(slug) {
     const boardPath = await resolveBoardIniPathForSlug(slug);
     const text = await fs.readFile(boardPath, "utf8");
     const m = parseBoardIni(text);
+    if (isAggregateBoard(m)) {
+      const catalog = await loadBoardCatalog();
+      const enriched = enrichAggregateBoardModel(m, catalog);
+      return { columns: enriched.columns, swimlanes: enriched.swimlanes };
+    }
     return { columns: m.columns, swimlanes: m.swimlanes };
   } catch {
     return { columns: [], swimlanes: [] };

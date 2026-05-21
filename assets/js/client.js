@@ -137,13 +137,21 @@ export async function updateBoardDefinition(payload) {
 
 /**
  * @param {string} name Display name for the new board
- * @returns {Promise<{ ok?: boolean, slug: string, name: string, file: string }>}
+ * @param {{ kind?: string, sources?: string[] }} [options]
+ * @returns {Promise<{ ok?: boolean, slug: string, name: string, file: string, kind?: string }>}
  */
-export async function createBoardDefinition(name) {
+export async function createBoardDefinition(name, options = {}) {
+  /** @type {{ name: string, kind?: string, sources?: string[] }} */
+  const body = { name };
+  const kind = String(options.kind ?? "").trim();
+  if (kind) body.kind = kind;
+  if (Array.isArray(options.sources) && options.sources.length > 0) {
+    body.sources = options.sources.map((s) => String(s ?? "").trim()).filter(Boolean);
+  }
   const res = await fetch("/api/board", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(body),
     ...NO_STORE,
   });
   const data = await res.json().catch(() => ({}));
@@ -160,6 +168,7 @@ export async function createBoardDefinition(name) {
     slug: String(data.slug ?? "").trim(),
     name: String(data.name ?? "").trim(),
     file: String(data.file ?? "").trim(),
+    kind: String(data.kind ?? "").trim() || undefined,
   };
 }
 

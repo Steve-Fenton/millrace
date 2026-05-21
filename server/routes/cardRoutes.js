@@ -17,6 +17,7 @@ import { summarizeCardIniDiff } from "../../assets/js/git/taskDiff.js";
 import { dataRoot } from "../dataRoot.js";
 import { ensureDir } from "../fsUtil.js";
 import {
+  boardIsAggregate,
   columnIndexFromTasksPath,
   columnSectionIsDone,
   laneIndexFromBody,
@@ -371,6 +372,12 @@ app.post("/api/cards", async (req, res) => {
     }
 
     const slug = sanitizeSegment(boardSlug || "board");
+    if (await boardIsAggregate(slug)) {
+      res.status(400).json({
+        message: "Cannot add cards on an aggregate board. Add cards on a source board.",
+      });
+      return;
+    }
     const col = Number(columnIndex);
     if (!Number.isInteger(col) || col < 1) {
       res.status(400).json({ message: "Invalid column index." });

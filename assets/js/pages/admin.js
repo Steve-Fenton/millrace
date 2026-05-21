@@ -152,6 +152,15 @@ function renderAddBoardRow(onCreated) {
   input.autocomplete = "off";
   input.maxLength = 120;
 
+  const aggregateLabel = document.createElement("label");
+  aggregateLabel.className = "admin-add-board__aggregate";
+  const aggregateCheckbox = document.createElement("input");
+  aggregateCheckbox.type = "checkbox";
+  aggregateCheckbox.id = "admin-new-board-aggregate";
+  aggregateCheckbox.className = "admin-add-board__aggregate-input";
+  aggregateLabel.htmlFor = "admin-new-board-aggregate";
+  aggregateLabel.append(aggregateCheckbox, document.createTextNode(" Aggregate board"));
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "admin-add-board__btn";
@@ -193,7 +202,9 @@ function renderAddBoardRow(onCreated) {
     status.hidden = true;
     setBusy(true);
     try {
-      const created = await createBoardDefinition(name);
+      const created = await createBoardDefinition(name, {
+        kind: aggregateCheckbox.checked ? "aggregate" : undefined,
+      });
       input.value = "";
       try {
         sessionStorage.setItem(
@@ -223,7 +234,7 @@ function renderAddBoardRow(onCreated) {
     }
   });
 
-  wrap.append(label, input, btn, status);
+  wrap.append(label, input, aggregateLabel, btn, status);
   return wrap;
 }
 

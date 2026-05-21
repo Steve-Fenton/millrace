@@ -8,6 +8,12 @@ import {
   userPreferenceSyncModeIsAutomatic,
 } from "./models/boardModel.js";
 import {
+  cardStorageBoardSlug,
+  enrichAggregateBoardModel,
+  isAggregateBoard,
+  sourceColumnIndexForAggregateViewColumn,
+} from "./models/aggregateBoard.js";
+import {
   fetchBoardIni,
   fetchColumnCards,
   fetchGitRepoAvailable,
@@ -159,7 +165,7 @@ const emptyFlowCtx = () => ({
   activeSlug: "board",
 });
 
-/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<number, "scroll" | "collapsed">> }} */
+/** @type {{ model: object | null, cardsByColumn: Map<number, object[]> | null, mineEmail: string, defaultCardOwner: string, flowCtx: ReturnType<typeof emptyFlowCtx> | null, pendingSync: boolean, syncMode: "automatic" | "manual", swimlaneCollapse: Record<string, Record<number, "scroll" | "collapsed">>, sourceColumnDefs: Map<string, import("./models/boardModel.js").ColumnDef[]>, sourceSwimlaneDefs: Map<string, import("./models/boardModel.js").SwimlaneDef[]> }} */
 let boardCache = {
   model: null,
   cardsByColumn: null,
@@ -169,6 +175,8 @@ let boardCache = {
   pendingSync: false,
   syncMode: "automatic",
   swimlaneCollapse: {},
+  sourceColumnDefs: new Map(),
+  sourceSwimlaneDefs: new Map(),
 };
 
 /** Set on full board load; used when re-rendering after owner filter only. */
@@ -289,6 +297,60 @@ function filenamesInCell(cardsByColumn, colIdx, laneIdx, swimlanes) {
 }
 
 /**
+ * @param {string} filename
+ * @param {number} colIdx
+ * @param {number} laneIdx
+ * @param {import("./models/boardModel.js").BoardModel} model
+ * @param {Map<number, object[]>} cardsByColumn
+ */
+function findCardInCache(filename, colIdx, laneIdx, model, cardsByColumn) {
+  const fn = String(filename).trim();
+  const cards = cardsByColumn.get(colIdx) ?? [];
+  for (const c of cards) {
+    if (String(c.filename ?? "").trim() !== fn) continue;
+    if (resolveCardSwimlaneIndex(c.swimlane, model.swimlanes ?? []) !== laneIdx) {
+      continue;
+    }
+    return c;
+  }
+  return null;
+}
+
+/**
+ * @param {object} card
+ * @param {string} sourceSlug
+ */
+function resolveSourceSwimlaneIndexForCard(card, sourceSlug) {
+  const sourceSwimlanes = boardCache.sourceSwimlaneDefs.get(sourceSlug) ?? [];
+  const raw =
+    card.sourceSwimlane != null && String(card.sourceSwimlane).trim()
+      ? card.sourceSwimlane
+      : card.swimlane;
+  return resolveCardSwimlaneIndex(raw, sourceSwimlanes);
+}
+
+/**
+ * @param {object} card
+ * @param {import("./models/boardModel.js").BoardModel} model
+ * @param {number} aggregateColumnIndex
+ * @returns {{ boardSlug: string, columnIndex: number | null, swimlaneIndex: number }}
+ */
+function cardMoveContextForAggregateColumn(card, model, aggregateColumnIndex) {
+  const boardSlug = cardStorageBoardSlug(card, boardSlugFrom(model.board ?? {}), model);
+  const columnIndex = sourceColumnIndexForAggregateViewColumn(
+    card,
+    model,
+    boardCache.sourceColumnDefs,
+    aggregateColumnIndex
+  );
+  return {
+    boardSlug,
+    columnIndex,
+    swimlaneIndex: resolveSourceSwimlaneIndexForCard(card, boardSlug),
+  };
+}
+
+/**
  * Move or reorder a card from arrow controls (same semantics as drag: column move + lane reorder).
  * @param {'up' | 'down' | 'left' | 'right'} direction
  * @param {{ boardSlug: string, filename: string, columnIndex: number, swimlaneIndex: number }} cardCtx
@@ -298,11 +360,13 @@ async function performCardNudge(direction, cardCtx) {
   const model = boardCache.model;
   if (!cache || !model) return;
 
-  const { boardSlug, filename, columnIndex, swimlaneIndex } = cardCtx;
+  const { boardSlug: viewBoardSlug, filename, columnIndex, swimlaneIndex } = cardCtx;
   const fn = String(filename).trim();
   const colIdx = Number(columnIndex);
   const laneIdx = Number(swimlaneIndex);
   const swimlanesDef = model.swimlanes ?? [];
+  const aggregate = isAggregateBoard(model);
+  const card = findCardInCache(fn, colIdx, laneIdx, model, cache);
 
   const sortedCols = [...model.columns].sort((a, b) => a.index - b.index);
   const laneDefs =
@@ -313,9 +377,23 @@ async function performCardNudge(direction, cardCtx) {
   if (direction === "left") {
     const ix = sortedCols.findIndex((c) => Number(c.index) === colIdx);
     if (ix <= 0) return;
-    const toCol = Number(sortedCols[ix - 1].index);
+    const toAggCol = Number(sortedCols[ix - 1].index);
+    if (aggregate && card) {
+      const fromCtx = cardMoveContextForAggregateColumn(card, model, colIdx);
+      const toCol = cardMoveContextForAggregateColumn(card, model, toAggCol).columnIndex;
+      if (fromCtx.columnIndex == null || toCol == null) return;
+      await moveCard({
+        boardSlug: fromCtx.boardSlug,
+        filename: fn,
+        fromColumnIndex: fromCtx.columnIndex,
+        toColumnIndex: toCol,
+        swimlaneIndex: fromCtx.swimlaneIndex,
+      });
+      return;
+    }
+    const toCol = toAggCol;
     await moveCard({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       filename: fn,
       fromColumnIndex: colIdx,
       toColumnIndex: toCol,
@@ -327,9 +405,23 @@ async function performCardNudge(direction, cardCtx) {
   if (direction === "right") {
     const ix = sortedCols.findIndex((c) => Number(c.index) === colIdx);
     if (ix < 0 || ix >= sortedCols.length - 1) return;
-    const toCol = Number(sortedCols[ix + 1].index);
+    const toAggCol = Number(sortedCols[ix + 1].index);
+    if (aggregate && card) {
+      const fromCtx = cardMoveContextForAggregateColumn(card, model, colIdx);
+      const toCol = cardMoveContextForAggregateColumn(card, model, toAggCol).columnIndex;
+      if (fromCtx.columnIndex == null || toCol == null) return;
+      await moveCard({
+        boardSlug: fromCtx.boardSlug,
+        filename: fn,
+        fromColumnIndex: fromCtx.columnIndex,
+        toColumnIndex: toCol,
+        swimlaneIndex: fromCtx.swimlaneIndex,
+      });
+      return;
+    }
+    const toCol = toAggCol;
     await moveCard({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       filename: fn,
       fromColumnIndex: colIdx,
       toColumnIndex: toCol,
@@ -345,19 +437,31 @@ async function performCardNudge(direction, cardCtx) {
     if (pos > 0) {
       const newOrder = [...peers];
       [newOrder[pos - 1], newOrder[pos]] = [newOrder[pos], newOrder[pos - 1]];
+      if (aggregate && card) {
+        const ctx = cardMoveContextForAggregateColumn(card, model, colIdx);
+        if (ctx.columnIndex == null) return;
+        await reorderCards({
+          boardSlug: ctx.boardSlug,
+          columnIndex: ctx.columnIndex,
+          swimlaneIndex: ctx.swimlaneIndex,
+          filenames: newOrder,
+        });
+        return;
+      }
       await reorderCards({
-        boardSlug,
+        boardSlug: viewBoardSlug,
         columnIndex: colIdx,
         swimlaneIndex: laneIdx,
         filenames: newOrder,
       });
       return;
     }
+    if (aggregate) return;
     const lix = laneDefs.findIndex((l) => Number(l.index) === laneIdx);
     if (lix <= 0) return;
     const prevLane = Number(laneDefs[lix - 1].index);
     await moveCard({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       filename: fn,
       fromColumnIndex: colIdx,
       toColumnIndex: colIdx,
@@ -367,7 +471,7 @@ async function performCardNudge(direction, cardCtx) {
       (f) => f !== fn
     );
     await reorderCards({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       columnIndex: colIdx,
       swimlaneIndex: prevLane,
       filenames: [...destPeers, fn],
@@ -382,19 +486,31 @@ async function performCardNudge(direction, cardCtx) {
     if (pos < peers.length - 1) {
       const newOrder = [...peers];
       [newOrder[pos], newOrder[pos + 1]] = [newOrder[pos + 1], newOrder[pos]];
+      if (aggregate && card) {
+        const ctx = cardMoveContextForAggregateColumn(card, model, colIdx);
+        if (ctx.columnIndex == null) return;
+        await reorderCards({
+          boardSlug: ctx.boardSlug,
+          columnIndex: ctx.columnIndex,
+          swimlaneIndex: ctx.swimlaneIndex,
+          filenames: newOrder,
+        });
+        return;
+      }
       await reorderCards({
-        boardSlug,
+        boardSlug: viewBoardSlug,
         columnIndex: colIdx,
         swimlaneIndex: laneIdx,
         filenames: newOrder,
       });
       return;
     }
+    if (aggregate) return;
     const lix = laneDefs.findIndex((l) => Number(l.index) === laneIdx);
     if (lix < 0 || lix >= laneDefs.length - 1) return;
     const nextLane = Number(laneDefs[lix + 1].index);
     await moveCard({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       filename: fn,
       fromColumnIndex: colIdx,
       toColumnIndex: colIdx,
@@ -404,7 +520,7 @@ async function performCardNudge(direction, cardCtx) {
       (f) => f !== fn
     );
     await reorderCards({
-      boardSlug,
+      boardSlug: viewBoardSlug,
       columnIndex: colIdx,
       swimlaneIndex: nextLane,
       filenames: [fn, ...destPeers],
@@ -691,6 +807,7 @@ function renderBoard(
   const name = board.name?.trim() || "Board";
   setFlowDocumentTitle("Board", name);
   const boardSlug = boardSlugFrom(board);
+  const aggregate = isAggregateBoard(model);
 
   let compassPersistMatched = false;
 
@@ -866,7 +983,7 @@ function renderBoard(
 
   const badge = document.createElement("span");
   badge.className = "board-badge";
-  badge.textContent = "Kanban";
+  badge.textContent = aggregate ? "Aggregate" : "Kanban";
 
   const navMenu = createFlowNavMenu({ current: "board" });
 
@@ -1106,8 +1223,8 @@ function renderBoard(
           editBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             void openCardEditorDialog({
-              boardSlug,
-              columnIndex: col.index,
+              boardSlug: cardStorageBoardSlug(card, boardSlug, model),
+              columnIndex: Number(card.sourceColumnIndex ?? col.index),
               filename: fn,
               columnTitle: col.title,
               swimlaneIndex: Number(lane.index),
@@ -1218,10 +1335,12 @@ function renderBoard(
           const canLeft = colPos > 0;
           const canRight =
             colPos >= 0 && colPos < sortedColsForNudge.length - 1;
-          const canUp = posInLane > 0 || lanePos > 0;
+          const canUp = posInLane > 0 || (!aggregate && lanePos > 0);
           const canDown =
             (posInLane >= 0 && posInLane < peersFull.length - 1) ||
-            (lanePos >= 0 && lanePos < sortedLanesForNudge.length - 1);
+            (!aggregate &&
+              lanePos >= 0 &&
+              lanePos < sortedLanesForNudge.length - 1);
 
           const compass = document.createElement("div");
           compass.className = "column-card-compass";
@@ -1319,6 +1438,7 @@ function renderBoard(
             }
             const payload = JSON.stringify({
               boardSlug,
+              sourceBoardSlug: card.sourceBoardSlug,
               filename: fn,
               fromColumnIndex: Number(col.index),
               fromSwimlaneIndex: Number(lane.index),
@@ -1357,6 +1477,12 @@ function renderBoard(
           boardUsers: model.users,
         });
       });
+
+      addBtn.hidden = aggregate;
+      if (aggregate) {
+        addBtn.disabled = true;
+        addBtn.title = "Add cards on the source board";
+      }
 
       body.append(list);
       if (doneLaneTruncated) {
@@ -1472,12 +1598,34 @@ function renderBoard(
           }
           void (async () => {
             try {
-              await reorderCards({
-                boardSlug,
-                columnIndex: toCol,
-                swimlaneIndex: toLane,
-                filenames: newOrder,
-              });
+              const card = findCardInCache(
+                data.filename,
+                toCol,
+                toLane,
+                boardCache.model,
+                boardCache.cardsByColumn
+              );
+              if (aggregate && card) {
+                const ctx = cardMoveContextForAggregateColumn(
+                  card,
+                  boardCache.model,
+                  toCol
+                );
+                if (ctx.columnIndex == null) return;
+                await reorderCards({
+                  boardSlug: ctx.boardSlug,
+                  columnIndex: ctx.columnIndex,
+                  swimlaneIndex: ctx.swimlaneIndex,
+                  filenames: newOrder,
+                });
+              } else {
+                await reorderCards({
+                  boardSlug,
+                  columnIndex: toCol,
+                  swimlaneIndex: toLane,
+                  filenames: newOrder,
+                });
+              }
               document.dispatchEvent(new CustomEvent("flow:refresh-board"));
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
@@ -1487,15 +1635,45 @@ function renderBoard(
           return;
         }
 
+        if (aggregate && fromLane !== toLane) return;
+
         void (async () => {
           try {
-            await moveCard({
-              boardSlug,
-              filename: data.filename,
-              fromColumnIndex: fromCol,
-              toColumnIndex: toCol,
-              swimlaneIndex: toLane,
-            });
+            const card = findCardInCache(
+              data.filename,
+              fromCol,
+              fromLane,
+              boardCache.model,
+              boardCache.cardsByColumn
+            );
+            if (aggregate && card) {
+              const fromCtx = cardMoveContextForAggregateColumn(
+                card,
+                boardCache.model,
+                fromCol
+              );
+              const toColSource = cardMoveContextForAggregateColumn(
+                card,
+                boardCache.model,
+                toCol
+              ).columnIndex;
+              if (fromCtx.columnIndex == null || toColSource == null) return;
+              await moveCard({
+                boardSlug: fromCtx.boardSlug,
+                filename: data.filename,
+                fromColumnIndex: fromCtx.columnIndex,
+                toColumnIndex: toColSource,
+                swimlaneIndex: fromCtx.swimlaneIndex,
+              });
+            } else {
+              await moveCard({
+                boardSlug,
+                filename: data.filename,
+                fromColumnIndex: fromCol,
+                toColumnIndex: toCol,
+                swimlaneIndex: toLane,
+              });
+            }
             if (
               ownerFilter.mode === "all" &&
               !normalizeSearchQuery(boardCardSearch) &&
@@ -1524,12 +1702,28 @@ function renderBoard(
                   data.filename,
                   ...destPeers.slice(insertBeforeIdx),
                 ];
-                await reorderCards({
-                  boardSlug,
-                  columnIndex: toCol,
-                  swimlaneIndex: toLane,
-                  filenames: newOrder,
-                });
+                if (aggregate && card) {
+                  const ctx = cardMoveContextForAggregateColumn(
+                    card,
+                    boardCache.model,
+                    toCol
+                  );
+                  if (ctx.columnIndex != null) {
+                    await reorderCards({
+                      boardSlug: ctx.boardSlug,
+                      columnIndex: ctx.columnIndex,
+                      swimlaneIndex: ctx.swimlaneIndex,
+                      filenames: newOrder,
+                    });
+                  }
+                } else {
+                  await reorderCards({
+                    boardSlug,
+                    columnIndex: toCol,
+                    swimlaneIndex: toLane,
+                    filenames: newOrder,
+                  });
+                }
               }
             }
             document.dispatchEvent(new CustomEvent("flow:refresh-board"));
@@ -1643,7 +1837,25 @@ async function loadApp(fullReload = true) {
     const { boards, activeSlug } = await resolveActiveBoardSelection();
     const flowCtx = { boards, activeSlug };
     const text = await fetchBoardIni(activeSlug);
-    const model = parseBoardIni(text);
+    let model = parseBoardIni(text);
+    /** @type {Map<string, import("./models/boardModel.js").ColumnDef[]>} */
+    const sourceColumnDefs = new Map();
+    /** @type {Map<string, import("./models/boardModel.js").SwimlaneDef[]>} */
+    const sourceSwimlaneDefs = new Map();
+
+    if (isAggregateBoard(model)) {
+      model = enrichAggregateBoardModel(model, boards);
+      await Promise.all(
+        (model.sources ?? []).map(async (src) => {
+          const slug = String(src.slug ?? "").trim();
+          if (!slug) return;
+          const srcText = await fetchBoardIni(slug);
+          const srcModel = parseBoardIni(srcText);
+          sourceColumnDefs.set(slug, srcModel.columns ?? []);
+          sourceSwimlaneDefs.set(slug, srcModel.swimlanes ?? []);
+        })
+      );
+    }
 
     if (model.columns.length === 0) {
       mount.innerHTML = `<div class="app-error">No columns found in board.ini.</div>`;
@@ -1687,6 +1899,8 @@ async function loadApp(fullReload = true) {
       pendingSync,
       syncMode,
       swimlaneCollapse,
+      sourceColumnDefs,
+      sourceSwimlaneDefs,
     };
 
     applyStoredOwnerFilter();

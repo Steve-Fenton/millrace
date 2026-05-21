@@ -5,6 +5,10 @@ import {
   parseBoardIni,
   validateExactlyOneDoneColumn,
 } from "../../assets/js/models/boardModel.js";
+import {
+  isAggregateBoard,
+  validateAggregateBoard,
+} from "../../assets/js/models/aggregateBoard.js";
 import { summarizeBoardIniDiff } from "../../assets/js/git/boardDiff.js";
 import { BOARD_CATALOG_SECTION } from "../constants.js";
 import { boardCatalogIniPath, dataRoot, isBoardCatalogIniSection } from "../dataRoot.js";
@@ -12,6 +16,7 @@ import {
   allocateNewBoardSlugAndFile,
   appendBoardCatalogEntry,
   boardSlugFromMeta,
+  defaultAggregateBoardIniText,
   defaultNewBoardIniText,
   loadBoardCatalog,
   resolveBoardIniPathForSlug,
@@ -65,8 +70,21 @@ app.post("/api/board", async (req, res) => {
       return;
     }
 
+    const kindRaw = String(req.body?.kind ?? "").trim().toLowerCase();
+    const isAggregate = kindRaw === "aggregate";
+    /** @type {string[]} */
+    const sourceSlugs = [];
+    if (Array.isArray(req.body?.sources)) {
+      for (const s of req.body.sources) {
+        const slug = String(s ?? "").trim();
+        if (slug) sourceSlugs.push(slug);
+      }
+    }
+
     const { slug, file } = await allocateNewBoardSlugAndFile(displayName);
-    const iniText = defaultNewBoardIniText(displayName, slug);
+    const iniText = isAggregate
+      ? defaultAggregateBoardIniText(displayName, slug, sourceSlugs)
+      : defaultNewBoardIniText(displayName, slug);
     let model;
     try {
       model = parseBoardIni(iniText.replace(/^\uFEFF/, ""));
@@ -79,6 +97,17 @@ app.post("/api/board", async (req, res) => {
     if (!model.columns?.length) {
       res.status(500).json({ message: "Generated board has no columns." });
       return;
+    }
+
+    if (isAggregate) {
+      const catalog = await loadBoardCatalog();
+      const aggErr = validateAggregateBoard(model, catalog, {
+        requireSources: false,
+      });
+      if (aggErr) {
+        res.status(400).json({ message: aggErr });
+        return;
+      }
     }
 
     const tasksDir = path.join(dataRoot(), "tasks");
@@ -95,8 +124,10 @@ app.post("/api/board", async (req, res) => {
       throw e;
     }
 
-    const boardRoot = path.join(tasksDir, slug);
-    await ensureDir(boardRoot);
+    if (!isAggregate) {
+      const boardRoot = path.join(tasksDir, slug);
+      await ensureDir(boardRoot);
+    }
 
     await markDataRootPendingSync();
     res.json({
@@ -104,6 +135,7 @@ app.post("/api/board", async (req, res) => {
       slug,
       name: model.board.name?.trim() || displayName,
       file,
+      kind: isAggregate ? "aggregate" : undefined,
     });
   } catch (e) {
     console.error(e);
@@ -142,6 +174,15 @@ app.put("/api/board-definition", async (req, res) => {
       return;
     }
 
+    if (isAggregateBoard(newModel)) {
+      const catalog = await loadBoardCatalog();
+      const aggErr = validateAggregateBoard(newModel, catalog);
+      if (aggErr) {
+        res.status(400).json({ message: aggErr });
+        return;
+      }
+    }
+
     const boardPath = await resolveBoardIniPathForSlug(slug);
     let oldText = "";
     try {
@@ -166,7 +207,7 @@ app.put("/api/board-definition", async (req, res) => {
       return;
     }
 
-    if (!isPureColumnSwimlaneReorderForTasks(oldModel, newModel)) {
+    if (!isAggregateBoard(newModel) && !isPureColumnSwimlaneReorderForTasks(oldModel, newModel)) {
       await syncTaskFilesToNewBoardModel(slug, oldModel, newModel);
     }
 
