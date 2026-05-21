@@ -35,7 +35,7 @@ Along the top:
 
 Along the bottom:
 
-- **Delete**: Deletes the card (after double-checking with you) 
+- **Delete**: Deletes the card (after double-checking with you).
 
 ### Useful card features
 
@@ -55,3 +55,18 @@ If you have chosen to manually sync, press the **Sync** button to share your cha
 > If you have any merge conflicts, you'll be taken to a resolution view that will help you resolve them. If you are using auto-sync, this will rarely happen. Work in small batches. Sync often.
 
 [← Millrace documentation](../index.md)
+
+## Aggregate boards
+
+An **aggregate board** combines open tasks from several normal boards into one view. Use it when you want a single place to see work spread across teams or streams, without copying cards.
+
+On an aggregate board:
+
+- **Columns** are always the five standard types (Options, To do, In progress, Waiting, Done). A card appears in the column whose type matches its column on the **source** board. For example, a card in a source board's "Doing" column which has the column type *In progress* shows under *In progress* on the aggregate board.
+- **Swimlanes** are one row per source board (labelled with each board's name), so you can see which board a card belongs to.
+- **Adding cards** is not available on an aggregate board; create or edit cards on the source board instead.
+- **Moving cards** (drag-and-drop or the navigation control) updates the card on its source board. You can move cards between columns and reorder within a swimlane; you cannot move a card to a different source board's swimlane.
+
+The badge in the header reads **Aggregate** instead of **Kanban**. **Completed** and **Charts** work the same way for aggregate boards, with data merged from all selected sources.
+
+Set up an aggregate board from [Admin](../admin/index.md) (tick **Aggregate board** when adding, then **Edit** to choose source boards).

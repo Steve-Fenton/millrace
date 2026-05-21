@@ -1457,33 +1457,6 @@ function renderBoard(
         list.append(li);
       }
 
-      const addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "column-add";
-      addBtn.setAttribute(
-        "aria-label",
-        `Add card to ${col.title}`
-      );
-      addBtn.title = "Add card";
-      addBtn.innerHTML = ADD_ICON;
-
-      addBtn.addEventListener("click", () => {
-        openAddCardDialog({
-          boardSlug,
-          columnIndex: col.index,
-          columnTitle: col.title,
-          swimlaneIndex: lane.index,
-          swimlaneTitle: lane.title || undefined,
-          boardUsers: model.users,
-        });
-      });
-
-      addBtn.hidden = aggregate;
-      if (aggregate) {
-        addBtn.disabled = true;
-        addBtn.title = "Add cards on the source board";
-      }
-
       body.append(list);
       if (doneLaneTruncated) {
         const note = document.createElement("p");
@@ -1500,7 +1473,28 @@ function renderBoard(
         note.append(completedLink);
         body.append(note);
       }
-      body.append(addBtn);
+      if (!aggregate) {
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "column-add";
+        addBtn.setAttribute(
+          "aria-label",
+          `Add card to ${col.title}`
+        );
+        addBtn.title = "Add card";
+        addBtn.innerHTML = ADD_ICON;
+        addBtn.addEventListener("click", () => {
+          openAddCardDialog({
+            boardSlug,
+            columnIndex: col.index,
+            columnTitle: col.title,
+            swimlaneIndex: lane.index,
+            swimlaneTitle: lane.title || undefined,
+            boardUsers: model.users,
+          });
+        });
+        body.append(addBtn);
+      }
       cell.append(body);
 
       cell.addEventListener("dragover", (e) => {
