@@ -306,6 +306,18 @@ created = 2024-01-02T00:00:00.000Z
 `,
         "utf8"
       );
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-agg-done.ini"),
+        `[item]
+id = FLOW-agg-done
+title = Done On Test
+column = Done
+closed = ${new Date().toISOString()}
+sort_order = 10
+created = 2024-01-01T00:00:00.000Z
+`,
+        "utf8"
+      );
       break;
     }
     case "charts": {

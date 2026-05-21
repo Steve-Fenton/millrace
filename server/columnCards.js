@@ -22,7 +22,7 @@ import {
  * @param {import("../assets/js/models/boardModel.js").SwimlaneDef[]} swimlanesDef
  * @returns {Promise<object[]>}
  */
-async function readOpenCardsForBoard(slug, columnsDef, swimlanesDef) {
+async function readBoardCardsForSource(slug, columnsDef, swimlanesDef) {
   const boardRoot = path.join(dataRoot(), "tasks", slug);
   /** @type {object[]} */
   const cards = [];
@@ -41,7 +41,6 @@ async function readOpenCardsForBoard(slug, columnsDef, swimlanesDef) {
       }
       try {
         const parsed = parseTaskCardIni(raw);
-        if (parsed.closed && String(parsed.closed).trim()) continue;
         cards.push({
           filename: ent.name,
           ...parsed,
@@ -74,7 +73,6 @@ async function readOpenCardsForBoard(slug, columnsDef, swimlanesDef) {
         }
         try {
           const parsed = parseTaskCardIni(raw);
-          if (parsed.closed && String(parsed.closed).trim()) continue;
           cards.push({
             filename: leg.name,
             ...parsed,
@@ -126,12 +124,12 @@ async function loadAggregateColumnCards(aggregateSlug, col) {
     const sourceName = hit?.name?.trim() || sourceSlug;
     const { columns: sourceColumns, swimlanes: sourceSwimlanes } =
       await loadBoardColumnAndSwimlaneDefsForSlug(sourceSlug);
-    const openCards = await readOpenCardsForBoard(
+    const sourceCards = await readBoardCardsForSource(
       sourceSlug,
       sourceColumns,
       sourceSwimlanes
     );
-    for (const card of openCards) {
+    for (const card of sourceCards) {
       const sourceCol = resolveCardColumnIndex(card.column, sourceColumns);
       const aggCol = aggregateColumnIndexForSourceColumn(
         sourceCol,

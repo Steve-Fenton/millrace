@@ -34,6 +34,14 @@ Feature: Aggregate board API
     And the first card in "cards" should have title "Doing On Other"
     And the first card in "cards" should have field "sourceBoardSlug" equal to "other"
 
+  Scenario: aggregate done column includes recently closed cards from sources
+    Given the Millrace integration server has profile "aggregate-board"
+    When I fetch JSON from "/api/column-cards?boardSlug=all&columnIndex=5"
+    Then the response status should be 200
+    And the JSON at "cards" should be a non-empty array
+    And the first card in "cards" should have title "Done On Test"
+    And the first card in "cards" should have field "sourceBoardSlug" equal to "test"
+
   Scenario: POST cards rejects aggregate boards
     Given the Millrace integration server has profile "aggregate-board"
     When I send a POST request to "/api/cards" with JSON body:
