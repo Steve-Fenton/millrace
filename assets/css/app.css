@@ -10,7 +10,6 @@
   --text: #fafafa;
   --text-muted: #a1a1aa;
   --accent: #38bdf8;
-  --accent-dim: rgba(56, 189, 248, 0.12);
   --accent-hover: #7dd3fc;
   --error: #f87171;
   --error-soft: #fca5a5;
@@ -25,81 +24,59 @@
   --overlay-accent-panel: rgba(30, 58, 95, 0.95);
   --overlay-border-muted: rgba(148, 163, 184, 0.45);
 
-  --elevated-a22: rgba(39, 39, 42, 0.22);
-  --elevated-a25: rgba(39, 39, 42, 0.25);
-  --elevated-a35: rgba(39, 39, 42, 0.35);
-  --elevated-a45: rgba(39, 39, 42, 0.45);
-  --surface-a35: rgba(24, 24, 27, 0.35);
-  --surface-a45: rgba(24, 24, 27, 0.45);
-  --surface-a50: rgba(24, 24, 27, 0.5);
+  --accent-dim: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-subtle: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-muted: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-medium: color-mix(in srgb, var(--accent) 35%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-border-strong: color-mix(in srgb, var(--accent) 55%, transparent);
+  --accent-emphasis: color-mix(in srgb, var(--accent) 65%, transparent);
+  --accent-solid: color-mix(in srgb, var(--accent) 85%, transparent);
 
-  --white-a02: rgba(255, 255, 255, 0.02);
-  --white-a03: rgba(255, 255, 255, 0.03);
-  --white-a06: rgba(255, 255, 255, 0.06);
-  --white-a10: rgba(255, 255, 255, 0.1);
-  --white-a12: rgba(255, 255, 255, 0.12);
-  --text-a55: rgba(250, 250, 250, 0.55);
+  --error-subtle: color-mix(in srgb, var(--error) 8%, transparent);
+  --error-dim: color-mix(in srgb, var(--error) 12%, transparent);
+  --error-muted: color-mix(in srgb, var(--error) 25%, transparent);
+  --error-border: color-mix(in srgb, var(--error) 35%, transparent);
+  --error-border-strong: color-mix(in srgb, var(--error) 45%, transparent);
+  --error-emphasis: color-mix(in srgb, var(--error) 55%, transparent);
+  --error-strong: color-mix(in srgb, var(--error) 65%, transparent);
 
-  --black-a28: rgba(0, 0, 0, 0.28);
-  --black-a35: rgba(0, 0, 0, 0.35);
-  --black-a38: rgba(0, 0, 0, 0.38);
-  --black-a42: rgba(0, 0, 0, 0.42);
-  --black-a45: rgba(0, 0, 0, 0.45);
-  --black-a55: rgba(0, 0, 0, 0.55);
+  --elevated-overlay: color-mix(in srgb, var(--elevated) 35%, transparent);
+  --surface-overlay: color-mix(in srgb, var(--surface) 45%, transparent);
 
-  --accent-a06: rgba(56, 189, 248, 0.06);
-  --accent-a08: rgba(56, 189, 248, 0.08);
-  --accent-a10: rgba(56, 189, 248, 0.1);
-  --accent-a15: rgba(56, 189, 248, 0.15);
-  --accent-a20: rgba(56, 189, 248, 0.2);
-  --accent-a22: rgba(56, 189, 248, 0.22);
-  --accent-a25: rgba(56, 189, 248, 0.25);
-  --accent-a32: rgba(56, 189, 248, 0.32);
-  --accent-a35: rgba(56, 189, 248, 0.35);
-  --accent-a45: rgba(56, 189, 248, 0.45);
-  --accent-a55: rgba(56, 189, 248, 0.55);
-  --accent-a65: rgba(56, 189, 248, 0.65);
-  --accent-a85: rgba(56, 189, 248, 0.85);
-  --accent-a90: rgba(56, 189, 248, 0.9);
+  --white-subtle: color-mix(in srgb, var(--text) 3%, transparent);
+  --white-muted: color-mix(in srgb, var(--text) 6%, transparent);
+  --white-border: color-mix(in srgb, var(--text) 12%, transparent);
+  --text-muted-overlay: color-mix(in srgb, var(--text) 55%, transparent);
 
-  --error-a07: rgba(248, 113, 113, 0.07);
-  --error-a10: rgba(248, 113, 113, 0.1);
-  --error-a12: rgba(248, 113, 113, 0.12);
-  --error-a14: rgba(248, 113, 113, 0.14);
-  --error-a18: rgba(248, 113, 113, 0.18);
-  --error-a25: rgba(248, 113, 113, 0.25);
-  --error-a28: rgba(248, 113, 113, 0.28);
-  --error-a35: rgba(248, 113, 113, 0.35);
-  --error-a45: rgba(248, 113, 113, 0.45);
-  --error-a55: rgba(248, 113, 113, 0.55);
-  --error-a65: rgba(248, 113, 113, 0.65);
+  --black-shadow-light: color-mix(in srgb, black 28%, transparent);
+  --black-shadow: color-mix(in srgb, black 35%, transparent);
+  --black-shadow-deep: color-mix(in srgb, black 42%, transparent);
+  --black-overlay: color-mix(in srgb, black 55%, transparent);
 
-  --purple-a10: rgba(167, 139, 250, 0.1);
-  --purple-a12: rgba(167, 139, 250, 0.12);
-  --purple-a35: rgba(167, 139, 250, 0.35);
-  --purple-a45: rgba(167, 139, 250, 0.45);
-  --purple-fill-a35: rgba(196, 181, 253, 0.35);
-  --purple-fill-a55: rgba(196, 181, 253, 0.55);
+  --purple-dim: color-mix(in srgb, var(--purple) 12%, transparent);
+  --purple-medium: color-mix(in srgb, var(--purple) 35%, transparent);
+  --purple-border: color-mix(in srgb, var(--purple) 45%, transparent);
+  --purple-fill-strong: color-mix(in srgb, var(--purple) 55%, transparent);
 
-  --blue-soft-a12: rgba(147, 197, 253, 0.12);
-  --blue-soft-a40: rgba(147, 197, 253, 0.4);
+  --blue-soft-dim: color-mix(in srgb, var(--blue-soft) 12%, transparent);
+  --blue-soft-border: color-mix(in srgb, var(--blue-soft) 40%, transparent);
 
-  --shadow-dock: 0 3px 14px var(--black-a45);
-  --shadow-dropdown: 0 8px 28px var(--black-a28);
-  --shadow-popover: 0 8px 24px var(--black-a35);
-  --shadow-modal-panel: 0 24px 48px var(--black-a35);
-  --shadow-accent-ring: 0 0 0 1px var(--accent-a20);
+  --shadow-dock: 0 3px 14px var(--black-shadow);
+  --shadow-dropdown: 0 8px 28px var(--black-shadow-light);
+  --shadow-popover: 0 8px 24px var(--black-shadow);
+  --shadow-modal-panel: 0 24px 48px var(--black-shadow);
+  --shadow-accent-ring: 0 0 0 1px var(--accent-muted);
   --shadow-accent-glow:
-    0 0 0 2px var(--accent-a45),
-    0 0 18px var(--accent-a45);
-  --shadow-error-inset-soft: inset 0 1px 0 var(--error-a07);
-  --shadow-error-inset: inset 0 1px 0 var(--error-a10);
-  --shadow: 0 4px 24px var(--black-a35);
+    0 0 0 2px var(--accent-border),
+    0 0 18px var(--accent-border);
+  --shadow-error-inset: inset 0 1px 0 var(--error-subtle);
+  --shadow: 0 4px 24px var(--black-shadow);
   /* Layered elevation for modal dialogs (stronger than --shadow) */
   --shadow-modal:
-    0 2px 6px var(--black-a28),
-    0 12px 36px var(--black-a42),
-    0 28px 72px var(--black-a38);
+    0 2px 6px var(--black-shadow-light),
+    0 12px 36px var(--black-shadow-deep),
+    0 28px 72px var(--black-shadow);
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -241,7 +218,7 @@ body {
   padding-block: 1.25rem;
   padding-inline: 1.5rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--elevated-a35);
+  background: var(--elevated-overlay);
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
@@ -376,7 +353,7 @@ body {
 
 .board-owner-filter-select:focus {
   outline: none;
-  border-color: var(--accent-a55);
+  border-color: var(--accent-border-strong);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -411,7 +388,7 @@ body {
 
 .board-card-search-input:focus {
   outline: none;
-  border-color: var(--accent-a55);
+  border-color: var(--accent-border-strong);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -487,7 +464,7 @@ body {
 .board-card-search-btn--icon.flow-btn-primary:hover,
 .complete-search-btn--icon.flow-btn-primary:hover {
   background: var(--surface-hover);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
 }
 
 .flow-search-submit-icon {
@@ -526,7 +503,7 @@ body {
 
 .complete-search-input:focus {
   outline: none;
-  border-color: var(--accent-a55);
+  border-color: var(--accent-border-strong);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -673,7 +650,7 @@ body {
   padding-block: 0;
   padding-inline: 0.65rem;
   border-radius: 999px;
-  border: 1px solid var(--accent-a25);
+  border: 1px solid var(--accent-muted);
   white-space: nowrap;
 }
 
@@ -703,7 +680,7 @@ body {
 
 .board-sync-btn:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
 }
 
 .board-sync-btn:focus-visible {
@@ -724,8 +701,8 @@ body {
     box-shadow: none;
   }
   50% {
-    background: var(--accent-a22);
-    border-color: var(--accent-a55);
+    background: var(--accent-muted);
+    border-color: var(--accent-border-strong);
     box-shadow: var(--shadow-accent-ring);
   }
 }
@@ -954,7 +931,7 @@ dialog.git-conflict-dialog::backdrop {
 
 .flow-nav-menu__trigger:hover {
   background: var(--surface-hover);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
 }
 
 .flow-nav-menu__trigger:focus-visible {
@@ -1035,7 +1012,7 @@ dialog.git-conflict-dialog::backdrop {
 
 .flow-nav-menu__item--current {
   color: var(--accent);
-  background: var(--accent-a08);
+  background: var(--accent-subtle);
 }
 
 /* Completed list view (/complete/) */
@@ -1053,7 +1030,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.85rem;
   padding-inline: 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--elevated-a22);
+  background: var(--elevated-overlay);
 }
 
 .complete-list-wrap {
@@ -1171,15 +1148,15 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .complete-table__row:hover .complete-table__td {
-  background: var(--white-a02);
+  background: var(--white-subtle);
 }
 
 .complete-table__row--strategic .complete-table__td {
-  background: var(--accent-a06);
+  background: var(--accent-subtle);
 }
 
 .complete-table__row--strategic:hover .complete-table__td {
-  background: var(--accent-a10);
+  background: var(--accent-dim);
 }
 
 .complete-table__row--editable {
@@ -1202,14 +1179,14 @@ dialog.git-conflict-dialog::backdrop {
 
 .complete-source-badge--archive {
   color: var(--purple);
-  border-color: var(--purple-a35);
-  background: var(--purple-a10);
+  border-color: var(--purple-medium);
+  background: var(--purple-dim);
 }
 
 .complete-source-badge--cold {
   color: var(--blue-soft);
-  border-color: var(--blue-soft-a40);
-  background: var(--blue-soft-a12);
+  border-color: var(--blue-soft-border);
+  background: var(--blue-soft-dim);
 }
 
 .complete-empty {
@@ -1230,7 +1207,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.85rem 1.1rem;
   padding-inline: 1.25rem;
   border-top: 1px solid var(--border-subtle);
-  background: var(--elevated-a25);
+  background: var(--elevated-overlay);
 }
 
 .complete-pagination-range {
@@ -1512,7 +1489,7 @@ dialog.git-conflict-dialog::backdrop {
   padding-inline: 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--surface-a45);
+  background: var(--surface-overlay);
 }
 
 .admin-add-board__label {
@@ -1535,7 +1512,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .admin-add-board__input:focus {
-  outline: 2px solid var(--accent-a45);
+  outline: 2px solid var(--accent-border);
   outline-offset: 1px;
 }
 
@@ -1546,14 +1523,14 @@ dialog.git-conflict-dialog::backdrop {
   padding-block: 0.4rem;
   padding-inline: 0.85rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--accent-a45);
+  border: 1px solid var(--accent-border);
   background: var(--accent-dim);
   color: var(--text);
   cursor: pointer;
 }
 
 .admin-add-board__btn:hover:not(:disabled) {
-  background: var(--accent-a22);
+  background: var(--accent-muted);
 }
 
 .admin-add-board__btn:disabled {
@@ -1616,7 +1593,7 @@ dialog.git-conflict-dialog::backdrop {
   width: 100%;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--surface-a50);
+  background: var(--surface-overlay);
   padding-block: 0.75rem;
   padding-inline: 1rem;
 }
@@ -1630,14 +1607,14 @@ dialog.git-conflict-dialog::backdrop {
 
 .charts-stack-area {
   opacity: 0.9;
-  stroke: var(--white-a12);
+  stroke: var(--white-border);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
 
 .charts-stack-bar {
   opacity: 0.9;
-  stroke: var(--white-a12);
+  stroke: var(--white-border);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
@@ -1645,7 +1622,7 @@ dialog.git-conflict-dialog::backdrop {
 .charts-hist-bar {
   fill: hsl(210 55% 52%);
   opacity: 0.88;
-  stroke: var(--white-a10);
+  stroke: var(--white-border);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }
@@ -1680,7 +1657,7 @@ dialog.git-conflict-dialog::backdrop {
   width: 0.65rem;
   height: 0.65rem;
   border-radius: 2px;
-  border: 1px solid var(--white-a12);
+  border: 1px solid var(--white-border);
 }
 
 .charts-axis {
@@ -1690,7 +1667,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-grid-line {
-  stroke: var(--white-a06);
+  stroke: var(--white-muted);
   stroke-width: 1;
 }
 
@@ -1712,19 +1689,19 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-point {
-  fill: var(--accent-a85);
-  stroke: var(--accent-a35);
+  fill: var(--accent-solid);
+  stroke: var(--accent-medium);
   stroke-width: 1.5;
 }
 
 .charts-point--cycle {
-  fill: var(--purple-fill-a35);
-  stroke: var(--purple-a45);
+  fill: var(--purple-medium);
+  stroke: var(--purple-border);
   stroke-width: 1.25;
 }
 
 .charts-point--cycle:hover {
-  fill: var(--purple-fill-a55);
+  fill: var(--purple-fill-strong);
 }
 
 .charts-point:hover {
@@ -1754,14 +1731,14 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-cycle-median-line {
-  stroke: var(--text-a55);
+  stroke: var(--text-muted-overlay);
   stroke-width: 1.5;
   stroke-dasharray: 6 4;
   pointer-events: none;
 }
 
 .charts-cycle-sigma-band {
-  fill: var(--purple-a12);
+  fill: var(--purple-dim);
   stroke: none;
   pointer-events: none;
 }
@@ -1820,8 +1797,8 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .column-head--wip-over {
-  background: var(--error-a14);
-  border-bottom-color: var(--error-a55);
+  background: var(--error-dim);
+  border-bottom-color: var(--error-emphasis);
   color: var(--error-pale);
 }
 
@@ -1920,7 +1897,7 @@ dialog.git-conflict-dialog::backdrop {
     hsl(355 22% 11%) 0%,
     hsl(0 28% 8%) 100%
   );
-  box-shadow: var(--shadow-error-inset-soft);
+  box-shadow: var(--shadow-error-inset);
 }
 
 .column-cell:hover {
@@ -2063,9 +2040,9 @@ a.column-done-truncation-link:focus-visible {
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    var(--accent-a15),
+    var(--accent-muted),
     var(--accent),
-    var(--accent-a15)
+    var(--accent-muted)
   );
   box-shadow: var(--shadow-accent-glow);
 }
@@ -2150,8 +2127,8 @@ a.column-done-truncation-link:focus-visible {
 
 /** Strategic / critical cards — override background and border in your theme if needed */
 .column-card--strategic {
-  background: var(--accent-a10);
-  border-color: var(--accent-a32);
+  background: var(--accent-dim);
+  border-color: var(--accent-medium);
 }
 
 .column-card--compass-open {
@@ -2200,7 +2177,7 @@ a.column-done-truncation-link:focus-visible {
 
 .column-card-nudge:hover:not(:disabled) {
   color: var(--accent);
-  border-color: var(--accent-a55);
+  border-color: var(--accent-border-strong);
   background: var(--overlay-accent-panel);
 }
 
@@ -2252,9 +2229,9 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-cell--drop-target {
-  outline: 2px dashed var(--accent-a65);
+  outline: 2px dashed var(--accent-emphasis);
   outline-offset: -2px;
-  background: var(--accent-a08);
+  background: var(--accent-subtle);
 }
 
 .column-card:last-child {
@@ -2381,7 +2358,7 @@ a.column-done-truncation-link:focus-visible {
   color: var(--accent);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--accent-a35);
+  border: 1px solid var(--accent-medium);
   background: var(--accent-dim);
   transition:
     background 0.12s ease,
@@ -2425,8 +2402,8 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-link:hover {
-  background: var(--accent-a20);
-  border-color: var(--accent-a55);
+  background: var(--accent-muted);
+  border-color: var(--accent-border-strong);
 }
 
 .column-card-link:focus-visible {
@@ -2465,7 +2442,7 @@ a.column-done-truncation-link:focus-visible {
 
 .column-add:hover {
   color: var(--accent);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
   background: var(--accent-dim);
 }
 
@@ -2489,7 +2466,7 @@ dialog.flow-modal {
 }
 
 dialog.flow-modal::backdrop {
-  background: var(--black-a55);
+  background: var(--black-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -2556,7 +2533,7 @@ dialog.flow-modal::backdrop {
   padding-inline: 0.4rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--surface-a35);
+  background: var(--surface-overlay);
 }
 
 .flow-board-sortable-row--swimlane {
@@ -2626,7 +2603,7 @@ dialog.flow-modal::backdrop {
 
 .flow-board-sort-dir:hover:not(:disabled) {
   color: var(--accent);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
   background: var(--surface-hover);
 }
 
@@ -2759,7 +2736,7 @@ dialog.flow-modal::backdrop {
 
 .flow-btn-icon:hover {
   background: var(--surface-hover);
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
   color: var(--accent);
 }
 
@@ -2939,7 +2916,7 @@ dialog.flow-modal::backdrop {
 
 .flow-description-tab:not(.flow-description-tab--active):hover {
   color: var(--text-muted);
-  background: var(--white-a03);
+  background: var(--white-subtle);
 }
 
 /* When pointer is over the editor, suppress any lingering inactive-tab hover look. */
@@ -3133,7 +3110,7 @@ dialog.flow-modal::backdrop {
   padding-inline: 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--elevated-a45);
+  background: var(--elevated-overlay);
   font-size: 0.78rem;
   line-height: 1.45;
   color: var(--text-muted);
@@ -3228,7 +3205,7 @@ dialog.flow-modal::backdrop {
 
 .flow-input:focus {
   outline: none;
-  border-color: var(--accent-a55);
+  border-color: var(--accent-border-strong);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
@@ -3274,12 +3251,12 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:hover:not(:disabled):not(:checked) {
-  border-color: var(--accent-a45);
+  border-color: var(--accent-border);
   background-color: var(--surface-hover);
 }
 
 input[type="checkbox"]:checked {
-  border-color: var(--accent-a90);
+  border-color: var(--accent);
   background-color: var(--accent);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%2309090b' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round' d='M3.75 8.25l2.9 2.9 6.7-7.9'/%3E%3C/svg%3E");
 }
@@ -3359,12 +3336,12 @@ input[type="checkbox"]:disabled {
 
 .flow-btn-delete-icon:hover {
   color: var(--error);
-  background: var(--error-a12);
-  border-color: var(--error-a28);
+  background: var(--error-dim);
+  border-color: var(--error-muted);
 }
 
 .flow-btn-delete-icon:focus-visible {
-  outline: 2px solid var(--error-a65);
+  outline: 2px solid var(--error-strong);
   outline-offset: 2px;
 }
 
@@ -3390,7 +3367,7 @@ input[type="checkbox"]:disabled {
 .flow-btn-primary {
   background: var(--accent);
   color: var(--bg);
-  border-color: var(--accent-a35);
+  border-color: var(--accent-medium);
 }
 
 .flow-btn-primary:hover {
@@ -3398,13 +3375,13 @@ input[type="checkbox"]:disabled {
 }
 
 .flow-btn-danger {
-  background: var(--error-a18);
+  background: var(--error-dim);
   color: var(--error-soft);
-  border: 1px solid var(--error-a45);
+  border: 1px solid var(--error-border-strong);
 }
 
 .flow-btn-danger:hover {
-  background: var(--error-a28);
+  background: var(--error-muted);
   filter: none;
 }
 
@@ -3426,8 +3403,8 @@ input[type="checkbox"]:disabled {
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   color: var(--error-soft);
-  background: var(--error-a12);
-  border: 1px solid var(--error-a25);
+  background: var(--error-dim);
+  border: 1px solid var(--error-muted);
 }
 
 .flow-links-field {
@@ -3474,7 +3451,7 @@ input[type="checkbox"]:disabled {
 
 .flow-link-remove:hover {
   color: var(--error);
-  border-color: var(--error-a35);
+  border-color: var(--error-border);
 }
 
 .flow-link-remove-icon {
