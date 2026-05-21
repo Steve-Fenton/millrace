@@ -71,6 +71,17 @@
     0 0 0 2px var(--accent-border),
     0 0 18px var(--accent-border);
   --shadow-error-inset: inset 0 1px 0 var(--error-subtle);
+  --wip-over-cell-bg: linear-gradient(
+    165deg,
+    hsl(355 22% 11%) 0%,
+    hsl(0 28% 8%) 100%
+  );
+  --wip-over-cell-bg-hover: linear-gradient(
+    165deg,
+    hsl(355 24% 13%) 0%,
+    hsl(0 26% 10%) 100%
+  );
+  --wip-over-head-text: var(--error-pale);
   --shadow: 0 4px 24px var(--black-shadow);
   /* Layered elevation for modal dialogs (stronger than --shadow) */
   --shadow-modal:
@@ -81,6 +92,51 @@
   --radius: 12px;
   --radius-sm: 8px;
   font-synthesis: none;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --surface-hover: #f4f4f5;
+  --elevated: #e4e4e7;
+  --border: #d4d4d8;
+  --border-subtle: #e4e4e7;
+  --text: #18181b;
+  --text-muted: #71717a;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --error: #dc2626;
+  --error-soft: #ef4444;
+  --error-pale: #fca5a5;
+  --success: #16a34a;
+  --warning: #d97706;
+  --purple: #7c3aed;
+  --blue-soft: #2563eb;
+
+  --overlay-backdrop: rgba(15, 23, 42, 0.4);
+  --overlay-panel: rgba(255, 255, 255, 0.98);
+  --overlay-accent-panel: rgba(224, 242, 254, 0.98);
+  --overlay-border-muted: rgba(161, 161, 170, 0.5);
+
+  --black-shadow-light: color-mix(in srgb, black 12%, transparent);
+  --black-shadow: color-mix(in srgb, black 18%, transparent);
+  --black-shadow-deep: color-mix(in srgb, black 24%, transparent);
+  --black-overlay: color-mix(in srgb, black 35%, transparent);
+
+  --wip-over-cell-bg: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--error) 8%, var(--surface)) 0%,
+    color-mix(in srgb, var(--error) 14%, var(--surface)) 100%
+  );
+  --wip-over-cell-bg-hover: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--error) 12%, var(--surface)) 0%,
+    color-mix(in srgb, var(--error) 18%, var(--surface)) 100%
+  );
+  --wip-over-head-text: var(--error);
+
+  color-scheme: light;
 }
 
 *,
@@ -1799,7 +1855,7 @@ dialog.git-conflict-dialog::backdrop {
 .column-head--wip-over {
   background: var(--error-dim);
   border-bottom-color: var(--error-emphasis);
-  color: var(--error-pale);
+  color: var(--wip-over-head-text);
 }
 
 .swimlane-label {
@@ -1890,13 +1946,9 @@ dialog.git-conflict-dialog::backdrop {
   gap: 0.45rem;
 }
 
-/* WIP exceeded: column body — deep wine/red that stays close to the dark board */
+/* WIP exceeded: column body */
 .column-cell--wip-over {
-  background: linear-gradient(
-    165deg,
-    hsl(355 22% 11%) 0%,
-    hsl(0 28% 8%) 100%
-  );
+  background: var(--wip-over-cell-bg);
   box-shadow: var(--shadow-error-inset);
 }
 
@@ -1905,11 +1957,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .column-cell--wip-over:hover {
-  background: linear-gradient(
-    165deg,
-    hsl(355 24% 13%) 0%,
-    hsl(0 26% 10%) 100%
-  );
+  background: var(--wip-over-cell-bg-hover);
   box-shadow: var(--shadow-error-inset);
 }
 

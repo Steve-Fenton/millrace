@@ -7,6 +7,7 @@ import {
 } from "../client.js";
 import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 import { escapeHtml } from "../html/escape.js";
+import { applyFlowTheme } from "../ui/applyTheme.js";
 
 /**
  * @param {{ lastAutoGitPull: string, lastNpmUpdateCheck: string }} initial
@@ -114,7 +115,7 @@ function renderPreferencesFlowTimestamps(initial) {
 }
 
 /**
- * @param {{ syncMode: "automatic" | "manual", mine: string, owner: string }} initial
+ * @param {{ syncMode: "automatic" | "manual", theme: "dark" | "light", mine: string, owner: string }} initial
  */
 function renderPreferencesForm(initial) {
   const form = document.createElement("form");
@@ -174,7 +175,28 @@ function renderPreferencesForm(initial) {
   syncSelect.value = initial.syncMode;
   syncLabel.append(syncSpan, syncSelect);
 
-  grid.append(mineLabel, ownerLabel, syncLabel);
+  const themeLabel = document.createElement("label");
+  themeLabel.className = "flow-field preferences-field";
+  const themeSpan = document.createElement("span");
+  themeSpan.className = "flow-field-label";
+  themeSpan.textContent = "Theme";
+  const themeSelect = document.createElement("select");
+  themeSelect.className = "flow-input";
+  themeSelect.name = "theme";
+  themeSelect.setAttribute("aria-label", "Theme");
+  for (const { value, label } of [
+    { value: "dark", label: "Dark" },
+    { value: "light", label: "Light" },
+  ]) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    themeSelect.append(opt);
+  }
+  themeSelect.value = initial.theme;
+  themeLabel.append(themeSpan, themeSelect);
+
+  grid.append(mineLabel, ownerLabel, syncLabel, themeLabel);
 
   const actions = document.createElement("div");
   actions.className = "preferences-form-actions";
@@ -192,14 +214,18 @@ function renderPreferencesForm(initial) {
       String(syncSelect.value || "").trim() === "manual"
         ? "manual"
         : "automatic";
+    const theme =
+      String(themeSelect.value || "").trim() === "light" ? "light" : "dark";
     void (async () => {
       saveBtn.disabled = true;
       try {
         await patchLocalUserPreferences({
           syncMode: v,
+          theme,
           mine: String(mineInput.value ?? ""),
           owner: String(ownerInput.value ?? ""),
         });
+        applyFlowTheme(theme);
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
         showFlowToast("Preferences saved.");
       } catch (err) {
@@ -255,7 +281,7 @@ function renderPreferencesShell(form, flowTimestamps) {
   secTitle.textContent = "Local preferences";
   const blurb = document.createElement("p");
   blurb.className = "flow-modal-context preferences-panel__intro";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code>: <code class="flow-board-editor-file">[user]</code> (Mine and default owner), <code class="flow-board-editor-file">[preferences]</code> (sync mode), <code class="flow-board-editor-file">[flow]</code> (background throttle timestamps shown below).`;
+  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/localuser.ini")}</code>: <code class="flow-board-editor-file">[user]</code> (Mine and default owner), <code class="flow-board-editor-file">[preferences]</code> (sync mode and theme), <code class="flow-board-editor-file">[flow]</code> (background throttle timestamps shown below).`;
 
   panel.append(secTitle, blurb, form, flowTimestamps);
   body.append(panel);
@@ -270,6 +296,7 @@ async function main() {
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
   try {
     const initial = await fetchLocalUserPreferences();
+    applyFlowTheme(initial.theme);
     mount.replaceChildren();
     mount.append(
       renderPreferencesShell(

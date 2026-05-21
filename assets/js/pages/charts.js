@@ -15,6 +15,7 @@ import {
   writeStoredActiveBoardSlug,
 } from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
+import { initFlowTheme } from "../ui/applyTheme.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 
@@ -1438,6 +1439,7 @@ function renderChartsShell(
 }
 
 async function main() {
+  void initFlowTheme();
   const mount = document.getElementById("app");
   if (!mount) return;
 

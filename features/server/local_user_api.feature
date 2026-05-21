@@ -110,6 +110,30 @@ Feature: Local user preferences API
       """
     Then the response status should be 400
 
+  Scenario: PATCH /api/local-user/preferences rejects unknown theme
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user/preferences" with JSON body:
+      """
+      { "theme": "weird" }
+      """
+    Then the response status should be 400
+    And the last JSON field "message" should contain "theme"
+
+  Scenario: PATCH /api/local-user/preferences accepts theme light and dark
+    Given the Millrace integration server has profile "flow-board"
+    When I send a PATCH request to "/api/local-user/preferences" with JSON body:
+      """
+      { "theme": "light" }
+      """
+    Then the response status should be 200
+    And the last JSON field "theme" should be "light"
+    When I send a PATCH request to "/api/local-user/preferences" with JSON body:
+      """
+      { "theme": "dark" }
+      """
+    Then the response status should be 200
+    And the last JSON field "theme" should be "dark"
+
   Scenario: PATCH /api/local-user/preferences rejects mine without an @
     Given the Millrace integration server has profile "flow-board"
     When I send a PATCH request to "/api/local-user/preferences" with JSON body:
@@ -146,6 +170,7 @@ Feature: Local user preferences API
     When I fetch JSON from "/api/local-user/preferences"
     Then the response status should be 200
     And the last JSON field "syncMode" should be "automatic"
+    And the last JSON field "theme" should be "dark"
     And the last JSON field "mine" should be ""
     And the last JSON field "owner" should be ""
     And the last JSON field "lastAutoGitPull" should be ""

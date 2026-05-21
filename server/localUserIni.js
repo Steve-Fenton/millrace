@@ -35,6 +35,17 @@ export function syncModeFromPreferencesSection(pref) {
 }
 
 /**
+ * @param {Record<string, string> | undefined} pref `[preferences]` section
+ * @returns {"dark" | "light"}
+ */
+export function themeFromPreferencesSection(pref) {
+  const raw = String(pref?.theme ?? "")
+    .trim()
+    .toLowerCase();
+  return raw === "light" ? "light" : "dark";
+}
+
+/**
  * @param {Record<string, Record<string, string>>} sections
  */
 export function serializeLocalUserIniFile(sections) {

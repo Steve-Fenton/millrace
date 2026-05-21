@@ -99,6 +99,27 @@ Feature: Local user INI helpers
       """
     Then the sync mode should be "automatic"
 
+  Scenario: themeFromPreferencesSection treats light as light
+    When I read theme from preferences JSON:
+      """
+      { "theme": "light" }
+      """
+    Then the theme should be "light"
+
+  Scenario: themeFromPreferencesSection defaults to dark
+    When I read theme from preferences JSON:
+      """
+      {}
+      """
+    Then the theme should be "dark"
+
+  Scenario: themeFromPreferencesSection treats unknown values as dark
+    When I read theme from preferences JSON:
+      """
+      { "theme": "weird" }
+      """
+    Then the theme should be "dark"
+
   Scenario: pendingSyncFromSections recognises 1
     When I read pendingSync from sections JSON:
       """

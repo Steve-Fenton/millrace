@@ -4,6 +4,7 @@ import {
   pendingSyncFromSections,
   serializeLocalUserIniFile,
   syncModeFromPreferencesSection,
+  themeFromPreferencesSection,
 } from "../../server/localUserIni.js";
 
 When("I serialize sections JSON:", function (doc) {
@@ -27,6 +28,15 @@ When("I read sync mode from preferences JSON:", function (doc) {
 
 Then("the sync mode should be {string}", function (expected) {
   assert.strictEqual(this.syncMode, expected);
+});
+
+When("I read theme from preferences JSON:", function (doc) {
+  const pref = JSON.parse(doc.trim());
+  this.theme = themeFromPreferencesSection(pref);
+});
+
+Then("the theme should be {string}", function (expected) {
+  assert.strictEqual(this.theme, expected);
 });
 
 When("I read pendingSync from sections JSON:", function (doc) {

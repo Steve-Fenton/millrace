@@ -8,6 +8,7 @@ import {
   writeStoredActiveBoardSlug,
 } from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
+import { initFlowTheme } from "../ui/applyTheme.js";
 
 const ADMIN_BOARD_CREATED_FLASH_KEY = "flow:admin-board-created-flash";
 
@@ -281,6 +282,7 @@ function renderAdminShell(boardsSection) {
 }
 
 async function main() {
+  void initFlowTheme();
   const mount = document.getElementById("app");
   if (!mount) return;
   setFlowDocumentTitle("Admin");

@@ -67,6 +67,7 @@ import {
 import { fillCardLinkWithNewTabIcon } from "./ui/cardLinkOpenNewTab.js";
 import { escapeHtml } from "./html/escape.js";
 import { displayTaskTitle } from "./models/taskModel.js";
+import { initFlowTheme } from "./ui/applyTheme.js";
 
 const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M7 3v8M3 7h8"/></svg>`;
 
@@ -2085,6 +2086,7 @@ function npmUpdateFailureReasonLabel(reason) {
 }
 
 async function main() {
+  void initFlowTheme();
   await loadApp(true);
   void maybeNotifyNpmUpdate();
 

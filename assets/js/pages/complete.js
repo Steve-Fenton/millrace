@@ -31,6 +31,7 @@ import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
 import { swimlaneNameForIniItem } from "../ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
 import { escapeHtml } from "../html/escape.js";
+import { initFlowTheme } from "../ui/applyTheme.js";
 import { displayTaskTitle } from "../models/taskModel.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
@@ -776,6 +777,7 @@ function renderCompleteShell(
 }
 
 async function main() {
+  void initFlowTheme();
   const mount = document.getElementById("app");
   if (!mount) return;
 

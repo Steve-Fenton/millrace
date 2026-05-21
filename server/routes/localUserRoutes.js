@@ -3,6 +3,7 @@ import {
   pendingSyncFromSections,
   readLocalUserIniSections,
   syncModeFromPreferencesSection,
+  themeFromPreferencesSection,
   writeLocalUserIniSections,
 } from "../localUserIni.js";
 import {
@@ -63,6 +64,7 @@ app.get("/api/local-user/preferences", async (_req, res) => {
     ).trim();
     res.json({
       syncMode: syncModeFromPreferencesSection(sections.preferences ?? {}),
+      theme: themeFromPreferencesSection(sections.preferences ?? {}),
       mine: String(mineRaw).trim(),
       owner: String(ownerRaw).trim(),
       lastAutoGitPull,
@@ -71,6 +73,7 @@ app.get("/api/local-user/preferences", async (_req, res) => {
   } catch {
     res.json({
       syncMode: "automatic",
+      theme: "dark",
       mine: "",
       owner: "",
       lastAutoGitPull: "",
@@ -253,6 +256,8 @@ app.patch("/api/local-user/preferences", async (req, res) => {
           : undefined;
     const mineRaw = body.mine !== undefined ? body.mine : undefined;
     const ownerRaw = body.owner !== undefined ? body.owner : undefined;
+    const themeRaw =
+      body.theme !== undefined ? body.theme : undefined;
     const clearLastAutoGitPull =
       body.clearLastAutoGitPull === true ||
       body.clear_last_auto_git_pull === true;
@@ -264,12 +269,13 @@ app.patch("/api/local-user/preferences", async (req, res) => {
       syncRaw === undefined &&
       mineRaw === undefined &&
       ownerRaw === undefined &&
+      themeRaw === undefined &&
       !clearLastAutoGitPull &&
       !clearLastNpmUpdateCheck
     ) {
       res.status(400).json({
         message:
-          "Expected JSON body with syncMode (automatic or manual), mine (email), owner (email), clearLastAutoGitPull (true), and/or clearLastNpmUpdateCheck (true).",
+          "Expected JSON body with syncMode (automatic or manual), theme (dark or light), mine (email), owner (email), clearLastAutoGitPull (true), and/or clearLastNpmUpdateCheck (true).",
       });
       return;
     }
@@ -324,6 +330,18 @@ app.patch("/api/local-user/preferences", async (req, res) => {
       }
     }
 
+    if (themeRaw !== undefined) {
+      const th = String(themeRaw).trim().toLowerCase();
+      if (th !== "dark" && th !== "light") {
+        res.status(400).json({
+          message: "theme must be dark or light.",
+        });
+        return;
+      }
+      sections.preferences = sections.preferences ?? {};
+      sections.preferences.theme = th;
+    }
+
     if (clearLastAutoGitPull || clearLastNpmUpdateCheck) {
       sections.flow = sections.flow ?? {};
       if (clearLastAutoGitPull) {
@@ -352,6 +370,7 @@ app.patch("/api/local-user/preferences", async (req, res) => {
     res.json({
       ok: true,
       syncMode: syncModeFromPreferencesSection(out.preferences ?? {}),
+      theme: themeFromPreferencesSection(out.preferences ?? {}),
       mine: mineOut,
       owner: ownerOut,
       lastAutoGitPull: lastAutoGitPullOut,

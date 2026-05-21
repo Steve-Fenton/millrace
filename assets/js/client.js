@@ -455,7 +455,7 @@ export async function postNpmInstallRunCycle() {
 
 /**
  * `[preferences]`, `[user]` mine/owner, and `[flow]` throttle timestamps from tasks/localuser.ini (preferences page).
- * @returns {Promise<{ syncMode: "automatic" | "manual", mine: string, owner: string, lastAutoGitPull: string, lastNpmUpdateCheck: string }>}
+ * @returns {Promise<{ syncMode: "automatic" | "manual", theme: "dark" | "light", mine: string, owner: string, lastAutoGitPull: string, lastNpmUpdateCheck: string }>}
  */
 export async function fetchLocalUserPreferences() {
   try {
@@ -463,6 +463,7 @@ export async function fetchLocalUserPreferences() {
     if (!res.ok) {
       return {
         syncMode: "automatic",
+        theme: "dark",
         mine: "",
         owner: "",
         lastAutoGitPull: "",
@@ -471,8 +472,10 @@ export async function fetchLocalUserPreferences() {
     }
     const data = await res.json();
     const sm = String(data.syncMode ?? "").trim().toLowerCase();
+    const th = String(data.theme ?? "").trim().toLowerCase();
     return {
       syncMode: sm === "manual" ? "manual" : "automatic",
+      theme: th === "light" ? "light" : "dark",
       mine: String(data.mine ?? "").trim(),
       owner: String(data.owner ?? "").trim(),
       lastAutoGitPull: String(data.lastAutoGitPull ?? "").trim(),
@@ -481,6 +484,7 @@ export async function fetchLocalUserPreferences() {
   } catch {
     return {
       syncMode: "automatic",
+      theme: "dark",
       mine: "",
       owner: "",
       lastAutoGitPull: "",
@@ -492,6 +496,7 @@ export async function fetchLocalUserPreferences() {
 /**
  * @param {{
  *   syncMode?: "automatic" | "manual",
+ *   theme?: "dark" | "light",
  *   mine?: string,
  *   owner?: string,
  *   clearLastAutoGitPull?: boolean,
@@ -503,6 +508,9 @@ export async function patchLocalUserPreferences(body) {
   const payload = {};
   if (body.syncMode !== undefined) {
     payload.syncMode = body.syncMode === "manual" ? "manual" : "automatic";
+  }
+  if (body.theme !== undefined) {
+    payload.theme = body.theme === "light" ? "light" : "dark";
   }
   if (body.mine !== undefined) {
     payload.mine = String(body.mine ?? "").trim();
