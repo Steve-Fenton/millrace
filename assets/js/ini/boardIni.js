@@ -1,3 +1,5 @@
+import { columnTypeOf } from "../models/boardModel.js";
+
 /**
  * Serialize a parsed board model back to tasks/*.ini text (board + columns + swimlanes + users).
  * Column and swimlane indices are 1..n in list order.
@@ -28,9 +30,7 @@ export function serializeBoardIniFromModel(model) {
     if (col.wipLimit != null && Number.isFinite(Number(col.wipLimit)) && Number(col.wipLimit) >= 0) {
       lines.push(`wip_limit = ${Math.round(Number(col.wipLimit))}`);
     }
-    if (col.isDone) {
-      lines.push(`is_done = true`);
-    }
+    lines.push(`type = ${columnTypeOf(col)}`);
     lines.push("");
   }
 

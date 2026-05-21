@@ -1,7 +1,7 @@
 Feature: Board INI change summary
   From earlier and later board INI text (as in a git diff), produce short readable
   lines: board name change, column / swimlane add / remove / reorder, WIP and done
-  marker tweaks, board user changes, parse failures, and added / removed files.
+  type tweaks, board user changes, parse failures, and added / removed files.
 
   Scenario: parse failure on the before text
     When I summarize the board INI diff assuming the earlier version fails to parse
@@ -333,7 +333,7 @@ Feature: Board INI change summary
       ["WIP limit (Doing): 2 → —"]
       """
 
-  Scenario: done marker moves to a different column title
+  Scenario: column type moves to a different column title
     Given the earlier board INI text is:
       """
       [board]
@@ -364,8 +364,8 @@ Feature: Board INI change summary
     Then the board diff summary JSON should be:
       """
       [
-        "Done marker (To Do): no → yes",
-        "Done marker (Done): yes → no"
+        "Column type (To Do): To do → Done",
+        "Column type (Done): Done → To do"
       ]
       """
 

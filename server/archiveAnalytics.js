@@ -7,6 +7,7 @@ import { ensureDir } from "./fsUtil.js";
 import { resolveCardColumnIndex } from "../assets/js/ini/columnResolve.js";
 import { resolveCardSwimlaneIndex } from "../assets/js/ini/swimlaneResolve.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
+import { columnIsDone } from "../assets/js/models/boardModel.js";
 import {
   loadBoardCatalog,
   loadBoardColumnAndSwimlaneDefsForSlug,
@@ -903,7 +904,7 @@ export async function aggregateColumnSwimlaneStack(slug) {
       : [{ key: "0", label: "Cards", index: 0 }];
 
   const colList = [...columns]
-    .filter((col) => !col.isDone)
+    .filter((col) => !columnIsDone(col))
     .sort((a, b) => a.index - b.index);
   const columnPayload = colList.map((col) => {
     const inner = byColumn.get(col.index) ?? new Map();

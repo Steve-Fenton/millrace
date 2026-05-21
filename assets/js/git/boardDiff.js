@@ -1,4 +1,8 @@
-import { parseBoardIni } from "../models/boardModel.js";
+import {
+  COLUMN_TYPE_LABELS,
+  columnTypeOf,
+  parseBoardIni,
+} from "../models/boardModel.js";
 import { dispChange } from "./taskDiff.js";
 
 const EMPTY_MODEL = Object.freeze({
@@ -81,15 +85,15 @@ function pushOrderedTitleDiff(out, label, before, after) {
 }
 
 /**
- * Compare per-title column attributes (WIP limit, is-done flag) when both sides have a
+ * Compare per-title column attributes (WIP limit, type) when both sides have a
  * column with the same trimmed lower-case title — only one entry per title (matches the
  * first occurrence the same way card column resolution does).
  * @param {string[]} out
- * @param {Array<{ index: number, title: string, wipLimit?: number, isDone?: boolean }>} before
- * @param {Array<{ index: number, title: string, wipLimit?: number, isDone?: boolean }>} after
+ * @param {Array<{ index: number, title: string, type?: string, wipLimit?: number, isDone?: boolean }>} before
+ * @param {Array<{ index: number, title: string, type?: string, wipLimit?: number, isDone?: boolean }>} after
  */
 function collectColumnAttributeChanges(out, before, after) {
-  /** @type {Map<string, { title: string, wipLimit?: number, isDone?: boolean }>} */
+  /** @type {Map<string, { title: string, type?: string, wipLimit?: number, isDone?: boolean }>} */
   const bMap = new Map();
   for (const c of before) {
     const key = titleKey(c.title).toLowerCase();
@@ -112,11 +116,11 @@ function collectColumnAttributeChanges(out, before, after) {
       const al = aw === undefined ? "—" : String(aw);
       out.push(`WIP limit (${dispChange(title)}): ${bl} → ${al}`);
     }
-    const bd = Boolean(b.isDone);
-    const ad = Boolean(c.isDone);
-    if (bd !== ad) {
+    const bt = columnTypeOf(b);
+    const at = columnTypeOf(c);
+    if (bt !== at) {
       out.push(
-        `Done marker (${dispChange(title)}): ${bd ? "yes" : "no"} → ${ad ? "yes" : "no"}`
+        `Column type (${dispChange(title)}): ${COLUMN_TYPE_LABELS[bt]} → ${COLUMN_TYPE_LABELS[at]}`
       );
     }
   }

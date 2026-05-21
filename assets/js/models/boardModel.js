@@ -1,7 +1,56 @@
 import { parseIni } from "../ini/parseIni.js";
 
+/** @typedef {'options' | 'to_do' | 'in_progress' | 'waiting' | 'done'} ColumnType */
+
+/** @type {readonly ColumnType[]} */
+export const COLUMN_TYPES = [
+  "options",
+  "to_do",
+  "in_progress",
+  "waiting",
+  "done",
+];
+
+/** @type {Record<ColumnType, string>} */
+export const COLUMN_TYPE_LABELS = {
+  options: "Options",
+  to_do: "To do",
+  in_progress: "In progress",
+  waiting: "Waiting",
+  done: "Done",
+};
+
 /**
- * @typedef {{ index: number, title: string, isDone?: boolean, wipLimit?: number }} ColumnDef
+ * @param {string | undefined} raw
+ * @returns {ColumnType | undefined}
+ */
+export function parseColumnTypeRaw(raw) {
+  const key = String(raw ?? "").trim().toLowerCase();
+  if (!key) return undefined;
+  return COLUMN_TYPES.find((t) => t === key);
+}
+
+/**
+ * @param {ColumnDef | { type?: string, isDone?: boolean }} col
+ * @returns {ColumnType}
+ */
+export function columnTypeOf(col) {
+  const parsed = parseColumnTypeRaw(col?.type);
+  if (parsed) return parsed;
+  if (col?.isDone === true) return "done";
+  return "in_progress";
+}
+
+/**
+ * @param {ColumnDef | { type?: string, isDone?: boolean }} col
+ * @returns {boolean}
+ */
+export function columnIsDone(col) {
+  return columnTypeOf(col) === "done";
+}
+
+/**
+ * @typedef {{ index: number, title: string, type: ColumnType, isDone?: boolean, wipLimit?: number }} ColumnDef
  * @typedef {{ index: number, title: string }} SwimlaneDef
  * @typedef {{ index: number, email: string, name: string, active?: boolean }} BoardUserDef
  * @typedef {{ name?: string, slug?: string }} BoardMeta
@@ -119,8 +168,14 @@ export function sectionsToBoardModel(sections) {
       const sec = sections[name];
       const title = sec.title ?? `Column ${idx}`;
       const doneRaw = String(sec.is_done ?? "").trim().toLowerCase();
-      const isDone =
+      const isDoneLegacy =
         doneRaw === "true" || doneRaw === "1" || doneRaw === "yes";
+      const typeKey =
+        Object.keys(sec).find((k) => k.toLowerCase() === "type") ?? "type";
+      const typeRaw = sec[typeKey];
+      let type = parseColumnTypeRaw(typeRaw);
+      if (!type && isDoneLegacy) type = "done";
+      if (!type) type = "in_progress";
 
       let wipLimit = undefined;
       const wipRaw = sec.wip_limit ?? sec.wipLimit;
@@ -130,8 +185,8 @@ export function sectionsToBoardModel(sections) {
       }
 
       /** @type {ColumnDef} */
-      const colEntry = { index: idx, title };
-      if (isDone) colEntry.isDone = true;
+      const colEntry = { index: idx, title, type };
+      if (type === "done") colEntry.isDone = true;
       if (wipLimit !== undefined) colEntry.wipLimit = wipLimit;
       columns.push(colEntry);
       continue;
@@ -200,13 +255,13 @@ export function userPreferenceSyncModeIsAutomatic(syncMode) {
 }
 
 /**
- * Kanban boards require exactly one column with `is_done` (Done in the editor).
+ * Kanban boards require exactly one column with type Done (`type = done` or legacy `is_done`).
  * @param {BoardModel} model
  * @returns {string | null} Error message, or null if valid.
  */
 export function validateExactlyOneDoneColumn(model) {
   const cols = Array.isArray(model.columns) ? model.columns : [];
-  const done = cols.filter((c) => c.isDone === true);
+  const done = cols.filter((c) => columnIsDone(c));
   if (done.length === 0) {
     return "The board must have exactly one column marked Done. None are marked.";
   }

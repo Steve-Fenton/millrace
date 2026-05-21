@@ -1,3 +1,9 @@
+import {
+  COLUMN_TYPE_LABELS,
+  COLUMN_TYPES,
+  columnTypeOf,
+} from "../models/boardModel.js";
+
 /** Up chevron (^) — stroke so it stays visible on dark UI. */
 const ARROW_UP = `<svg class="flow-board-sort-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" d="M7 14l5-5 5 5"/></svg>`;
 /** Down chevron (v) */
@@ -13,7 +19,7 @@ function rowIndexInList(list, rowEl) {
 }
 
 /**
- * @param {{ title: string, wipLimit?: string, isDone?: boolean }[]} initial
+ * @param {{ title: string, wipLimit?: string, type?: string, isDone?: boolean }[]} initial
  */
 export function createSortableColumnList(initial) {
   const wrap = document.createElement("div");
@@ -33,14 +39,14 @@ export function createSortableColumnList(initial) {
 
   wrap.append(label, list, addBtn);
 
-  /** @type {{ title: string, wipLimit: string, isDone: boolean }[]} */
+  /** @type {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} */
   let rows = (Array.isArray(initial) ? initial : []).map((r) => ({
     title: String(r?.title ?? "").trim(),
     wipLimit:
       r?.wipLimit != null && String(r.wipLimit).trim() !== ""
         ? String(r.wipLimit).trim()
         : "",
-    isDone: Boolean(r?.isDone),
+    type: columnTypeOf(r ?? {}),
   }));
 
   function moveRow(from, to) {
@@ -156,12 +162,17 @@ export function createSortableColumnList(initial) {
     wipWrap.className = "flow-board-sortable-wip-wrap";
     wipWrap.append(wipIn, wipSteppers);
 
-    const doneLbl = document.createElement("label");
-    doneLbl.className = "flow-board-sortable-done";
-    const doneCb = document.createElement("input");
-    doneCb.type = "checkbox";
-    doneCb.checked = row.isDone;
-    doneLbl.append(doneCb, document.createTextNode(" Done"));
+    const typeSel = document.createElement("select");
+    typeSel.className = "flow-input flow-board-sortable-type";
+    typeSel.title = "Column type";
+    typeSel.setAttribute("aria-label", "Column type");
+    for (const t of COLUMN_TYPES) {
+      const opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = COLUMN_TYPE_LABELS[t];
+      typeSel.append(opt);
+    }
+    typeSel.value = row.type;
 
     const rm = document.createElement("button");
     rm.type = "button";
@@ -178,7 +189,7 @@ export function createSortableColumnList(initial) {
       render();
     });
 
-    rowEl.append(reorder, titleIn, wipWrap, doneLbl, rm);
+    rowEl.append(reorder, titleIn, wipWrap, typeSel, rm);
     return rowEl;
   }
 
@@ -188,12 +199,13 @@ export function createSortableColumnList(initial) {
     for (const rowEl of els) {
       const t = rowEl.querySelector(".flow-board-sortable-title");
       const w = rowEl.querySelector(".flow-board-sortable-wip");
-      const c = rowEl.querySelector('input[type="checkbox"]');
+      const typeEl = rowEl.querySelector(".flow-board-sortable-type");
       if (!rows[i]) break;
+      const typeRaw = String(typeEl?.value ?? "").trim();
       rows[i] = {
         title: String(t?.value ?? "").trim(),
         wipLimit: String(w?.value ?? "").trim(),
-        isDone: Boolean(c?.checked),
+        type: columnTypeOf({ type: typeRaw }),
       };
       i++;
     }
@@ -209,7 +221,7 @@ export function createSortableColumnList(initial) {
 
   addBtn.addEventListener("click", () => {
     syncRowInputsToState();
-    rows.push({ title: "", wipLimit: "", isDone: false });
+    rows.push({ title: "", wipLimit: "", type: "in_progress" });
     render();
     const last = list.querySelector(".flow-board-sortable-row:last-child .flow-board-sortable-title");
     if (last instanceof HTMLInputElement) last.focus();
@@ -219,7 +231,7 @@ export function createSortableColumnList(initial) {
 
   return {
     root: wrap,
-    /** @returns {{ title: string, wipLimit: string, isDone: boolean }[]} */
+    /** @returns {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} */
     getRows() {
       syncRowInputsToState();
       return rows.map((r) => ({ ...r }));

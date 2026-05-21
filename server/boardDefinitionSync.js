@@ -72,7 +72,7 @@ export function multisetsEqual(a, b) {
 
 /**
  * Same column & swimlane titles (incl. counts / duplicates) — only order or non-placement
- * fields (WIP, is_done, etc.) changed. Cards use titles, so no INI updates.
+ * fields (WIP, type, etc.) changed. Cards use titles, so no INI updates.
  * @param {import("../assets/js/models/boardModel.js").BoardModel} oldModel
  * @param {import("../assets/js/models/boardModel.js").BoardModel} newModel
  */

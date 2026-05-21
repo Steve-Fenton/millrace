@@ -10,7 +10,10 @@ import {
   dataRoot,
   isBoardCatalogIniSection,
 } from "./dataRoot.js";
-import { parseBoardIni } from "../assets/js/models/boardModel.js";
+import {
+  parseBoardIni,
+  parseColumnTypeRaw,
+} from "../assets/js/models/boardModel.js";
 import { parseIni } from "../assets/js/ini/parseIni.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
 import {
@@ -176,7 +179,7 @@ title = Doing
 
 [columns.3]
 title = Done
-is_done = true
+type = done
 
 [swimlanes.1]
 title = Default
@@ -387,7 +390,7 @@ export function columnIndexFromTasksPath(fullPath) {
 }
 
 /**
- * Whether the board definition for `slug` marks columns.{n} with is_done (Kanban done column).
+ * Whether the board definition for `slug` marks columns.{n} as Done (type or legacy is_done).
  * @param {string} slug
  * @param {number} columnIndex
  */
@@ -399,6 +402,9 @@ export async function columnSectionIsDone(slug, columnIndex) {
     const sections = parseIni(text);
     const sec = sections[`columns.${columnIndex}`];
     if (!sec) return false;
+    const typeKey = Object.keys(sec).find((k) => k.toLowerCase() === "type");
+    const type = parseColumnTypeRaw(typeKey ? sec[typeKey] : undefined);
+    if (type === "done") return true;
     let raw = sec.is_done;
     if (raw === undefined || raw === "") {
       const hit = Object.keys(sec).find((k) => k.toLowerCase() === "is_done");

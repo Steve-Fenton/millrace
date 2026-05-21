@@ -46,17 +46,19 @@ Feature: Board model to tasks INI format
       ; Columns appear in list order by section index (columns.1, columns.2, …).
       [columns.1]
       title = First
+      type = in_progress
 
       [columns.2]
       title = Last
+      type = in_progress
 
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       """
 
-  Scenario: column wip_limit and is_done are emitted when applicable
+  Scenario: column wip_limit and type are emitted for each column
     Given a board model:
       """
-      {"board":{},"columns":[{"index":1,"title":"Doing","wipLimit":5},{"index":2,"title":"Done","isDone":true}]}
+      {"board":{},"columns":[{"index":1,"title":"Doing","type":"in_progress","wipLimit":5},{"index":2,"title":"Done","type":"done","isDone":true}]}
       """
     When I serialize the board model to tasks INI
     Then the INI output should be:
@@ -67,10 +69,11 @@ Feature: Board model to tasks INI format
       [columns.1]
       title = Doing
       wip_limit = 5
+      type = in_progress
 
       [columns.2]
       title = Done
-      is_done = true
+      type = done
 
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       """
@@ -88,6 +91,7 @@ Feature: Board model to tasks INI format
       ; Columns appear in list order by section index (columns.1, columns.2, …).
       [columns.1]
       title = Column 1
+      type = in_progress
 
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       """
@@ -105,9 +109,11 @@ Feature: Board model to tasks INI format
       ; Columns appear in list order by section index (columns.1, columns.2, …).
       [columns.1]
       title = A
+      type = in_progress
 
       [columns.2]
       title = B
+      type = in_progress
 
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       """
@@ -168,9 +174,11 @@ Feature: Board model to tasks INI format
       ; Columns appear in list order by section index (columns.1, columns.2, …).
       [columns.1]
       title = Named
+      type = in_progress
 
       [columns.2]
       title = Column 2
+      type = in_progress
 
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       [swimlanes.1]

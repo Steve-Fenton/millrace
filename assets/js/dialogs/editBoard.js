@@ -1,4 +1,8 @@
-import { parseBoardIni, validateExactlyOneDoneColumn } from "../models/boardModel.js";
+import {
+  columnTypeOf,
+  parseBoardIni,
+  validateExactlyOneDoneColumn,
+} from "../models/boardModel.js";
 import { serializeBoardIniFromModel } from "../ini/boardIni.js";
 import {
   createSortableBoardUserList,
@@ -158,7 +162,7 @@ async function openBoardGitHistoryNested(ctx) {
 /**
  * @param {import("../models/boardModel.js").BoardModel} initialModel
  * @param {string} boardName
- * @param {{ title: string, wipLimit: string, isDone: boolean }[]} colRows
+ * @param {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} colRows
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
  */
@@ -170,13 +174,15 @@ function buildModel(initialModel, boardName, colRows, swimRows, userRows) {
       const n = Number(wip);
       if (Number.isFinite(n) && n >= 0) wipLimit = n;
     }
+    const type = columnTypeOf({ type: r.type });
     /** @type {import("../models/boardModel.js").ColumnDef} */
     const c = {
       index: i + 1,
       title: r.title.trim() || `Column ${i + 1}`,
+      type,
     };
     if (wipLimit !== undefined) c.wipLimit = wipLimit;
-    if (r.isDone) c.isDone = true;
+    if (type === "done") c.isDone = true;
     return c;
   });
   const swimlanes = swimRows.map((r, i) => ({
@@ -246,7 +252,7 @@ export async function openBoardEditorDialog(ctx) {
         c.wipLimit != null && Number.isFinite(Number(c.wipLimit))
           ? String(Math.round(Number(c.wipLimit)))
           : "",
-      isDone: Boolean(c.isDone),
+      type: columnTypeOf(c),
     }));
   const swimSeeds = [...(initialModel.swimlanes ?? [])]
     .sort((a, b) => a.index - b.index)
@@ -310,7 +316,9 @@ export async function openBoardEditorDialog(ctx) {
   slugInput.value = ctx.boardSlug;
 
   const sortWrap = modal.querySelector(".flow-board-editor-sortables");
-  const colEditor = createSortableColumnList(colSeeds.length ? colSeeds : [{ title: "Backlog", wipLimit: "", isDone: false }]);
+  const colEditor = createSortableColumnList(
+    colSeeds.length ? colSeeds : [{ title: "Backlog", wipLimit: "", type: "in_progress" }]
+  );
   const swimEditor = createSortableSwimlaneList(swimSeeds);
   const userEditor = createSortableBoardUserList(userSeeds);
   sortWrap.append(colEditor.root, swimEditor.root, userEditor.root);
@@ -321,7 +329,7 @@ export async function openBoardEditorDialog(ctx) {
       columns: colEditor.getRows().map((r) => ({
         title: String(r.title ?? "").trim(),
         wipLimit: String(r.wipLimit ?? "").trim(),
-        isDone: Boolean(r.isDone),
+        type: columnTypeOf({ type: r.type }),
       })),
       swimlanes: swimEditor.getRows().map((r) => ({
         title: String(r.title ?? "").trim(),

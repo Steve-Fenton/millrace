@@ -2582,13 +2582,12 @@ dialog.flow-modal::backdrop {
   min-width: 0;
 }
 
-.flow-board-sortable-done {
+.flow-board-sortable-type {
+  min-width: 0;
+  max-width: 9rem;
   font-size: 0.78rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+  padding-block: 0.2rem;
+  padding-inline: 0.35rem;
 }
 
 .flow-board-sortable-add {

@@ -272,7 +272,7 @@ Feature: Board model from INI and UI helpers
     When I convert INI sections to a board model
     Then the board model JSON should be:
       """
-      {"board":{"name":"Demo","slug":"demo"},"columns":[{"index":1,"title":"Done","isDone":true},{"index":2,"title":"Doing","wipLimit":3}],"swimlanes":[{"index":1,"title":"Main"}],"users":[{"index":1,"email":"x@x.com","name":"X","active":false}]}
+      {"board":{"name":"Demo","slug":"demo"},"columns":[{"index":1,"title":"Done","type":"done","isDone":true},{"index":2,"title":"Doing","type":"in_progress","wipLimit":3}],"swimlanes":[{"index":1,"title":"Main"}],"users":[{"index":1,"email":"x@x.com","name":"X","active":false}]}
       """
 
   Scenario: sectionsToBoardModel accepts camelCase wipLimit and is_done synonyms
@@ -283,7 +283,7 @@ Feature: Board model from INI and UI helpers
     When I convert INI sections to a board model
     Then the board model JSON should be:
       """
-      {"board":{},"columns":[{"index":1,"title":"Wip","isDone":true,"wipLimit":2}],"swimlanes":[],"users":[]}
+      {"board":{},"columns":[{"index":1,"title":"Wip","type":"done","isDone":true,"wipLimit":2}],"swimlanes":[],"users":[]}
       """
 
   Scenario: sectionsToBoardModel marks users inactive via inactive or explicit active false
@@ -316,7 +316,7 @@ Feature: Board model from INI and UI helpers
     When I convert INI sections to a board model
     Then the board model JSON should be:
       """
-      {"board":{},"columns":[{"index":3,"title":"Column 3","isDone":true}],"swimlanes":[],"users":[{"index":1,"email":"e@e.e","name":"e@e.e","active":true},{"index":2,"email":"f@f.f","name":"f@f.f","active":true}]}
+      {"board":{},"columns":[{"index":3,"title":"Column 3","type":"done","isDone":true}],"swimlanes":[],"users":[{"index":1,"email":"e@e.e","name":"e@e.e","active":true},{"index":2,"email":"f@f.f","name":"f@f.f","active":true}]}
       """
 
   Scenario: sectionsToBoardModel skips users when email key is null or missing
@@ -344,7 +344,7 @@ Feature: Board model from INI and UI helpers
     When I parse the board definition INI
     Then the board model JSON should be:
       """
-      {"board":{"name":"Demo"},"columns":[{"index":1,"title":"Done","isDone":true}],"swimlanes":[],"users":[]}
+      {"board":{"name":"Demo"},"columns":[{"index":1,"title":"Done","type":"done","isDone":true}],"swimlanes":[],"users":[]}
       """
 
   Scenario: userPreferenceSyncModeIsAutomatic is false only for manual
@@ -366,7 +366,7 @@ Feature: Board model from INI and UI helpers
   Scenario: validateExactlyOneDoneColumn returns null when exactly one column is Done
     Given board model for Done validation as JSON:
       """
-      {"columns":[{"index":1,"title":"Todo"},{"index":2,"title":"Done","isDone":true}]}
+      {"columns":[{"index":1,"title":"Todo","type":"to_do"},{"index":2,"title":"Done","type":"done","isDone":true}]}
       """
     When I validate exactly one Done column
     Then the validation message should be null
@@ -374,7 +374,7 @@ Feature: Board model from INI and UI helpers
   Scenario: validateExactlyOneDoneColumn reports when no Done column exists
     Given board model for Done validation as JSON:
       """
-      {"columns":[{"index":1,"title":"Todo"}]}
+      {"columns":[{"index":1,"title":"Todo","type":"to_do"}]}
       """
     When I validate exactly one Done column
     Then the validation message should be:
@@ -385,7 +385,7 @@ Feature: Board model from INI and UI helpers
   Scenario: validateExactlyOneDoneColumn reports when multiple columns are Done
     Given board model for Done validation as JSON:
       """
-      {"columns":[{"index":1,"title":"D1","isDone":true},{"index":2,"title":"D2","isDone":true}]}
+      {"columns":[{"index":1,"title":"D1","type":"done","isDone":true},{"index":2,"title":"D2","type":"done","isDone":true}]}
       """
     When I validate exactly one Done column
     Then the validation message should be:
@@ -402,6 +402,28 @@ Feature: Board model from INI and UI helpers
     Then the validation message should be:
       """
       The board must have exactly one column marked Done. None are marked.
+      """
+
+  Scenario: sectionsToBoardModel reads column type from INI
+    Given INI-shaped sections as JSON:
+      """
+      {"columns.1":{"title":"Ideas","type":"options"},"columns.2":{"title":"Active","type":"in_progress"},"columns.3":{"title":"Blocked","type":"waiting"}}
+      """
+    When I convert INI sections to a board model
+    Then the board model JSON should be:
+      """
+      {"board":{},"columns":[{"index":1,"title":"Ideas","type":"options"},{"index":2,"title":"Active","type":"in_progress"},{"index":3,"title":"Blocked","type":"waiting"}],"swimlanes":[],"users":[]}
+      """
+
+  Scenario: sectionsToBoardModel prefers explicit type over legacy is_done
+    Given INI-shaped sections as JSON:
+      """
+      {"columns.1":{"title":"Archive","type":"options","is_done":"true"}}
+      """
+    When I convert INI sections to a board model
+    Then the board model JSON should be:
+      """
+      {"board":{},"columns":[{"index":1,"title":"Archive","type":"options"}],"swimlanes":[],"users":[]}
       """
 
   Scenario: validateExactlyOneDoneColumn labels unnamed Done columns by index

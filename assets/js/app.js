@@ -2,6 +2,7 @@ import { openAddCardDialog } from "./dialogs/addCard.js";
 import { openCardEditorDialog } from "./dialogs/editCard.js";
 import {
   boardOwnerEmailsForFilter,
+  columnIsDone,
   ownerDisplayLabel,
   parseBoardIni,
   userPreferenceSyncModeIsAutomatic,
@@ -92,7 +93,7 @@ const SWIMLANE_COLLAPSE_ICON = {
   collapsed: `<svg class="swimlane-collapse-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="1.6" rx="0.6" fill="currentColor"/><path d="M4 9 L8 12 L12 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
-/** Done columns (`is_done` in board.ini) show at most this many cards (newest `closed` first). */
+/** Done columns (`type = done` in board.ini) show at most this many cards (newest `closed` first). */
 const DONE_COLUMN_DISPLAY_MAX = 5;
 
 /** Wait this long after the last task change before auto-sync (Preferences → automatic sync). */
@@ -119,11 +120,11 @@ function closedSortMs(card) {
  * Done columns only: when there are more than {@link DONE_COLUMN_DISPLAY_MAX} cards in a lane,
  * show the most recently closed. Other columns pass through in API order.
  * @param {object[]} laneCards — already filtered to one swimlane + owner filter
- * @param {{ isDone?: boolean }} col
+ * @param {{ type?: string, isDone?: boolean }} col
  * @returns {{ display: object[], truncated: boolean }}
  */
 function cardsForDoneColumnDisplay(laneCards, col) {
-  if (!col.isDone || laneCards.length <= DONE_COLUMN_DISPLAY_MAX) {
+  if (!columnIsDone(col) || laneCards.length <= DONE_COLUMN_DISPLAY_MAX) {
     return { display: laneCards, truncated: false };
   }
   const sorted = [...laneCards].sort((a, b) => {
@@ -1499,7 +1500,7 @@ function renderBoard(
               ownerFilter.mode === "all" &&
               !normalizeSearchQuery(boardCardSearch) &&
               boardCache.cardsByColumn &&
-              (!col.isDone || !doneLaneTruncated)
+              (!columnIsDone(col) || !doneLaneTruncated)
             ) {
               const listEl = cell.querySelector(".column-card-list");
               if (listEl) {
