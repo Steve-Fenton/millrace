@@ -27,6 +27,9 @@ Feature: Charts and completed-work APIs
     Then the response status should be 200
     And the last JSON field "count" should equal number 1
     And the last JSON field "points" should have array length at least 1
+    And the first cycle scatter point should have field "closed"
+    And the last JSON field "periodStats" should have array length at least 1
+    And the last JSON field "medianDays" should equal number 5
 
   Scenario: completion buckets default to weekly granularity
     When I fetch JSON from "/api/completion-buckets?boardSlug=test"

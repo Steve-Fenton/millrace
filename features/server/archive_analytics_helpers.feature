@@ -92,6 +92,25 @@ Feature: Completed archive analytics helpers
       """
     Then the stdDev should be approximately 2.138 within 0.01
 
+  Scenario: buildCycleTimePeriodStats groups by bucket and sorts by time
+    When I call buildCycleTimePeriodStats with points JSON:
+      """
+      [
+        { "t": "2024-01-08T00:00:00.000Z", "d": 10 },
+        { "t": "2024-01-01T00:00:00.000Z", "d": 2 },
+        { "t": "2024-01-01T00:00:00.000Z", "d": 4 }
+      ]
+      """
+    Then the period stats should have length 2
+    And period stat at index 0 should have t "2024-01-01T00:00:00.000Z"
+    And period stat at index 0 median should equal 3
+    And period stat at index 0 count should equal 2
+    And period stat at index 0 stdDev should be approximately 1.414 within 0.01
+    And period stat at index 1 should have t "2024-01-08T00:00:00.000Z"
+    And period stat at index 1 median should equal 10
+    And period stat at index 1 count should equal 1
+    And period stat at index 1 stdDev should be null
+
   Scenario: completedRowMatchesSearch is true for empty query
     When I check completedRowMatchesSearch with query "" and row JSON:
       """

@@ -66,16 +66,44 @@ function formatBucketLabel(iso, granularity) {
   });
 }
 
+/** @param {string} iso */
+function formatCloseDateLabel(iso) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/**
+ * @param {{ closed?: string, t?: string, bucket?: string, d: number }} p
+ */
+function cyclePointClosedMs(p) {
+  if (typeof p.closed === "string") return Date.parse(p.closed);
+  return Date.parse(p.t ?? "");
+}
+
+/**
+ * @param {{ closed?: string, t?: string, bucket?: string, d: number }} p
+ */
+function cyclePointBucketKey(p) {
+  if (typeof p.bucket === "string") return p.bucket;
+  return p.t ?? "";
+}
+
 /**
  * @param {{ t: string, n: number }[]} buckets
- * @param {{ t: string, d: number }[]} cyclePoints
+ * @param {{ closed?: string, t?: string, bucket?: string, d: number }[]} cyclePoints
  * @param {{ t: string }[]} [extraBuckets]
  * @returns {{ tLo: number, tHi: number }}
  */
 function sharedTimeDomain(buckets, cyclePoints, extraBuckets = []) {
   const ts = [];
   for (const b of buckets) ts.push(Date.parse(b.t));
-  for (const p of cyclePoints) ts.push(Date.parse(p.t));
+  for (const p of cyclePoints) {
+    const ms = cyclePointClosedMs(p);
+    if (Number.isFinite(ms)) ts.push(ms);
+  }
   for (const b of extraBuckets) ts.push(Date.parse(b.t));
   if (ts.length === 0) {
     const n = Date.now();
@@ -1023,19 +1051,137 @@ function renderScatterSvg(buckets, granularity, timeDomain = null) {
 }
 
 /**
+ * @param {number[]} values
+ * @returns {number | null}
+ */
+function medianSampleClient(values) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const mid = Math.floor(n / 2);
+  return n % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * @param {number[]} values
+ * @returns {number | null}
+ */
+function sampleStdDevClient(values) {
+  const n = values.length;
+  if (n < 2) return null;
+  const mean = values.reduce((a, v) => a + v, 0) / n;
+  const varSum = values.reduce((a, v) => a + (v - mean) ** 2, 0);
+  return Math.sqrt(varSum / (n - 1));
+}
+
+/**
+ * @param {{ closed?: string, t?: string, bucket?: string, d: number }[]} points
+ */
+function buildCycleTimePeriodStatsFromPoints(points) {
+  /** @type {Map<string, number[]>} */
+  const byBucket = new Map();
+  for (const p of points) {
+    const key = cyclePointBucketKey(p);
+    if (!key) continue;
+    if (!byBucket.has(key)) byBucket.set(key, []);
+    byBucket.get(key).push(p.d);
+  }
+  return [...byBucket.entries()]
+    .sort(([a], [b]) => Date.parse(a) - Date.parse(b))
+    .map(([t, values]) => ({
+      t,
+      medianDays: medianSampleClient(values),
+      stdevDays: sampleStdDevClient(values),
+      count: values.length,
+    }));
+}
+
+/**
+ * @param {string[]} sortedBucketIsos sorted ascending
+ * @param {number} i
+ * @param {(tm: number) => number} xAt
+ * @param {number} padL
+ * @param {number} plotRight
+ * @param {number} plotW
+ * @returns {{ x0: number, x1: number }}
+ */
+function cyclePeriodXRange(sortedBucketIsos, i, xAt, padL, plotRight, plotW) {
+  const n = sortedBucketIsos.length;
+  if (n === 0) return { x0: padL, x1: plotRight };
+  const tm = Date.parse(sortedBucketIsos[i]);
+  if (n === 1) {
+    return { x0: padL, x1: plotRight };
+  }
+
+  let leftMs;
+  let rightMs;
+  if (i === 0) {
+    const nextMs = Date.parse(sortedBucketIsos[i + 1]);
+    const halfSpan = (nextMs - tm) / 2;
+    leftMs = tm - halfSpan;
+    rightMs = tm + halfSpan;
+  } else if (i === n - 1) {
+    const prevMs = Date.parse(sortedBucketIsos[i - 1]);
+    const halfSpan = (tm - prevMs) / 2;
+    leftMs = tm - halfSpan;
+    rightMs = tm + halfSpan;
+  } else {
+    leftMs = (Date.parse(sortedBucketIsos[i - 1]) + tm) / 2;
+    rightMs = (tm + Date.parse(sortedBucketIsos[i + 1])) / 2;
+  }
+
+  let x0 = Math.max(padL, xAt(leftMs));
+  let x1 = Math.min(plotRight, xAt(rightMs));
+  if (!Number.isFinite(x0) || !Number.isFinite(x1) || x1 <= x0) {
+    const cx = xAt(tm);
+    const w = Math.max(12, plotW / Math.max(n * 1.5, 1));
+    x0 = Math.max(padL, cx - w / 2);
+    x1 = Math.min(plotRight, cx + w / 2);
+  }
+  return { x0, x1: Math.max(x0 + 1, x1) };
+}
+
+/**
+ * @param {{ x0: number, x1: number, y: number }[]} segments
+ * @returns {string}
+ */
+function buildCycleStepPath(segments) {
+  let d = "";
+  for (const seg of segments) {
+    if (!Number.isFinite(seg.y)) continue;
+    if (d === "") {
+      d = `M ${seg.x0} ${seg.y} H ${seg.x1}`;
+    } else {
+      d += ` V ${seg.y} H ${seg.x1}`;
+    }
+  }
+  return d;
+}
+
+/**
  * @param {Record<string, unknown>} cyclePayload
  * @param {Granularity} granularity
  * @param {{ tLo: number, tHi: number }} timeDomain
  */
 function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
   const points = Array.isArray(cyclePayload.points)
-    ? /** @type {{ t: string, d: number }[]} */ (cyclePayload.points)
+    ? /** @type {{ closed?: string, t?: string, bucket?: string, d: number }[]} */ (
+        cyclePayload.points
+      )
     : [];
+  const periodStats = Array.isArray(cyclePayload.periodStats)
+    ? /** @type {{ t: string, medianDays: number | null, stdevDays: number | null, count: number }[]} */ (
+        cyclePayload.periodStats
+      )
+    : [];
+  const effectivePeriodStats =
+    periodStats.length > 0
+      ? periodStats
+      : buildCycleTimePeriodStatsFromPoints(points);
   const medianDays =
     typeof cyclePayload.medianDays === "number" ? cyclePayload.medianDays : null;
   const stdevDays =
     typeof cyclePayload.stdevDays === "number" ? cyclePayload.stdevDays : null;
-  const count = Number(cyclePayload.count) || 0;
 
   const vbW = 720;
   const vbH = 360;
@@ -1045,6 +1191,7 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
   const padB = 52;
   const plotW = vbW - padL - padR;
   const plotH = vbH - padT - padB;
+  const plotRight = padL + plotW;
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
@@ -1052,7 +1199,7 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
   svg.setAttribute("role", "img");
   svg.setAttribute(
     "aria-label",
-    `Cycle time in days per ${granularity} close bucket (UTC)`
+    `Cycle time in days by close date (UTC); median and σ per ${granularity} period`
   );
 
   const { tLo, tHi } = timeDomain;
@@ -1074,6 +1221,24 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
   let dMax = 0.01;
   for (const p of points) {
     if (Number.isFinite(p.d)) dMax = Math.max(dMax, p.d);
+  }
+  for (const ps of effectivePeriodStats) {
+    if (typeof ps.medianDays === "number" && Number.isFinite(ps.medianDays)) {
+      dMax = Math.max(dMax, ps.medianDays);
+    }
+    if (
+      typeof ps.medianDays === "number" &&
+      typeof ps.stdevDays === "number" &&
+      Number.isFinite(ps.medianDays) &&
+      Number.isFinite(ps.stdevDays)
+    ) {
+      dMax = Math.max(
+        dMax,
+        ps.medianDays + ps.stdevDays,
+        ps.medianDays - ps.stdevDays,
+        0
+      );
+    }
   }
   if (medianDays != null && Number.isFinite(medianDays)) {
     dMax = Math.max(dMax, medianDays);
@@ -1129,18 +1294,16 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
     svg.append(line, lab);
   }
 
-  const uniqT = [...new Set(points.map((p) => p.t))].sort(
-    (a, b) => Date.parse(a) - Date.parse(b)
-  );
+  const sortedPeriodTs = effectivePeriodStats.map((ps) => ps.t);
+  const uniqT = sortedPeriodTs.length > 0 ? sortedPeriodTs : [];
   const xTickN = Math.min(7, uniqT.length);
   for (let i = 0; i < xTickN; i++) {
     const idx =
       xTickN <= 1 ? 0 : Math.round((i / (xTickN - 1)) * (uniqT.length - 1));
     const tIso = uniqT[idx];
     const tm = Date.parse(tIso);
-    const xx = xAt(tm);
     const lab = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    lab.setAttribute("x", String(xx));
+    lab.setAttribute("x", String(xAt(tm)));
     lab.setAttribute("y", String(padT + plotH + 22));
     lab.setAttribute("text-anchor", "middle");
     lab.setAttribute("class", "charts-tick-label charts-tick-label--x");
@@ -1148,33 +1311,76 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
     svg.append(lab);
   }
 
-  if (medianDays != null && stdevDays != null && count >= 2) {
-    const lo = Math.max(0, medianDays - stdevDays);
-    const hi = Math.min(medianDays + stdevDays, dTop);
-    const yTopPx = yAt(hi);
-    const yBotPx = yAt(lo);
-    const band = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    band.setAttribute("x", String(padL));
-    band.setAttribute("width", String(plotW));
-    band.setAttribute("y", String(yTopPx));
-    band.setAttribute("height", String(Math.max(1, yBotPx - yTopPx)));
-    band.setAttribute("class", "charts-cycle-sigma-band");
-    svg.append(band);
+  /** @type {{ x0: number, x1: number, y: number }[]} */
+  const medianSegments = [];
+  /** @type {{ x0: number, x1: number, y: number }[]} */
+  const sigmaUpperSegments = [];
+  /** @type {{ x0: number, x1: number, y: number }[]} */
+  const sigmaLowerSegments = [];
+
+  for (let i = 0; i < effectivePeriodStats.length; i++) {
+    const ps = effectivePeriodStats[i];
+    const { x0, x1 } = cyclePeriodXRange(
+      sortedPeriodTs,
+      i,
+      xAt,
+      padL,
+      plotRight,
+      plotW
+    );
+    const width = Math.max(1, x1 - x0);
+    const periodMedian =
+      typeof ps.medianDays === "number" && Number.isFinite(ps.medianDays)
+        ? ps.medianDays
+        : null;
+    const periodStdev =
+      typeof ps.stdevDays === "number" && Number.isFinite(ps.stdevDays)
+        ? ps.stdevDays
+        : null;
+    const periodCount = Number(ps.count) || 0;
+
+    if (periodMedian != null && periodStdev != null && periodCount >= 2) {
+      const lo = Math.max(0, periodMedian - periodStdev);
+      const hi = Math.min(periodMedian + periodStdev, dTop);
+      const yTopPx = yAt(hi);
+      const yBotPx = yAt(lo);
+      const band = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      band.setAttribute("x", String(x0));
+      band.setAttribute("width", String(width));
+      band.setAttribute("y", String(yTopPx));
+      band.setAttribute("height", String(Math.max(1, yBotPx - yTopPx)));
+      band.setAttribute("class", "charts-cycle-sigma-band");
+      svg.append(band);
+      sigmaUpperSegments.push({ x0, x1, y: yTopPx });
+      sigmaLowerSegments.push({ x0, x1, y: yBotPx });
+    }
+
+    if (periodMedian != null && periodCount > 0) {
+      medianSegments.push({
+        x0,
+        x1,
+        y: yAt(Math.min(periodMedian, dTop)),
+      });
+    }
   }
 
-  if (medianDays != null && count > 0) {
-    const yMed = yAt(Math.min(medianDays, dTop));
-    const medLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    medLine.setAttribute("x1", String(padL));
-    medLine.setAttribute("x2", String(padL + plotW));
-    medLine.setAttribute("y1", String(yMed));
-    medLine.setAttribute("y2", String(yMed));
-    medLine.setAttribute("class", "charts-cycle-median-line");
-    svg.append(medLine);
-  }
+  const appendStepPath = (segments, className) => {
+    const d = buildCycleStepPath(segments);
+    if (!d) return;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    path.setAttribute("class", className);
+    path.setAttribute("fill", "none");
+    svg.append(path);
+  };
+
+  appendStepPath(sigmaLowerSegments, "charts-cycle-sigma-line");
+  appendStepPath(sigmaUpperSegments, "charts-cycle-sigma-line");
+  appendStepPath(medianSegments, "charts-cycle-median-line");
 
   for (const p of points) {
-    const tm = Date.parse(p.t);
+    const tm = cyclePointClosedMs(p);
+    if (!Number.isFinite(tm)) continue;
     const cx = xAt(tm);
     const cy = yAt(p.d);
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -1183,7 +1389,9 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
     c.setAttribute("r", "5.5");
     c.setAttribute("class", "charts-point charts-point--cycle");
     const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    tip.textContent = `${formatBucketLabel(p.t, granularity)} — ${p.d.toFixed(2)} d (close − create)`;
+    const closedIso =
+      typeof p.closed === "string" ? p.closed : typeof p.t === "string" ? p.t : "";
+    tip.textContent = `${formatCloseDateLabel(closedIso)} — ${p.d.toFixed(2)} d (close − create)`;
     c.append(tip);
     svg.append(c);
   }
@@ -1217,7 +1425,9 @@ function renderChartsShell(
     ? completionData.buckets
     : [];
   const cyclePoints = Array.isArray(cycleData.points)
-    ? /** @type {{ t: string, d: number }[]} */ (cycleData.points)
+    ? /** @type {{ closed?: string, t?: string, bucket?: string, d: number }[]} */ (
+        cycleData.points
+      )
     : [];
   const stackBuckets = Array.isArray(swimlaneStackData.buckets)
     ? /** @type {{ t: string }[]} */ (swimlaneStackData.buckets)
@@ -1380,7 +1590,7 @@ function renderChartsShell(
   const cardCycle = createChartCard({
     title: "Cycle time (created → closed)",
     note:
-      "The shaded band is median ± one standard deviation",
+      "Shaded bands show median ± one standard deviation for each close period",
     svgElement: svgCycle,
     footer: stats,
     afterChart: [stats],

@@ -54,7 +54,7 @@
   --black-shadow-deep: color-mix(in srgb, black 42%, transparent);
   --black-overlay: color-mix(in srgb, black 55%, transparent);
 
-  --purple-dim: color-mix(in srgb, var(--purple) 12%, transparent);
+  --purple-dim: color-mix(in srgb, var(--purple) 22%, transparent);
   --purple-medium: color-mix(in srgb, var(--purple) 35%, transparent);
   --purple-border: color-mix(in srgb, var(--purple) 45%, transparent);
   --purple-fill-strong: color-mix(in srgb, var(--purple) 55%, transparent);
@@ -1787,15 +1787,25 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .charts-cycle-median-line {
-  stroke: var(--text-muted-overlay);
-  stroke-width: 1.5;
-  stroke-dasharray: 6 4;
+  stroke: var(--purple);
+  stroke-width: 2;
+  stroke-dasharray: none;
+  vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 
 .charts-cycle-sigma-band {
   fill: var(--purple-dim);
   stroke: none;
+  pointer-events: none;
+}
+
+.charts-cycle-sigma-line {
+  stroke: var(--purple);
+  stroke-width: 1.25;
+  stroke-dasharray: 5 4;
+  opacity: 0.65;
+  vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 

@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import {
   bucketStartMsForGranularity,
+  buildCycleTimePeriodStats,
   completedClosedInWhenRange,
   completedRowMatchesSearch,
   legacySwimlaneFilterCandidates,
@@ -111,6 +112,46 @@ Then(
     assert.ok(
       Math.abs(this.stdDevResult - expected) < tolerance,
       `expected ~${expected}, got ${this.stdDevResult}`
+    );
+  }
+);
+
+When("I call buildCycleTimePeriodStats with points JSON:", function (docString) {
+  const points = JSON.parse(docString.trim());
+  this.periodStatsResult = buildCycleTimePeriodStats(points);
+});
+
+Then("the period stats should have length {int}", function (n) {
+  assert.ok(Array.isArray(this.periodStatsResult));
+  assert.strictEqual(this.periodStatsResult.length, n);
+});
+
+Then(
+  "period stat at index {int} should have t {string}",
+  function (index, expectedT) {
+    assert.strictEqual(this.periodStatsResult[index].t, expectedT);
+  }
+);
+
+Then("period stat at index {int} median should equal {int}", function (index, n) {
+  assert.strictEqual(this.periodStatsResult[index].medianDays, n);
+});
+
+Then("period stat at index {int} count should equal {int}", function (index, n) {
+  assert.strictEqual(this.periodStatsResult[index].count, n);
+});
+
+Then("period stat at index {int} stdDev should be null", function (index) {
+  assert.strictEqual(this.periodStatsResult[index].stdevDays, null);
+});
+
+Then(
+  "period stat at index {int} stdDev should be approximately {float} within {float}",
+  function (index, expected, tolerance) {
+    const actual = this.periodStatsResult[index].stdevDays;
+    assert.ok(
+      Math.abs(actual - expected) < tolerance,
+      `expected ~${expected}, got ${actual}`
     );
   }
 );

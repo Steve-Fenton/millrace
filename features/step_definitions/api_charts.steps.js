@@ -19,3 +19,15 @@ Then(
     assert.ok(ok, `expected a bucket with n >= ${min}, got ${JSON.stringify(buckets)}`);
   }
 );
+
+Then(
+  "the first cycle scatter point should have field {string}",
+  function (field) {
+    const points = this.lastJson.points;
+    assert.ok(Array.isArray(points) && points.length > 0);
+    assert.ok(
+      Object.hasOwn(points[0], field),
+      `expected points[0] to have ${field}, got ${JSON.stringify(points[0])}`
+    );
+  }
+);

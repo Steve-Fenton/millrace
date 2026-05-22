@@ -27,7 +27,7 @@ For the selected granularity, this chart shows the total cards completed, groupe
 
 ## Cycle time
 
-For the selected granularity, this chart shows the time it took a card to be completed. It also highlights the median and one standard deviation.
+For the selected granularity, this chart shows the time it took a card to be completed. Each dot is placed on the card’s close date; median and one standard deviation are shown **per close period** (weekly or monthly), with an overall summary in the footer.
 
 ![Screenshot: Cycle times](../screenshots/demo-chart-expand-cycle-time.png)
 

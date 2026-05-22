@@ -840,13 +840,39 @@ export function sampleStdDev(values) {
 }
 
 /**
- * Per-card cycle length (closed − created) in days, x = UTC bucket of `closed`.
+ * Median and sample σ per close bucket from scatter points.
+ * @param {{ bucket?: string, t?: string, d: number }[]} points
+ * @returns {{ t: string, medianDays: number | null, stdevDays: number | null, count: number }[]}
+ */
+export function buildCycleTimePeriodStats(points) {
+  /** @type {Map<string, number[]>} */
+  const byBucket = new Map();
+  for (const p of points) {
+    const bucket =
+      typeof p.bucket === "string" ? p.bucket : typeof p.t === "string" ? p.t : "";
+    if (!bucket) continue;
+    if (!byBucket.has(bucket)) byBucket.set(bucket, []);
+    byBucket.get(bucket).push(p.d);
+  }
+  return [...byBucket.entries()]
+    .sort(([a], [b]) => Date.parse(a) - Date.parse(b))
+    .map(([t, values]) => ({
+      t,
+      medianDays: medianSample(values),
+      stdevDays: sampleStdDev(values),
+      count: values.length,
+    }));
+}
+
+/**
+ * Per-card cycle length (closed − created) in days.
+ * Scatter x uses actual `closed`; `periodStats` group by UTC close bucket.
  * @param {string} slug
  * @param {"daily" | "weekly" | "monthly"} granularity
  */
 export async function buildCycleTimeScatter(slug, granularity) {
   const rows = await gatherCompletedAndArchiveRows(slug);
-  /** @type {{ t: string, d: number }[]} */
+  /** @type {{ closed: string, bucket: string, d: number }[]} */
   const points = [];
   for (const row of rows) {
     const closedMs = parseIsoMs(row.closed);
@@ -856,12 +882,17 @@ export async function buildCycleTimeScatter(slug, granularity) {
     if (!Number.isFinite(cycleMs) || cycleMs < 0) continue;
     const bucketMs = bucketStartMsForGranularity(closedMs, granularity);
     const d = cycleMs / (24 * 60 * 60 * 1000);
-    points.push({ t: new Date(bucketMs).toISOString(), d });
+    points.push({
+      closed: new Date(closedMs).toISOString(),
+      bucket: new Date(bucketMs).toISOString(),
+      d,
+    });
   }
   const values = points.map((p) => p.d);
   return {
     granularity,
     points,
+    periodStats: buildCycleTimePeriodStats(points),
     medianDays: medianSample(values),
     stdevDays: sampleStdDev(values),
     count: values.length,

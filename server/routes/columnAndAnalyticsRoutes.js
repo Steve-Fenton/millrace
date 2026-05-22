@@ -217,8 +217,11 @@ app.get("/api/completion-swimlane-stack", async (req, res) => {
 
 /**
  * Query: boardSlug, granularity=daily|weekly|monthly (default weekly).
- * Points: each card with parseable `created` and `closed`; x = UTC bucket of `closed`, y = (closed − created) in days.
- * `medianDays` / `stdevDays` are over those cycle lengths (sample σ, n ≥ 2).
+ * Points: each card with parseable `created` and `closed`; scatter uses actual
+ * `closed` on x, y = (closed − created) in days. `periodStats` groups by UTC
+ * close bucket at the requested granularity.
+ * `periodStats` gives median / sample σ per close bucket; top-level `medianDays` /
+ * `stdevDays` are global over all cycle lengths (sample σ, n ≥ 2).
  */
 app.get("/api/cycle-time-scatter", async (req, res) => {
   try {
