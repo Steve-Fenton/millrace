@@ -61,6 +61,35 @@ export function buildCardDeepLinkUrl(opts) {
   return u.toString();
 }
 
+export const SOURCE_CARD_LINK_TEXT = "Source card";
+
+/**
+ * @param {Array<{ text?: string, url?: string }>} links
+ * @param {{ boardSlug: string, filename: string }} source
+ * @returns {Array<{ text: string, url: string }>}
+ */
+export function linksWithSourceCardLink(links, source) {
+  const boardSlug = String(source.boardSlug ?? "").trim();
+  const filename = String(source.filename ?? "").trim();
+  const normalized = Array.isArray(links)
+    ? links.map((l) => ({
+        text: String(l?.text ?? "").trim(),
+        url: String(l?.url ?? "").trim(),
+      }))
+    : [];
+  if (!boardSlug || !filename) return normalized;
+  return [
+    ...normalized,
+    {
+      text: SOURCE_CARD_LINK_TEXT,
+      url: buildCardDeepLinkUrl({
+        boardSlug,
+        cardId: normalizeCardId(filename),
+      }),
+    },
+  ];
+}
+
 /**
  * @param {URLSearchParams} params
  * @returns {{ boardSlug?: string, cardId: string } | null}

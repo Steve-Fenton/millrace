@@ -3,6 +3,7 @@ import { createLinksEditor } from "../ui/cardLinks.js";
 import {
   CARD_LINK_ICON_SVG,
   copyCardDeepLinkToClipboard,
+  linksWithSourceCardLink,
   showCopyLinkButtonCopied,
 } from "../ui/cardDeepLink.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
@@ -487,7 +488,10 @@ export async function openCardEditorDialog(ctx) {
         const note = String(noteInput?.value || "").trim();
         const nextActionDate = String(nextActionInput?.value || "").trim();
         const owner = ownerField.getValue();
-        const links = linksEditor.getLinks();
+        const links = linksWithSourceCardLink(linksEditor.getLinks(), {
+          boardSlug: ctx.boardSlug,
+          filename: ctx.filename,
+        });
         try {
           await createCard({
             boardSlug: ctx.boardSlug,
