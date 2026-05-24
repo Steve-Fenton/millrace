@@ -2806,8 +2806,15 @@ dialog.flow-modal::backdrop {
 }
 
 .flow-history-icon-svg,
-.flow-duplicate-icon-svg {
+.flow-duplicate-icon-svg,
+.flow-copy-link-icon-svg {
   display: block;
+}
+
+.flow-btn-copy-card-link-icon--copied {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--surface-hover);
 }
 
 .flow-modal--git-history {

@@ -65,6 +65,10 @@ import {
   wrapSearchInputWithClear,
 } from "./ui/clearFilter.js";
 import { fillCardLinkWithNewTabIcon } from "./ui/cardLinkOpenNewTab.js";
+import {
+  parseCardDeepLinkParams,
+  tryOpenCardFromDeepLink,
+} from "./ui/cardDeepLink.js";
 import { escapeHtml } from "./html/escape.js";
 import { displayTaskTitle } from "./models/taskModel.js";
 import { initFlowTheme } from "./ui/applyTheme.js";
@@ -1828,6 +1832,13 @@ async function loadApp(fullReload = true) {
   setFlowDocumentTitle("Board");
   mount.innerHTML = `<div class="app-loading">Loading board…</div>`;
 
+  const cardDeepLink = parseCardDeepLinkParams(
+    new URLSearchParams(window.location.search)
+  );
+  if (cardDeepLink?.boardSlug) {
+    writeStoredActiveBoardSlug(cardDeepLink.boardSlug);
+  }
+
   try {
     const { boards, activeSlug } = await resolveActiveBoardSelection();
     const flowCtx = { boards, activeSlug };
@@ -1913,6 +1924,10 @@ async function loadApp(fullReload = true) {
       )
     );
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
+
+    if (cardDeepLink) {
+      tryOpenCardFromDeepLink(cardDeepLink, boardCache, openCardEditorDialog);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     mount.innerHTML = `<div class="app-error">Could not load board: ${escapeHtml(msg)}</div>`;

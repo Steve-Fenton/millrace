@@ -1,5 +1,10 @@
 import { createCardDescriptionEditor } from "../ui/cardDescriptionEditor.js";
 import { createLinksEditor } from "../ui/cardLinks.js";
+import {
+  CARD_LINK_ICON_SVG,
+  copyCardDeepLinkToClipboard,
+  showCopyLinkButtonCopied,
+} from "../ui/cardDeepLink.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
@@ -194,6 +199,14 @@ export async function openCardEditorDialog(ctx) {
           >
             <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
           </button>
+          <button
+            type="button"
+            class="flow-btn flow-btn-icon flow-btn-copy-card-link-icon"
+            aria-label="Copy link to this card"
+            title="Copy link"
+          >
+            ${CARD_LINK_ICON_SVG}
+          </button>
         </div>
       </div>
       <p id="flow-edit-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
@@ -341,6 +354,18 @@ export async function openCardEditorDialog(ctx) {
 
   modal.querySelector(".flow-btn-history-icon")?.addEventListener("click", () => {
     void openCardGitHistoryNested(ctx);
+  });
+
+  modal.querySelector(".flow-btn-copy-card-link-icon")?.addEventListener("click", () => {
+    const btn = modal.querySelector(".flow-btn-copy-card-link-icon");
+    if (!(btn instanceof HTMLButtonElement)) return;
+    void (async () => {
+      const ok = await copyCardDeepLinkToClipboard({
+        boardSlug: ctx.boardSlug,
+        filename: ctx.filename,
+      });
+      if (ok) showCopyLinkButtonCopied(btn);
+    })();
   });
 
   let settled = false;
