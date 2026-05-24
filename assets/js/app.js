@@ -69,6 +69,7 @@ import {
   parseCardDeepLinkParams,
   tryOpenCardFromDeepLink,
 } from "./ui/cardDeepLink.js";
+import { takePendingCardEditorOpen } from "./ui/openCardEditorAfterRefresh.js";
 import { escapeHtml } from "./html/escape.js";
 import { displayTaskTitle } from "./models/taskModel.js";
 import { initFlowTheme } from "./ui/applyTheme.js";
@@ -1925,7 +1926,10 @@ async function loadApp(fullReload = true) {
     );
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
 
-    if (cardDeepLink) {
+    const pendingOpen = takePendingCardEditorOpen();
+    if (pendingOpen) {
+      void openCardEditorDialog(pendingOpen);
+    } else if (cardDeepLink) {
       tryOpenCardFromDeepLink(cardDeepLink, boardCache, openCardEditorDialog);
     }
   } catch (e) {

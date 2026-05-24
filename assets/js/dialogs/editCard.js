@@ -6,6 +6,7 @@ import {
   linksWithSourceCardLink,
   showCopyLinkButtonCopied,
 } from "../ui/cardDeepLink.js";
+import { queueCardEditorOpenAfterRefresh } from "../ui/openCardEditorAfterRefresh.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
@@ -493,7 +494,7 @@ export async function openCardEditorDialog(ctx) {
           filename: ctx.filename,
         });
         try {
-          await createCard({
+          const created = await createCard({
             boardSlug: ctx.boardSlug,
             columnIndex: ctx.columnIndex,
             swimlaneIndex: laneNum,
@@ -505,8 +506,22 @@ export async function openCardEditorDialog(ctx) {
             nextActionDate,
             links,
           });
-          document.dispatchEvent(new CustomEvent("flow:refresh-board"));
           finish(true);
+          const filename =
+            String(created.filename ?? "").trim() ||
+            (created.id ? `${String(created.id).trim()}.ini` : "");
+          if (filename) {
+            queueCardEditorOpenAfterRefresh({
+              boardSlug: ctx.boardSlug,
+              columnIndex: ctx.columnIndex,
+              filename,
+              columnTitle: ctx.columnTitle,
+              swimlaneIndex: ctx.swimlaneIndex,
+              swimlaneTitle: ctx.swimlaneTitle,
+              boardUsers: ctx.boardUsers,
+            });
+          }
+          document.dispatchEvent(new CustomEvent("flow:refresh-board"));
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           await showFlowAlert(msg, { title: "Could not duplicate card" });

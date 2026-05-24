@@ -1,4 +1,5 @@
 import { openCardEditorDialog } from "../dialogs/editCard.js";
+import { takePendingCardEditorOpen } from "../ui/openCardEditorAfterRefresh.js";
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
@@ -909,6 +910,10 @@ async function main() {
         whenFilterParam
       )
     );
+    const pendingOpen = takePendingCardEditorOpen();
+    if (pendingOpen) {
+      void openCardEditorDialog(pendingOpen);
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     mount.innerHTML = `<div class="app-error">Could not load list: ${escapeHtml(msg)}</div>`;

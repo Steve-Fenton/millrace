@@ -20,7 +20,7 @@ Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<boar
 
 ## Edit task cards
 
-When you hover over a card, you can select the **Edit** icon to opent the card editor. From here you can update you task information, add links.
+When you hover over a card, you can select the **Edit** icon to open the card editor. From here you can update your task information, add links, and use the header actions.
 
 Card descriptions support limited **Markdown** (see [supported markdown](../markdown.md)).
 
@@ -30,12 +30,28 @@ You'll notice several icons on the card editor.
 
 Along the top:
 
-- **Duplicate**: Creates a copy of the card.
+- **Duplicate**: Creates a copy of the card in the same column and swimlane. The copy includes a **Source card** link back to the original, and the editor opens on the new card so you can adjust the title or other fields right away.
 - **History**: Shows changes made to the card.
+- **Copy link**: Copies a shareable URL for this card.
 
 Along the bottom:
 
 - **Delete**: Deletes the card (after double-checking with you).
+
+### Share a link to a card
+
+Use **Copy link** in the card editor to copy a URL like:
+
+```text
+/index.html?board=demo&card=FLOW-mp1eqyhn-1j2hsw
+```
+
+- **`board`** is the board slug (the folder name under `tasks/`).
+- **`card`** is the card ID — the task INI filename without the `.ini` extension.
+
+When someone opens that link, Millrace loads the board and opens the card in the editor. The query string is removed from the address bar after the card opens.
+
+On an **aggregate board**, copied links use the **source** board where the card file lives, not the aggregate board slug.
 
 ### Useful card features
 
