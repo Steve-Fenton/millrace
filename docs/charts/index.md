@@ -25,6 +25,12 @@ For the selected granularity, this chart shows the total cards completed, groupe
 
 ![Screenshot: Completions by swimland](../screenshots/demo-chart-expand-swimlane.png)
 
+## Cumulative flow
+
+For the selected granularity, this chart shows how work accumulates over time. Open card counts in each column come from daily snapshots; the **Done** band is a running total of cards closed in each period. On aggregate boards, columns are matched by **type** rather than name.
+
+![Screenshot: Cumulative flow](../screenshots/demo-chart-expand-cumulative-flow.png)
+
 ## Cycle time
 
 For the selected granularity, this chart shows the time it took a card to be completed. Each dot is placed on the card’s close date; median and one standard deviation are shown **per close period** (weekly or monthly), with an overall summary in the footer.
