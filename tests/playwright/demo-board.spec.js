@@ -12,6 +12,9 @@ const CHART_EXPAND_SHOTS = [
     file: "demo-chart-expand-swimlane.png",
     title: "Completions by swimlane",
   },{
+    file: "demo-chart-expand-cumulative-flow.png",
+    title: "Cumulative flow",
+  },{
     file: "demo-chart-expand-cycle-time.png",
     title: "Cycle time (created → closed)",
   },{
