@@ -14,6 +14,7 @@ import {
   parseCompletedWhenFilter,
   resolveCompletedLaneFilterIndices,
 } from "../archiveAnalytics.js";
+import { buildCumulativeFlowStack } from "../columnSnapshots.js";
 import { resolveBoardIniPathForSlug, sanitizeSegment } from "../boardCatalog.js";
 import { sendColumnCards } from "../columnCards.js";
 
@@ -251,6 +252,27 @@ app.get("/api/column-swimlane-stack", async (req, res) => {
     console.error(e);
     res.status(500).json({
       message: "Failed to load column swimlane stack.",
+    });
+  }
+});
+
+/**
+ * Query: boardSlug, granularity=weekly|monthly (default weekly).
+ * Cumulative flow from column snapshots (WIP) and closed-card completions (done).
+ */
+app.get("/api/cumulative-flow-stack", async (req, res) => {
+  try {
+    const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
+    const gRaw = String(req.query.granularity ?? "weekly").toLowerCase();
+    let granularity = "weekly";
+    if (gRaw === "monthly") granularity = "monthly";
+    else if (gRaw === "daily") granularity = "daily";
+    const { series, buckets } = await buildCumulativeFlowStack(slug, granularity);
+    res.json({ boardSlug: slug, granularity, series, buckets });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Failed to load cumulative flow stack.",
     });
   }
 });

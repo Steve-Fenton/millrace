@@ -227,6 +227,35 @@ async function fetchCompletionSwimlaneStack(boardSlug, granularity) {
 }
 
 /**
+ * @param {string} boardSlug
+ * @param {Granularity} granularity
+ */
+async function fetchCumulativeFlowStack(boardSlug, granularity) {
+  const q = new URLSearchParams({ boardSlug, granularity });
+  const res = await fetch(`/api/cumulative-flow-stack?${q}`, NO_STORE);
+  const ct = res.headers.get("content-type") ?? "";
+  /** @type {Record<string, unknown>} */
+  let data = {};
+  if (ct.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
+  } else {
+    await res.text().catch(() => {});
+  }
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed";
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/**
  * @param {number} i
  * @param {number} n
  */
@@ -235,6 +264,16 @@ function swimlaneStackFill(i, n) {
   const sat = n <= 1 ? 45 : 52;
   const light = 48 - (i % 3) * 4;
   return `hsl(${hue} ${sat}% ${light}%)`;
+}
+
+/**
+ * Bottom-to-top stack order for cumulative flow (done band at the base).
+ * @param {{ key: string, label: string, index: number }[]} logicalSeries
+ */
+function cumulativeFlowStackSeries(logicalSeries) {
+  const done = logicalSeries.find((s) => s.key === "done");
+  const wip = logicalSeries.filter((s) => s.key !== "done");
+  return done ? [done, ...wip] : wip;
 }
 
 /**
@@ -248,6 +287,11 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
         stackPayload.series
       )
     : [];
+  const stackSeries = Array.isArray(stackPayload.stackSeries)
+    ? /** @type {{ key: string, label: string, index: number }[]} */ (
+        stackPayload.stackSeries
+      )
+    : series;
   const buckets = Array.isArray(stackPayload.buckets)
     ? /** @type {{ t: string, counts: Record<string, number> }[]} */ (
         stackPayload.buckets
@@ -267,14 +311,21 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
   svg.setAttribute("viewBox", `0 0 ${vbW} ${vbH}`);
   svg.setAttribute("class", "charts-scatter-svg charts-stack-svg");
   svg.setAttribute("role", "img");
-  svg.setAttribute(
-    "aria-label",
-    `Completions by swimlane per ${granularity} period (UTC buckets)`
-  );
+  const ariaLabel =
+    typeof stackPayload.ariaLabel === "string" && stackPayload.ariaLabel.trim()
+      ? stackPayload.ariaLabel.trim()
+      : `Completions by swimlane per ${granularity} period (UTC buckets)`;
+  svg.setAttribute("aria-label", ariaLabel);
 
   const { tLo, tHi } = timeDomain;
   /** @param {number} tm */
   const xAt = (tm) => padL + ((tm - tLo) / (tHi - tLo)) * plotW;
+
+  const emptyLabel =
+    typeof stackPayload.emptyLabel === "string" &&
+    stackPayload.emptyLabel.trim()
+      ? stackPayload.emptyLabel.trim()
+      : "No completions with a close date yet.";
 
   if (buckets.length === 0) {
     const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -282,7 +333,7 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
     msg.setAttribute("y", String(vbH / 2));
     msg.setAttribute("text-anchor", "middle");
     msg.setAttribute("class", "charts-empty-label");
-    msg.textContent = "No completions with a close date yet.";
+    msg.textContent = emptyLabel;
     svg.append(msg);
     return svg;
   }
@@ -316,7 +367,10 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
     `rotate(-90 14 ${padT + plotH / 2})`
   );
   yLabel.setAttribute("class", "charts-axis-title");
-  yLabel.textContent = "Completions";
+  yLabel.textContent =
+    typeof stackPayload.yAxisLabel === "string" && stackPayload.yAxisLabel.trim()
+      ? stackPayload.yAxisLabel.trim()
+      : "Completions";
   svg.append(yLabel);
 
   const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -324,7 +378,10 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
   xLabel.setAttribute("y", String(vbH - 12));
   xLabel.setAttribute("text-anchor", "middle");
   xLabel.setAttribute("class", "charts-axis-title");
-  xLabel.textContent = "Close period (UTC)";
+  xLabel.textContent =
+    typeof stackPayload.xAxisLabel === "string" && stackPayload.xAxisLabel.trim()
+      ? stackPayload.xAxisLabel.trim()
+      : "Close period (UTC)";
   svg.append(xLabel);
 
   const yTicks = Math.min(5, Math.max(2, Math.ceil(yMax)));
@@ -363,10 +420,18 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
   }
 
   const n = buckets.length;
-  const nSeries = series.length;
+  const nStack = stackSeries.length;
 
-  for (let si = 0; si < nSeries; si++) {
-    const s = series[si];
+  /**
+   * @param {string} key
+   */
+  function seriesColorIndex(key) {
+    const idx = series.findIndex((entry) => entry.key === key);
+    return idx >= 0 ? idx : 0;
+  }
+
+  for (let si = 0; si < nStack; si++) {
+    const s = stackSeries[si];
     let any = false;
     for (const b of buckets) {
       if ((Number(b.counts[s.key] ?? 0) || 0) > 0) {
@@ -380,7 +445,7 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
     function stackY0(i) {
       let y0 = 0;
       for (let j = 0; j < si; j++) {
-        y0 += Number(buckets[i].counts[series[j].key] ?? 0) || 0;
+        y0 += Number(buckets[i].counts[stackSeries[j].key] ?? 0) || 0;
       }
       return y0;
     }
@@ -389,7 +454,7 @@ function renderStackedAreaSvg(stackPayload, granularity, timeDomain) {
       return stackY0(i) + (Number(buckets[i].counts[s.key] ?? 0) || 0);
     }
 
-    const fill = swimlaneStackFill(si, nSeries);
+    const fill = swimlaneStackFill(seriesColorIndex(s.key), series.length);
 
     if (n === 1) {
       const tm = Date.parse(buckets[0].t);
@@ -1405,6 +1470,7 @@ function renderCycleScatterSvg(cyclePayload, granularity, timeDomain) {
  * @param {{ buckets: { t: string, n: number }[] }} completionData
  * @param {Record<string, unknown>} cycleData
  * @param {Record<string, unknown>} swimlaneStackData
+ * @param {Record<string, unknown>} cumulativeFlowData
  * @param {Record<string, unknown>} columnStackData
  * @param {Record<string, unknown>} ageDistData
  * @param {{ boards: { slug: string, name: string }[], activeSlug: string }} flowCtx
@@ -1415,6 +1481,7 @@ function renderChartsShell(
   completionData,
   cycleData,
   swimlaneStackData,
+  cumulativeFlowData,
   columnStackData,
   ageDistData,
   flowCtx
@@ -1432,7 +1499,13 @@ function renderChartsShell(
   const stackBuckets = Array.isArray(swimlaneStackData.buckets)
     ? /** @type {{ t: string }[]} */ (swimlaneStackData.buckets)
     : [];
-  const timeDomain = sharedTimeDomain(buckets, cyclePoints, stackBuckets);
+  const cumulativeBuckets = Array.isArray(cumulativeFlowData.buckets)
+    ? /** @type {{ t: string }[]} */ (cumulativeFlowData.buckets)
+    : [];
+  const timeDomain = sharedTimeDomain(buckets, cyclePoints, [
+    ...stackBuckets,
+    ...cumulativeBuckets,
+  ]);
   const totalClosedCards = buckets.reduce(
     (sum, b) => sum + (Number(b.n) || 0),
     0
@@ -1561,6 +1634,34 @@ function renderChartsShell(
     afterChart: [stackLegend],
   });
 
+  const cumulativeFlowSeries = Array.isArray(cumulativeFlowData.series)
+    ? /** @type {{ key: string, label: string, index: number }[]} */ (
+        cumulativeFlowData.series
+      )
+    : [];
+  const cumulativeFlowPayload = {
+    ...cumulativeFlowData,
+    stackSeries: cumulativeFlowStackSeries(cumulativeFlowSeries),
+    yAxisLabel: "Cards",
+    xAxisLabel: "Period (UTC)",
+    emptyLabel: "No snapshot or completion data yet.",
+    ariaLabel: `Cumulative flow by column per ${granularity} period (UTC buckets)`,
+  };
+  const svgCumulativeFlow = renderStackedAreaSvg(
+    cumulativeFlowPayload,
+    granularity,
+    timeDomain
+  );
+  const cumulativeLegend = renderSwimlaneStackLegend(cumulativeFlowData);
+  const cardCumulativeFlow = createChartCard({
+    title: "Cumulative flow",
+    note:
+      "Column counts from snapshots; done is a running total of cards closed each period.",
+    svgElement: svgCumulativeFlow,
+    footer: cumulativeLegend,
+    afterChart: [cumulativeLegend],
+  });
+
   const stats = document.createElement("div");
   stats.className = "charts-cycle-stats";
   const stMed = document.createElement("span");
@@ -1638,6 +1739,7 @@ function renderChartsShell(
   dashboard.append(
     cardScatter,
     cardStack,
+    cardCumulativeFlow,
     cardCycle,
     cardColumnStack,
     cardAge
@@ -1690,12 +1792,14 @@ async function main() {
       completionData,
       cycleData,
       swimlaneStackData,
+      cumulativeFlowData,
       columnStackData,
       ageDistData,
     ] = await Promise.all([
       fetchCompletionBuckets(boardSlug, granularity),
       fetchCycleTimeScatter(boardSlug, granularity),
       fetchCompletionSwimlaneStack(boardSlug, granularity),
+      fetchCumulativeFlowStack(boardSlug, granularity),
       fetchColumnSwimlaneStack(boardSlug),
       fetchCardAgeDistribution(boardSlug),
     ]);
@@ -1708,6 +1812,7 @@ async function main() {
         completionData,
         cycleData,
         swimlaneStackData,
+        cumulativeFlowData,
         columnStackData,
         ageDistData,
         flowCtx

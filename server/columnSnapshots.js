@@ -3,8 +3,15 @@ import {
   columnIsDone,
   columnTypeOf,
 } from "../assets/js/models/boardModel.js";
-import { loadBoardCatalog, loadBoardColumnAndSwimlaneDefsForSlug } from "./boardCatalog.js";
-import { gatherOpenBoardRows } from "./archiveAnalytics.js";
+import {
+  aggregateCompletionBuckets,
+  bucketStartMsForGranularity,
+  gatherOpenBoardRows,
+} from "./archiveAnalytics.js";
+import { loadBoardCatalog, loadBoardColumnAndSwimlaneDefsForSlug, loadBoardModelForSlug } from "./boardCatalog.js";
+import {
+  isAggregateBoard,
+} from "../assets/js/models/aggregateBoard.js";
 import { snapshotsJsonPath } from "./dataRoot.js";
 
 /** Reserved top-level key for snapshot settings (not a board slug). */
@@ -161,6 +168,239 @@ export function upsertTodayBoardSnapshot(existing, today) {
 }
 
 /**
+ * Sum source-board snapshots into one series per date, keyed by column type.
+ * @param {string[]} sourceSlugs
+ * @param {Record<string, BoardColumnSnapshot[]>} boardSnapshots
+ * @returns {BoardColumnSnapshot[]}
+ */
+export function mergeSourceBoardSnapshotsByType(
+  sourceSlugs,
+  boardSnapshots
+) {
+  /** @type {Map<string, Map<string, number>>} date → type → count */
+  const byDate = new Map();
+
+  for (const sourceSlug of sourceSlugs) {
+    for (const snap of boardSnapshots[sourceSlug] ?? []) {
+      if (!byDate.has(snap.date)) byDate.set(snap.date, new Map());
+      const typeCounts = byDate.get(snap.date);
+      for (const col of snap.columns) {
+        const type = String(col.type ?? "").trim().toLowerCase();
+        if (!type || type === "done") continue;
+        typeCounts.set(type, (typeCounts.get(type) ?? 0) + (Number(col.count) || 0));
+      }
+    }
+  }
+
+  return [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, typeCounts]) => ({
+      date,
+      columns: [...typeCounts.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([type, count]) => ({
+          name: type,
+          type,
+          count,
+        })),
+    }));
+}
+
+/**
+ * @param {BoardColumnSnapshot} snap
+ * @param {import("../assets/js/models/boardModel.js").ColumnDef} col
+ * @param {{ byType?: boolean }} [opts]
+ */
+export function wipCountFromSnapshot(snap, col, opts = {}) {
+  if (opts.byType) {
+    const type = columnTypeOf(col);
+    let sum = 0;
+    for (const entry of snap.columns) {
+      if (String(entry.type ?? "").trim().toLowerCase() === type) {
+        sum += Number(entry.count) || 0;
+      }
+    }
+    return sum;
+  }
+  const title = String(col.title ?? "").trim();
+  const hit = snap.columns.find((c) => String(c.name).trim() === title);
+  return hit?.count ?? 0;
+}
+
+/**
+ * @param {number} bucketMs
+ * @param {"daily" | "weekly" | "monthly"} granularity
+ */
+export function nextBucketStartMs(bucketMs, granularity) {
+  if (granularity === "monthly") {
+    const d = new Date(bucketMs);
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+  }
+  if (granularity === "weekly") {
+    return bucketMs + 7 * 86400000;
+  }
+  return bucketMs + 86400000;
+}
+
+/**
+ * @param {number} minMs
+ * @param {number} maxMs
+ * @param {"daily" | "weekly" | "monthly"} granularity
+ */
+export function enumerateBucketRange(minMs, maxMs, granularity) {
+  const out = [];
+  let cur = bucketStartMsForGranularity(minMs, granularity);
+  const end = bucketStartMsForGranularity(maxMs, granularity);
+  while (cur <= end) {
+    out.push(cur);
+    cur = nextBucketStartMs(cur, granularity);
+  }
+  return out;
+}
+
+/**
+ * @param {string} dateStr `YYYY-MM-DD`
+ */
+export function snapshotDateToUtcMs(dateStr) {
+  return Date.parse(`${String(dateStr).trim()}T00:00:00.000Z`);
+}
+
+/**
+ * @param {{
+ *   readFile?: typeof fs.readFile;
+ * }} [deps]
+ * @returns {Promise<SnapshotsDocument>}
+ */
+export async function loadSnapshotsDocument(deps = {}) {
+  const readFile = deps.readFile ?? fs.readFile.bind(fs);
+  try {
+    const text = await readFile(snapshotsJsonPath(), "utf8");
+    return parseSnapshotsDocument(JSON.parse(text.replace(/^\uFEFF/, "")));
+  } catch {
+    return { settings: { boards: [] }, boardSnapshots: {} };
+  }
+}
+
+/**
+ * Cumulative flow stack: WIP column counts from snapshots, cumulative done from completions.
+ * @param {string} slug
+ * @param {"daily" | "weekly" | "monthly"} granularity
+ * @param {{
+ *   loadSnapshotsDocument?: typeof loadSnapshotsDocument;
+ *   aggregateCompletionBuckets?: typeof aggregateCompletionBuckets;
+ *   loadBoardColumnAndSwimlaneDefsForSlug?: typeof loadBoardColumnAndSwimlaneDefsForSlug;
+ *   loadBoardModelForSlug?: typeof loadBoardModelForSlug;
+ * }} [deps]
+ */
+export async function buildCumulativeFlowStack(slug, granularity, deps = {}) {
+  const loadDoc = deps.loadSnapshotsDocument ?? loadSnapshotsDocument;
+  const completionBucketsFn =
+    deps.aggregateCompletionBuckets ?? aggregateCompletionBuckets;
+  const loadColsFn =
+    deps.loadBoardColumnAndSwimlaneDefsForSlug ??
+    loadBoardColumnAndSwimlaneDefsForSlug;
+  const loadModelFn = deps.loadBoardModelForSlug ?? loadBoardModelForSlug;
+
+  const [model, { columns }, doc, completionBuckets] = await Promise.all([
+    loadModelFn(slug),
+    loadColsFn(slug),
+    loadDoc(),
+    completionBucketsFn(slug, granularity),
+  ]);
+
+  const aggregate = isAggregateBoard(model);
+  const matchSnapshotsByType = aggregate;
+  const snapshots = aggregate
+    ? mergeSourceBoardSnapshotsByType(
+        (model.sources ?? [])
+          .map((src) => String(src.slug ?? "").trim())
+          .filter(Boolean),
+        doc.boardSnapshots
+      )
+    : doc.boardSnapshots[slug] ?? [];
+
+  const wipCols = [...columns]
+    .filter((col) => !columnIsDone(col))
+    .sort((a, b) => a.index - b.index);
+  const doneCol = columns.find((col) => columnIsDone(col));
+  const doneLabel = String(doneCol?.title ?? "").trim() || "Done";
+
+  const series = [
+    ...wipCols.map((col) => ({
+      key: String(col.index),
+      label: String(col.title ?? "").trim() || `Column ${col.index}`,
+      index: col.index,
+    })),
+    { key: "done", label: doneLabel, index: 9999 },
+  ];
+
+  /** @type {Map<number, BoardColumnSnapshot>} */
+  const snapshotByBucket = new Map();
+  for (const snap of snapshots) {
+    const ms = snapshotDateToUtcMs(snap.date);
+    if (!Number.isFinite(ms)) continue;
+    const bucketMs = bucketStartMsForGranularity(ms, granularity);
+    const existing = snapshotByBucket.get(bucketMs);
+    if (!existing || snap.date >= existing.date) {
+      snapshotByBucket.set(bucketMs, snap);
+    }
+  }
+
+  /** @type {Set<number>} */
+  const bucketKeys = new Set();
+  for (const b of completionBuckets) {
+    const ms = Date.parse(b.t);
+    if (Number.isFinite(ms)) bucketKeys.add(ms);
+  }
+  for (const bm of snapshotByBucket.keys()) bucketKeys.add(bm);
+
+  if (bucketKeys.size === 0) {
+    return { series, buckets: [] };
+  }
+
+  const sortedKeys = [...bucketKeys].sort((a, b) => a - b);
+  const allBuckets = enumerateBucketRange(
+    sortedKeys[0],
+    sortedKeys[sortedKeys.length - 1],
+    granularity
+  );
+
+  /** @type {Map<number, number>} */
+  const completionsByBucket = new Map();
+  for (const b of completionBuckets) {
+    const ms = Date.parse(b.t);
+    if (Number.isFinite(ms)) completionsByBucket.set(ms, b.n);
+  }
+
+  /** @type {Record<string, number>} */
+  const lastWip = Object.fromEntries(
+    wipCols.map((col) => [String(col.index), 0])
+  );
+  let cumulativeDone = 0;
+  /** @type {{ t: string, counts: Record<string, number> }[]} */
+  const buckets = [];
+
+  for (const bm of allBuckets) {
+    cumulativeDone += completionsByBucket.get(bm) ?? 0;
+
+    const snap = snapshotByBucket.get(bm);
+    if (snap) {
+      for (const col of wipCols) {
+        lastWip[String(col.index)] = wipCountFromSnapshot(snap, col, {
+          byType: matchSnapshotsByType,
+        });
+      }
+    }
+
+    /** @type {Record<string, number>} */
+    const counts = { ...lastWip, done: cumulativeDone };
+    buckets.push({ t: new Date(bm).toISOString(), counts });
+  }
+
+  return { series, buckets };
+}
+
+/**
  * @param {{
  *   loadBoardCatalog?: typeof loadBoardCatalog;
  *   captureInFlightColumnCountsForSlug?: typeof captureInFlightColumnCountsForSlug;
@@ -179,16 +419,7 @@ export async function captureTodayColumnSnapshots(deps = {}) {
   const nowMs = deps.nowMs ?? (async () => Date.now());
 
   const jsonPath = snapshotsJsonPath();
-  let doc = /** @type {SnapshotsDocument} */ ({
-    settings: { boards: [] },
-    boardSnapshots: {},
-  });
-  try {
-    const text = await readFile(jsonPath, "utf8");
-    doc = parseSnapshotsDocument(JSON.parse(text.replace(/^\uFEFF/, "")));
-  } catch {
-    /* new or invalid file — start fresh */
-  }
+  let doc = await loadSnapshotsDocument({ readFile });
 
   const catalog = await loadCatalog();
   const filter = boardSlugsFromSnapshotSettings(doc.settings);
