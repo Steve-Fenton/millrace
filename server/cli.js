@@ -5,6 +5,7 @@ import { runStartupArchiveStaleForCatalogSlugs } from "./archiveAnalytics.js";
 import { portFromArgv } from "./cliArgs.js";
 import { app } from "./createApp.js";
 import { ensureDefaultTasksLayout } from "./bootstrapTasks.js";
+import { runMillraceSnapshotLayoutStartup } from "./millraceSnapshotLayout.js";
 import { boardCatalogIniPath, dataRoot } from "./dataRoot.js";
 
 const PORT = portFromArgv(process.argv) ?? (Number(process.env.PORT) || 8888);
@@ -52,6 +53,7 @@ export function startMillraceServerIfPrimary() {
 
 async function startPrimaryServer() {
   await ensureDefaultTasksLayout();
+  await runMillraceSnapshotLayoutStartup();
   if (HOST != null && HOST !== "") {
     app.listen(PORT, HOST, () => {
       void onListen();

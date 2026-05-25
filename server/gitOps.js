@@ -138,6 +138,20 @@ export async function commitOutstandingTasksDir(opts) {
 }
 
 /**
+ * Stage a repo-relative path and create one commit when there are staged changes.
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ * @param {string} relPath repo-relative path using `/` (e.g. `tasks/.millrace`)
+ * @param {string} message
+ * @returns {Promise<boolean>} whether a commit was created
+ */
+export async function commitPathIfChanged(opts, relPath, message) {
+  await execFileAsync("git", ["add", "--", relPath], opts);
+  if (!(await gitIndexHasStagedChanges(opts))) return false;
+  await execFileAsync("git", ["commit", "-m", message], opts);
+  return true;
+}
+
+/**
  * Stage `package.json` and `pnpm-lock.yaml` (whichever exist at `opts.cwd`) and create one
  * commit if there are staged changes. Used after the in-app `pnpm update --latest` /
  * `pnpm install` flow so the next git sync push carries the lockfile/package change.

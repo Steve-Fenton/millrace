@@ -4,7 +4,9 @@ import { cliOptionsFromArgv } from "./cliArgs.js";
 import {
   BOARD_CATALOG_INI_BASENAME,
   BOARD_CATALOG_SECTION,
+  SNAPSHOTS_JSON_BASENAME,
   LEGACY_BOARD_CATALOG_SECTION,
+  MILLRACE_DATA_DIRNAME,
 } from "./constants.js";
 import { REPO_ROOT } from "./repoRoot.js";
 
@@ -58,6 +60,14 @@ export function setMillraceDataRootForTesting(absPath) {
 
 export function boardCatalogIniPath() {
   return path.join(dataRoot(), "tasks", BOARD_CATALOG_INI_BASENAME);
+}
+
+export function millraceDataDirPath() {
+  return path.join(dataRoot(), "tasks", MILLRACE_DATA_DIRNAME);
+}
+
+export function snapshotsJsonPath() {
+  return path.join(millraceDataDirPath(), SNAPSHOTS_JSON_BASENAME);
 }
 
 /**
