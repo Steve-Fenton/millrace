@@ -163,8 +163,11 @@ created = 2024-01-02T00:00:00.000Z
 
 /** Completed card on the board (Done column) for charts / completed-cards. */
 export function cardIniDoneWithClosed() {
-  const closed = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-  const created = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = Date.now();
+  // Closed "now" so the card always matches when=this_week (UTC Mon–Sun), including Mondays
+  // when a fixed offset like "2 days ago" would fall in the previous week.
+  const closed = new Date(now).toISOString();
+  const created = new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString();
   return `[item]
 id = FLOW-fix-done-1
 title = Chart Done Card
