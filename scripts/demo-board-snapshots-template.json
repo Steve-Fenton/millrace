@@ -1,0 +1,37 @@
+[
+  {
+    "date": "2026-04-21",
+    "columns": [
+      { "name": "To Do", "type": "options", "count": 30 },
+      { "name": "Doing", "type": "in_progress", "count": 1 }
+    ]
+  },
+  {
+    "date": "2026-04-28",
+    "columns": [
+      { "name": "To Do", "type": "options", "count": 28 },
+      { "name": "Doing", "type": "in_progress", "count": 2 }
+    ]
+  },
+  {
+    "date": "2026-05-05",
+    "columns": [
+      { "name": "To Do", "type": "options", "count": 25 },
+      { "name": "Doing", "type": "in_progress", "count": 2 }
+    ]
+  },
+  {
+    "date": "2026-05-12",
+    "columns": [
+      { "name": "To Do", "type": "options", "count": 23 },
+      { "name": "Doing", "type": "in_progress", "count": 3 }
+    ]
+  },
+  {
+    "date": "2026-05-17",
+    "columns": [
+      { "name": "To Do", "type": "options", "count": 22 },
+      { "name": "Doing", "type": "in_progress", "count": 3 }
+    ]
+  }
+]

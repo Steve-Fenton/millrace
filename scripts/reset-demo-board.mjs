@@ -1,5 +1,8 @@
 /**
  * Reset `tasks/demo/` cards from `scripts/demo-board-template/`.
+ * Clears `tasks/demo/archive/` so stale archived copies do not duplicate template cards.
+ * Replaces the `demo` entry in `tasks/.millrace/snapshots.json` with dated WIP history
+ * for cumulative flow charts (other boards in that file are left unchanged).
  *
  * Shifts `created`, `closed`, and `next_action_date` so offsets from the
  * reference day (default 2026-05-17, local calendar) match offsets from the
@@ -13,13 +16,20 @@
  *   MILLRACE_DEMO_REFERENCE_DATE=2026-05-17 node scripts/reset-demo-board.mjs
  *   MILLRACE_DEMO_RUN_DATE=2026-05-20 node scripts/reset-demo-board.mjs
  */
-import { readdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const templateDir = path.join(root, "scripts", "demo-board-template");
+const snapshotsTemplatePath = path.join(
+  root,
+  "scripts",
+  "demo-board-snapshots-template.json"
+);
 const demoDir = path.join(root, "tasks", "demo");
+const demoArchiveDir = path.join(demoDir, "archive");
+const snapshotsJsonPath = path.join(root, "tasks", ".millrace", "snapshots.json");
 const CARD_INI_RE = /^FLOW-[\w.-]+\.ini$/i;
 
 const REFERENCE_YMD =
@@ -89,6 +99,57 @@ function listCardInis(dir) {
     .sort();
 }
 
+/** @param {string} ymd UTC calendar `YYYY-MM-DD` */
+function shiftUtcYmd(ymd, deltaMs) {
+  const ms = Date.parse(`${String(ymd).trim()}T00:00:00.000Z`);
+  if (!Number.isFinite(ms)) {
+    throw new Error(`Invalid snapshot date: ${ymd}`);
+  }
+  return new Date(ms + deltaMs).toISOString().slice(0, 10);
+}
+
+/** @returns {number} snapshot rows written for demo */
+function resetDemoSnapshots(deltaMs) {
+  /** @type {{ date: string, columns: { name: string, type: string, count: number }[] }[]} */
+  const templateRows = JSON.parse(readFileSync(snapshotsTemplatePath, "utf8"));
+  const demoSnapshots = templateRows.map((row) => ({
+    ...row,
+    date: shiftUtcYmd(row.date, deltaMs),
+  }));
+
+  /** @type {Record<string, unknown>} */
+  let doc = { settings: { boards: [] } };
+  try {
+    doc = JSON.parse(readFileSync(snapshotsJsonPath, "utf8"));
+  } catch {
+    /* new or invalid file */
+  }
+  if (!doc.settings || typeof doc.settings !== "object") {
+    doc.settings = { boards: [] };
+  }
+  doc.demo = demoSnapshots;
+
+  mkdirSync(path.dirname(snapshotsJsonPath), { recursive: true });
+  writeFileSync(snapshotsJsonPath, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
+  return demoSnapshots.length;
+}
+
+/** @returns {number} files removed */
+function emptyDemoArchive() {
+  let removed = 0;
+  let names;
+  try {
+    names = readdirSync(demoArchiveDir);
+  } catch {
+    return 0;
+  }
+  for (const name of names) {
+    unlinkSync(path.join(demoArchiveDir, name));
+    removed++;
+  }
+  return removed;
+}
+
 const referenceMs = localStartOfDayMs(parseLocalYmd(REFERENCE_YMD));
 const runDay = RUN_YMD ? parseLocalYmd(RUN_YMD) : new Date();
 const runMs = localStartOfDayMs(runDay);
@@ -114,8 +175,18 @@ if (dryRun) {
     const text = readFileSync(path.join(templateDir, name), "utf8");
     shiftCardIniDates(text, deltaMs);
   }
-  console.log("reset-demo-board: dry run — no files written");
+  const snapshotRows = JSON.parse(readFileSync(snapshotsTemplatePath, "utf8"));
+  console.log(
+    `reset-demo-board: dry run — would write ${templates.length} cards and ${snapshotRows.length} demo snapshot(s)`
+  );
   process.exit(0);
+}
+
+const archivedRemoved = emptyDemoArchive();
+if (archivedRemoved > 0) {
+  console.log(
+    `reset-demo-board: cleared ${archivedRemoved} file(s) from tasks/demo/archive/`
+  );
 }
 
 for (const name of existing) {
@@ -128,4 +199,9 @@ for (const name of templates) {
   writeFileSync(path.join(demoDir, name), out, "utf8");
 }
 
+const snapshotCount = resetDemoSnapshots(deltaMs);
+
 console.log(`reset-demo-board: wrote ${templates.length} cards to tasks/demo/`);
+console.log(
+  `reset-demo-board: wrote ${snapshotCount} snapshot(s) for demo in tasks/.millrace/snapshots.json`
+);
