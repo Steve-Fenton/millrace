@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2026-05-26",
+    "columns": [
+      {
+        "name": "To Do",
+        "type": "to_do",
+        "count": 2
+      },
+      {
+        "name": "Doing",
+        "type": "in_progress",
+        "count": 1
+      }
+    ]
+  }
+]
