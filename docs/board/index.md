@@ -36,7 +36,7 @@ Along the top:
 
 Along the bottom:
 
-- **Delete**: Deletes the card (after double-checking with you).
+- **Abandon**: Removes the card from the board and moves it to `tasks/{board}/abandoned/{year}/` (after double-checking with you).
 
 ### Share a link to a card
 

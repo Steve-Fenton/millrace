@@ -671,7 +671,7 @@ export async function updateCard(payload) {
 /**
  * @param {{ boardSlug: string, columnIndex: number, filename: string }} payload
  */
-export async function deleteCard(payload) {
+export async function abandonCard(payload) {
   const q = new URLSearchParams({
     boardSlug: payload.boardSlug,
     columnIndex: String(payload.columnIndex),

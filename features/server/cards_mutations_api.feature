@@ -35,7 +35,7 @@ Feature: Card mutations API
     And the last JSON field "title" should be "Card with note"
     And the last JSON field "note" should be "Blocked on CI"
 
-  Scenario: create then read update and delete the same card
+  Scenario: create then read update and abandon the same card
     Given the Millrace integration server has profile "flow-board"
     When I send a POST request to "/api/cards" with JSON body:
       """
@@ -61,6 +61,7 @@ Feature: Card mutations API
     And the last JSON field "ok" should be boolean true
     When I fetch the test card from column 1
     Then the response status should be 404
+    And the test card file should exist under abandoned
 
   Scenario: POST move shifts card to another column
     Given the Millrace integration server has profile "with-open-card"

@@ -1,6 +1,9 @@
 import assert from "node:assert";
-import { When } from "@cucumber/cucumber";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { Then, When } from "@cucumber/cucumber";
 import { millraceHttp } from "../support/integration_request.js";
+import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 
 When("I remember the last response card filename as the test card", function () {
   this.testCardFilename = this.lastJson.filename;
@@ -67,8 +70,23 @@ When(
 When("I delete the test card from column {int}", async function (columnIndex) {
   const fn = this.testCardFilename;
   assert.ok(fn);
-  const path = `/api/card?boardSlug=test&columnIndex=${columnIndex}&filename=${encodeURIComponent(fn)}`;
-  const { status, json } = await millraceHttp(this.flowApiAgent, "DELETE", path);
+  const reqPath = `/api/card?boardSlug=test&columnIndex=${columnIndex}&filename=${encodeURIComponent(fn)}`;
+  const { status, json } = await millraceHttp(this.flowApiAgent, "DELETE", reqPath);
   this.lastHttpStatus = status;
   this.lastJson = json;
+});
+
+Then("the test card file should exist under abandoned", async function () {
+  const fn = this.testCardFilename;
+  assert.ok(fn);
+  const year = new Date().getUTCFullYear();
+  const abandonedPath = path.join(
+    INTEGRATION_DATA_ROOT,
+    "tasks",
+    "test",
+    "abandoned",
+    String(year),
+    fn
+  );
+  await fs.access(abandonedPath);
 });

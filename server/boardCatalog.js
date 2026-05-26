@@ -10,6 +10,7 @@ import {
   dataRoot,
   isBoardCatalogIniSection,
 } from "./dataRoot.js";
+import { ensureDir } from "./fsUtil.js";
 import {
   parseBoardIni,
   parseColumnTypeRaw,
@@ -498,4 +499,29 @@ export async function columnSectionIsDone(slug, columnIndex) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Move a card file from the active board folder to `tasks/{slug}/abandoned/{year}/`.
+ * @param {string} slug
+ * @param {string} srcPath absolute path to the card INI
+ * @param {string} filename basename of the card file
+ * @returns {Promise<string>} absolute path to the abandoned file
+ */
+export async function abandonCardFile(slug, srcPath, filename) {
+  const year = new Date().getUTCFullYear();
+  const destDir = path.join(dataRoot(), "tasks", slug, "abandoned", String(year));
+  await ensureDir(destDir);
+  const destPath = path.join(destDir, filename);
+  try {
+    await fs.access(destPath);
+    throw new Error(`Abandoned card already exists: ${filename}`);
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Abandoned card already exists")) {
+      throw e;
+    }
+    /* destination available */
+  }
+  await fs.rename(srcPath, destPath);
+  return destPath;
 }

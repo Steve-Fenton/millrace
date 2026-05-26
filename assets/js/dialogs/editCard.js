@@ -11,8 +11,8 @@ import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
 import {
+  abandonCard,
   createCard,
-  deleteCard,
   fetchCard,
   fetchCardGitHistory,
   readLocalUserIni,
@@ -229,8 +229,8 @@ export async function openCardEditorDialog(ctx) {
           <button
             type="button"
             class="flow-btn flow-btn-delete-icon"
-            aria-label="Delete card"
-            title="Delete card"
+            aria-label="Abandon card"
+            title="Abandon card"
           >
             <svg class="flow-delete-icon-svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2m-9 4v10m10-10v10M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
           </button>
@@ -532,17 +532,17 @@ export async function openCardEditorDialog(ctx) {
     modal.querySelector(".flow-btn-delete-icon")?.addEventListener("click", () => {
       void (async () => {
         const ok = await showFlowConfirm(
-          "Delete this card permanently? This removes the task file from disk.",
+          "Abandon this card? It will be removed from the board and moved to the abandoned folder.",
           {
-            title: "Delete card",
-            confirmLabel: "Delete",
+            title: "Abandon card",
+            confirmLabel: "Abandon",
             cancelLabel: "Cancel",
             destructive: true,
           }
         );
         if (!ok) return;
         try {
-          await deleteCard({
+          await abandonCard({
             boardSlug: ctx.boardSlug,
             columnIndex: ctx.columnIndex,
             filename: ctx.filename,
@@ -551,7 +551,7 @@ export async function openCardEditorDialog(ctx) {
           finish(true);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          await showFlowAlert(msg, { title: "Could not delete card" });
+          await showFlowAlert(msg, { title: "Could not abandon card" });
         }
       })();
     });

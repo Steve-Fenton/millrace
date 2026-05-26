@@ -12,6 +12,9 @@ import { dataRoot } from "./dataRoot.js";
 
 const BOARD_TASK_INI_RE = /^FLOW-[\w.-]+\.ini$/i;
 
+/** Subfolders under `tasks/{slug}/` that hold inactive cards — skip on board-definition sync. */
+const BOARD_TASK_SKIP_DIRS = new Set(["archive", "cold-storage", "abandoned"]);
+
 /**
  * @param {string} slug
  * @returns {Promise<string[]>} absolute paths
@@ -30,6 +33,7 @@ export async function walkBoardTaskIniPaths(slug) {
     for (const e of ents) {
       const full = path.join(dir, e.name);
       if (e.isDirectory()) {
+        if (BOARD_TASK_SKIP_DIRS.has(e.name)) continue;
         await walk(full);
       } else if (e.isFile() && BOARD_TASK_INI_RE.test(e.name)) {
         out.push(full);

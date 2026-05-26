@@ -26,6 +26,7 @@ import {
   maxSortOrderForCell,
   newCardId,
   readFlatBoardIniSummaries,
+  abandonCardFile,
   resolveCardFilePath,
   safeCardIniFilename,
   sanitizeSegment,
@@ -328,7 +329,7 @@ app.delete("/api/card", async (req, res) => {
     const col = Number(req.query.columnIndex);
     const filename = safeCardIniFilename(req.query.filename);
     if (!filename || !Number.isInteger(col) || col < 1) {
-      res.status(400).json({ message: "Invalid card delete request." });
+      res.status(400).json({ message: "Invalid card abandon request." });
       return;
     }
 
@@ -338,14 +339,14 @@ app.delete("/api/card", async (req, res) => {
       return;
     }
 
-    await fs.unlink(fullPath);
+    await abandonCardFile(slug, fullPath, filename);
 
     await markDataRootPendingSync();
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
     res.status(500).json({
-      message: e instanceof Error ? e.message : "Failed to delete card.",
+      message: e instanceof Error ? e.message : "Failed to abandon card.",
     });
   }
 });
