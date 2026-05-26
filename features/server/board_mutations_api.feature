@@ -58,6 +58,53 @@ Feature: Board definition mutations API
     Then the response status should be 400
     And the last JSON field "message" should contain "Board name"
 
+  Scenario: POST /api/board rejects duplicate board name
+    Given the Millrace integration server has profile "two-boards"
+    When I send a POST request to "/api/board" with JSON body:
+      """
+      { "name": "Integration Test Board" }
+      """
+    Then the response status should be 400
+    And the last JSON field "message" should contain "already exists"
+
+  Scenario: POST /api/board/rename updates name slug file and folder
+    Given the Millrace integration server has profile "with-open-card"
+    When I send a POST request to "/api/board/rename" with JSON body:
+      """
+      { "boardSlug": "test", "name": "Renamed QA Board" }
+      """
+    Then the response status should be 200
+    And the last JSON field "slug" should be "renamed-qa-board"
+    And the last JSON field "file" should be "renamed-qa-board.ini"
+    And the board ini file "test.ini" should not exist under tasks
+    And the board ini file "renamed-qa-board.ini" should exist under tasks
+    And the tasks directory for slug "renamed-qa-board" should exist
+    When I fetch JSON from "/api/flow"
+    Then the response status should be 200
+    And the first board slug in the last response should be "renamed-qa-board"
+
+  Scenario: POST /api/board/rename rejects duplicate board name
+    Given the Millrace integration server has profile "two-boards"
+    When I send a POST request to "/api/board/rename" with JSON body:
+      """
+      { "boardSlug": "other", "name": "Integration Test Board" }
+      """
+    Then the response status should be 400
+    And the last JSON field "message" should contain "already exists"
+
+  Scenario: POST /api/board/rename updates aggregate source slugs
+    Given the Millrace integration server has profile "aggregate-board"
+    When I send a POST request to "/api/board/rename" with JSON body:
+      """
+      { "boardSlug": "test", "name": "QA Source Board" }
+      """
+    Then the response status should be 200
+    And the last JSON field "slug" should be "qa-source-board"
+    And the board ini file "all.ini" should contain "slug = qa-source-board"
+    When I fetch JSON from "/api/column-cards?boardSlug=all&columnIndex=2"
+    Then the response status should be 200
+    And the first card in "cards" should have field "sourceBoardSlug" equal to "qa-source-board"
+
   Scenario: PUT board-definition rejects blank text
     Given the Millrace integration server has profile "flow-board"
     When I send a PUT request to "/api/board-definition" with JSON body:

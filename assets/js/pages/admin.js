@@ -1,4 +1,5 @@
 import { openBoardEditorDialog } from "../dialogs/editBoard.js";
+import { openRenameBoardDialog } from "../dialogs/renameBoard.js";
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
@@ -11,8 +12,6 @@ import { escapeHtml } from "../html/escape.js";
 import { initFlowTheme } from "../ui/applyTheme.js";
 
 const ADMIN_BOARD_CREATED_FLASH_KEY = "flow:admin-board-created-flash";
-
-const EDIT_BOARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
 
 /**
  * @param {{ boards: { slug: string, name: string, file?: string }[], activeSlug: string }} selection
@@ -58,20 +57,19 @@ function renderBoardsTable(selection) {
     tdName.className = "complete-table__td complete-table__td--title";
     const titleInner = document.createElement("div");
     titleInner.className = "complete-table__title-inner";
-    const titleMain = document.createElement("div");
-    titleMain.className = "complete-table__title-main";
     const titleDiv = document.createElement("div");
     titleDiv.className = "column-card-title complete-table__title-text";
     titleDiv.textContent = b.name;
-    titleMain.append(titleDiv);
 
     const fn = b.file && String(b.file).trim();
+    const actions = document.createElement("div");
+    actions.className = "admin-board-actions";
+
     const editBtn = document.createElement("button");
     editBtn.type = "button";
-    editBtn.className = "flow-card-edit-btn";
+    editBtn.className = "admin-board-action-btn";
+    editBtn.textContent = "Edit";
     editBtn.setAttribute("aria-label", `Edit board ${b.name}`);
-    editBtn.title = "Edit board";
-    editBtn.innerHTML = EDIT_BOARD_ICON;
     editBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       void openBoardEditorDialog({
@@ -80,9 +78,23 @@ function renderBoardsTable(selection) {
         configFile: fn || `${b.slug}.ini`,
       });
     });
-    titleMain.append(editBtn);
 
-    titleInner.append(titleMain);
+    const renameBtn = document.createElement("button");
+    renameBtn.type = "button";
+    renameBtn.className = "admin-board-action-btn";
+    renameBtn.textContent = "Rename";
+    renameBtn.setAttribute("aria-label", `Rename board ${b.name}`);
+    renameBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      void openRenameBoardDialog({
+        boardSlug: b.slug,
+        displayName: b.name,
+        configFile: fn || `${b.slug}.ini`,
+      });
+    });
+
+    actions.append(editBtn, renameBtn);
+    titleInner.append(titleDiv, actions);
     tdName.append(titleInner);
 
     const tdSlug = document.createElement("td");

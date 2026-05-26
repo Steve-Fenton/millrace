@@ -195,9 +195,11 @@ slug = ${slug}
 
 [columns.1]
 title = To Do
+type = to_do
 
 [columns.2]
 title = Doing
+type = in_progress
 
 [columns.3]
 title = Done

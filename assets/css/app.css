@@ -1545,6 +1545,47 @@ dialog.git-conflict-dialog::backdrop {
   pointer-events: none;
 }
 
+.admin-board-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.admin-board-action-btn {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding-block: 0.28rem;
+  padding-inline: 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-board-action-btn:hover,
+.admin-board-action-btn:focus-visible {
+  color: var(--text);
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+  outline: none;
+}
+
+.complete-table__row--editable .admin-board-action-btn {
+  opacity: 0.92;
+}
+
+.complete-table__row--editable:hover .admin-board-action-btn,
+.complete-table__row--editable:focus-within .admin-board-action-btn {
+  opacity: 1;
+}
+
 .admin-add-board {
   align-self: flex-start;
   width: min(28rem, 100%);

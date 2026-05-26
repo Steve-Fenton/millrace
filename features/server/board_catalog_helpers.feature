@@ -101,6 +101,7 @@ Feature: Board catalog path and filename helpers
     And the generated board INI should contain "slug = demo"
     And the generated board INI should contain "[columns.1]"
     And the generated board INI should contain "[columns.3]"
+    And the generated board INI should contain "type = to_do"
     And the generated board INI should contain "type = done"
     And the generated board INI should contain "[swimlanes.1]"
 

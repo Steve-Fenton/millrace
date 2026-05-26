@@ -167,13 +167,12 @@ async function openBoardGitHistoryNested(ctx) {
 
 /**
  * @param {import("../models/boardModel.js").BoardModel} initialModel
- * @param {string} boardName
  * @param {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} colRows
  * @param {{ title: string }[]} swimRows
  * @param {{ email: string, name: string, active?: boolean }[]} userRows
  * @param {string[]} [sourceSlugs]
  */
-function buildModel(initialModel, boardName, colRows, swimRows, userRows, sourceSlugs) {
+function buildModel(initialModel, colRows, swimRows, userRows, sourceSlugs) {
   const aggregate = isAggregateBoard(initialModel);
   const columns = aggregate
     ? standardAggregateColumns()
@@ -230,7 +229,7 @@ function buildModel(initialModel, boardName, colRows, swimRows, userRows, source
   return {
     board: {
       ...rest,
-      name: boardName.trim(),
+      name: String(ib.name ?? "").trim(),
       slug: String(ib.slug ?? "").trim(),
       kind: aggregate ? AGGREGATE_BOARD_KIND : rest.kind,
     },
@@ -317,11 +316,11 @@ export async function openBoardEditorDialog(ctx) {
       <form class="flow-modal-form flow-modal-form--edit-board">
         <label class="flow-field">
           <span class="flow-field-label">Board name</span>
-          <input class="flow-input" name="boardName" type="text" required autocomplete="off" />
+          <input class="flow-input flow-input--readonly" name="boardName" type="text" readonly autocomplete="off" title="Rename the board from Admin" />
         </label>
         <label class="flow-field">
           <span class="flow-field-label">Slug</span>
-          <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Change slug by renaming the board file and tasks folder in the repo" />
+          <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Renamed together with the board name from Admin" />
         </label>
         <div class="flow-board-editor-sortables"></div>
         <div class="flow-modal-actions flow-modal-actions--split">
@@ -439,7 +438,6 @@ export async function openBoardEditorDialog(ctx) {
 
   function snapshotDraft() {
     return JSON.stringify({
-      boardName: String(nameInput.value ?? "").trim(),
       columns: colEditor
         ? colEditor.getRows().map((r) => ({
             title: String(r.title ?? "").trim(),
@@ -483,12 +481,6 @@ export async function openBoardEditorDialog(ctx) {
     }
 
     async function saveDraft() {
-      const boardName = String(nameInput.value || "").trim();
-      if (!boardName) {
-        await showFlowAlert("Board name is required.", { title: "Edit board" });
-        return false;
-      }
-
       const colRows = colEditor ? colEditor.getRows() : [];
       if (!aggregate && colRows.length === 0) {
         await showFlowAlert("Add at least one column.", { title: "Edit board" });
@@ -546,7 +538,6 @@ export async function openBoardEditorDialog(ctx) {
 
       const model = buildModel(
         initialModel,
-        boardName,
         colRows,
         swimRows,
         rawUserRows,
@@ -666,7 +657,11 @@ export async function openBoardEditorDialog(ctx) {
     });
 
     modal.showModal();
-    nameInput.focus();
-    nameInput.select();
+    const firstFocus =
+      colEditor?.root.querySelector("input, button, select, textarea") ??
+      swimEditor?.root.querySelector("input, button, select, textarea") ??
+      userEditor.root.querySelector("input, button, select, textarea") ??
+      modal.querySelector(".flow-cancel");
+    if (firstFocus instanceof HTMLElement) firstFocus.focus();
   });
 }

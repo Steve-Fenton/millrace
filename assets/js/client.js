@@ -140,6 +140,38 @@ export async function updateBoardDefinition(payload) {
  * @param {{ kind?: string, sources?: string[] }} [options]
  * @returns {Promise<{ ok?: boolean, slug: string, name: string, file: string, kind?: string }>}
  */
+/**
+ * @param {{ boardSlug: string, name: string }} payload
+ * @returns {Promise<{ ok?: boolean, oldSlug: string, slug: string, name: string, file: string }>}
+ */
+export async function renameBoardDefinition(payload) {
+  const res = await fetch("/api/board/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      boardSlug: String(payload.boardSlug ?? "").trim(),
+      name: String(payload.name ?? "").trim(),
+    }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  emitPendingSync();
+  return {
+    ok: Boolean(data.ok),
+    oldSlug: String(data.oldSlug ?? "").trim(),
+    slug: String(data.slug ?? "").trim(),
+    name: String(data.name ?? "").trim(),
+    file: String(data.file ?? "").trim(),
+  };
+}
+
 export async function createBoardDefinition(name, options = {}) {
   /** @type {{ name: string, kind?: string, sources?: string[] }} */
   const body = { name };

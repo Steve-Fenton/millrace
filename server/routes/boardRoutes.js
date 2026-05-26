@@ -23,6 +23,10 @@ import {
   sanitizeSegment,
 } from "../boardCatalog.js";
 import {
+  boardNameUniqueError,
+  renameBoard,
+} from "../boardRename.js";
+import {
   isPureColumnSwimlaneReorderForTasks,
   syncTaskFilesToNewBoardModel,
 } from "../boardDefinitionSync.js";
@@ -65,8 +69,10 @@ app.get("/api/board", async (req, res) => {
 app.post("/api/board", async (req, res) => {
   try {
     const displayName = String(req.body?.name ?? "").trim();
-    if (!displayName) {
-      res.status(400).json({ message: "Board name is required." });
+    const catalog = await loadBoardCatalog();
+    const nameErr = boardNameUniqueError(catalog, displayName);
+    if (nameErr) {
+      res.status(400).json({ message: nameErr });
       return;
     }
 
@@ -100,7 +106,6 @@ app.post("/api/board", async (req, res) => {
     }
 
     if (isAggregate) {
-      const catalog = await loadBoardCatalog();
       const aggErr = validateAggregateBoard(model, catalog, {
         requireSources: false,
       });
@@ -144,6 +149,30 @@ app.post("/api/board", async (req, res) => {
     });
   }
 });
+
+app.post("/api/board/rename", async (req, res) => {
+  try {
+    const boardSlug = sanitizeSegment(String(req.body?.boardSlug ?? "board"));
+    const name = String(req.body?.name ?? "").trim();
+    const result = await renameBoard(boardSlug, name);
+    await markDataRootPendingSync();
+    res.json(result);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to rename board.";
+    const status =
+      msg.includes("not found") ||
+      msg.includes("required") ||
+      msg.includes("already exists") ||
+      msg.includes("already used") ||
+      msg.includes("must be at most") ||
+      msg.includes("cannot contain")
+        ? 400
+        : 500;
+    if (status >= 500) console.error(e);
+    res.status(status).json({ message: msg });
+  }
+});
+
 app.put("/api/board-definition", async (req, res) => {
   try {
     const { boardSlug, text } = req.body ?? {};
