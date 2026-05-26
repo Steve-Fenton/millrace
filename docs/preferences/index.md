@@ -11,7 +11,13 @@ The **Preferences** view edits settings stored in **`tasks/localuser.ini`** (mac
 - **Sync mode**: **Automatic** or **Manual** control over how sync behaves with your workflow (pair with the **Sync** control on the board).
 - **Theme**: Choose between light and dark mode.
 
+Chart **granularity** (weekly vs monthly) is set on the [Charts](../charts/index.md) view and stored in the same file.
+
 Saving preferences triggers a refresh so lists and filters stay consistent.
+
+## Update checks
+
+When a newer Millrace version is published, the board may prompt you to update (if your `package.json` includes a **`cycle`** script, as in the [quick start](quick-start/index.md)). Dismissals are remembered for the session. You can force another check by clearing **Last npm update check** below.
 
 > [!TIP]
 > Usually the **MINE** and **DEFAULT OWNER** will both be set to your email address. However, if you create tasks on someone else's behalf, you can reduce friction by entering their email address in the **DEFAULT OWNER** field.

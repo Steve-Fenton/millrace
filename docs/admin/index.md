@@ -1,6 +1,6 @@
 # Admin
 
-The **Admin** view lists your boards and let's you manage them. You can add new boards, or edit existing boards from this view.
+The **Admin** view lists your boards and lets you manage them. You can add new boards, or edit existing boards from this view.
 
 ![Screenshot: The admin view](../screenshots/demo-admin-full.png)
 
@@ -10,16 +10,29 @@ The **Admin** view lists your boards and let's you manage them. You can add new 
 
 The **Current** board indicates your local selected project.
 
+## Rename a board
+
+**Rename** updates the board display name, slug, config file (`{slug}.ini`), and `tasks/{slug}/` folder to match. Use **Edit** to change columns and swimlanes without changing the slug.
+
 ## Customizing boards
 
-When you **Edit** a board you can customize the columns and swimlanes.
+When you **Edit** a board you can customize columns, swimlanes, and board users. The **Git history** button in the editor shows commits for the board definition file.
+
+Each column has a **type** (Options, To do, In progress, Waiting, Done). Exactly one column must be type **Done**; this drives the Done column on the board and completion analytics. You can set an optional **WIP limit** per column.
+
+Board **users** (email and display name) power the owner filter and owner picker when creating or editing cards. Inactive users stay in the list but are hidden from pickers.
 
 ![Screenshot: Editing boards](../screenshots/demo-admin-edit-board-dialog.png)
 
 > [!Tip]
 > When you rename a column or swimlane, current cards will be automatically updated with the change. Cards in the archive and cold storage aren't updated, but they are not shown on boards, only the completed view.
+
 > [!WARNING]
 > When you delete a column or swimlane, cards will be moved to the first column / first swimlane on your board. This prevents them going missing.
+
+### Delete a board
+
+**Delete** (in the board editor) removes the board from the catalog and deletes its config file. Task cards under `tasks/{slug}/` remain on disk; remove that folder manually if you no longer need them.
 
 [← Millrace documentation](../index.md)
 

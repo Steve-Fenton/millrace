@@ -23,11 +23,11 @@ For the selected granularity, this chart shows the total cards completed.
 
 For the selected granularity, this chart shows the total cards completed, grouped by swimlane.
 
-![Screenshot: Completions by swimland](../screenshots/demo-chart-expand-swimlane.png)
+![Screenshot: Completions by swimlane](../screenshots/demo-chart-expand-swimlane.png)
 
 ## Cumulative flow
 
-For the selected granularity, this chart shows how work accumulates over time. Open card counts in each column come from daily snapshots; the **Done** band is a running total of cards closed in each period. On aggregate boards, columns are matched by **type** rather than name.
+For the selected granularity, this chart shows how work accumulates over time. Open card counts in each column come from daily snapshots stored in `tasks/{board-slug}/snapshots.json` (captured automatically once per day); the **Done** band is a running total of cards closed in each period. On aggregate boards, columns are matched by **type** rather than name.
 
 ![Screenshot: Cumulative flow](../screenshots/demo-chart-expand-cumulative-flow.png)
 

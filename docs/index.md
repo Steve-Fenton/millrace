@@ -32,6 +32,8 @@ This information may be useful to know. You don't normally hand-crank the INI fi
 - **`tasks/.millrace.ini`** (section **`[millrace]`**, key **`boards`**) lists active boards so you can switch between multiple boards in one repo.
 - **Board definitions** (`*.ini` under **`tasks/`**) describe columns, optional swimlanes, and WIP limits
 - **Task cards** are stored in **INI files** under **`tasks/{board-slug}/`**
+- **Column snapshots** for cumulative-flow charts live in **`tasks/{board-slug}/snapshots.json`** (daily open-card counts; Millrace captures and commits these automatically)
+- **Abandoned cards** are moved to **`tasks/{board-slug}/abandoned/{year}/`** when you abandon a card from the editor
 
 To keep current work items clean, an archiving process moves older tasks into archive and cold storage. Configure ages in **`tasks/.millrace.ini`** under **`[millrace]`** (omit a key to use the default):
 

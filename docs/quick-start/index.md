@@ -1,10 +1,10 @@
 # Quick start
 
-To use Millrace, follow these steps. It will set up your project and make it automatically run when you start you machine, so you can always open your Milrace instance in a browser and do your work.
+To use Millrace, follow these steps. It will set up your project and make it automatically run when you start your machine, so you can always open your Millrace instance in a browser and do your work.
 
 ## 1. Create a repo
 
-Create an empty git repository to store you work.
+Create an empty git repository to store your work.
 
 ## 2. Add a package file
 

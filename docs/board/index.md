@@ -1,12 +1,22 @@
 # Board
 
-The **Board** view is the main Kanban workspace. Each board is divided in to columns and swimlanes, with <abbr title="Work In Process">WIP</abbr> limits shown and highlighted when they are exceeded.
+The **Board** view is the main Kanban workspace. Each board is divided into columns and swimlanes, with <abbr title="Work In Process">WIP</abbr> limits shown and highlighted when they are exceeded.
 
 ![Screenshot: The board view](../screenshots/demo-board-full.png)
 
-Task cards are arranged on the board and you can drag and drop them to a new location. You can also click a card to open a navigation control that lets you movee the card.
+Task cards are arranged on the board and you can drag and drop them to a new location. You can also click a card to open a navigation control that lets you move the card.
 
 ![Screenshot: Card navigation controls](../screenshots/demo-card-move-icons.png)
+
+## Filter and search
+
+Use the **Owner** dropdown to show all cards, only **Mine** (your email from [Preferences](../preferences/index.md)), or a specific board user.
+
+Use **Search** to filter visible cards by title, description, note, owner, filename, or links. Matching is case-insensitive and updates when you press Enter or click the search button.
+
+## Done columns
+
+Done columns show at most the **five** most recently closed cards (newest first). When there are more, a note links to the [Completed](../completed/index.md) view for the full history.
 
 ## Collapse a swimlane
 
