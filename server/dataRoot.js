@@ -66,9 +66,16 @@ export function millraceDataDirPath() {
   return path.join(dataRoot(), "tasks", MILLRACE_DATA_DIRNAME);
 }
 
-export function snapshotsJsonPath() {
+/** @param {string} slug board folder under `tasks/` */
+export function boardSnapshotsJsonPath(slug) {
+  return path.join(dataRoot(), "tasks", slug, SNAPSHOTS_JSON_BASENAME);
+}
+
+/** Legacy monolithic snapshot store (`tasks/.millrace/snapshots.json`). */
+export function legacySnapshotsJsonPath() {
   return path.join(millraceDataDirPath(), SNAPSHOTS_JSON_BASENAME);
 }
+
 
 /**
  * Keys from `[millrace]` merged over legacy `[flow]` (modern wins).

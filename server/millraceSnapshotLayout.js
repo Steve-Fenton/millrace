@@ -1,57 +1,81 @@
 import { existsSync } from "fs";
 import fs from "fs/promises";
 import path from "path";
-import { MILLRACE_DATA_DIRNAME } from "./constants.js";
-import { captureTodayColumnSnapshots } from "./columnSnapshots.js";
-import { dataRoot, millraceDataDirPath, snapshotsJsonPath } from "./dataRoot.js";
 import {
-  commitPathIfChanged,
+  captureTodayColumnSnapshots,
+  migrateLegacySnapshotsJson,
+  removeObsoleteSnapshotSettings,
+} from "./columnSnapshots.js";
+import { dataRoot, millraceDataDirPath } from "./dataRoot.js";
+import { loadBoardCatalog } from "./boardCatalog.js";
+import {
   execFileAsync,
   gitChildEnv,
+  gitIndexHasStagedChanges,
   gitPullWithOptionalAutostash,
   runGitSerialized,
 } from "./gitOps.js";
 
-const SNAPSHOT_DATA_REL = path
-  .join("tasks", MILLRACE_DATA_DIRNAME)
-  .split(path.sep)
-  .join("/");
 const SNAPSHOT_COMMIT_MESSAGE = "Millrace: column snapshots";
 
-function defaultSnapshotsJsonText() {
-  return `{
-  "settings": {
-    "boards": []
+/**
+ * Repo-relative paths for per-board snapshot git commits.
+ * @param {{ file: string, slug: string, kind?: string }[]} catalog
+ */
+export function snapshotGitRelPaths(catalog) {
+  /** @type {string[]} */
+  const paths = [];
+  for (const entry of catalog) {
+    if (entry.kind === "aggregate") continue;
+    paths.push(
+      path.join("tasks", entry.slug, "snapshots.json").split(path.sep).join("/")
+    );
   }
-}
-`;
+  return paths;
 }
 
 /**
- * Ensure `tasks/.millrace/` exists with a default `snapshots.json`.
- * Safe to run on every server start; never overwrites existing files.
+ * Ensure `tasks/.millrace/` exists; migrate legacy layout; drop obsolete settings file.
+ * Safe to run on every server start.
  */
 export async function ensureMillraceSnapshotLayout() {
   const millraceDir = millraceDataDirPath();
-  const snapshotsPath = snapshotsJsonPath();
 
   if (!existsSync(millraceDir)) {
     await fs.mkdir(millraceDir, { recursive: true });
   }
-  if (!existsSync(snapshotsPath)) {
-    await fs.writeFile(snapshotsPath, defaultSnapshotsJsonText(), "utf8");
+  await migrateLegacySnapshotsJson();
+  await removeObsoleteSnapshotSettings();
+}
+
+/**
+ * Stage per-board snapshot files, then commit when changed.
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ * @param {string} message
+ * @param {{ file: string, slug: string, kind?: string }[]} catalog
+ * @returns {Promise<boolean>}
+ */
+export async function commitSnapshotPathsIfChanged(opts, message, catalog) {
+  for (const rel of snapshotGitRelPaths(catalog)) {
+    const abs = path.join(opts.cwd, rel);
+    if (!existsSync(abs)) continue;
+    await execFileAsync("git", ["add", "--", rel], opts);
   }
+  if (!(await gitIndexHasStagedChanges(opts))) return false;
+  await execFileAsync("git", ["commit", "-m", message], opts);
+  return true;
 }
 
 /**
  * Pull latest changes, ensure snapshot files exist, capture today's column counts,
- * then commit and push when `tasks/.millrace` changed. Skips git work when the data
+ * then commit and push when snapshot files changed. Skips git work when the data
  * root has no `.git` directory. Errors are logged and do not block server startup.
  * @param {{
  *   ensureMillraceSnapshotLayout?: typeof ensureMillraceSnapshotLayout;
  *   captureTodayColumnSnapshots?: typeof captureTodayColumnSnapshots;
+ *   loadBoardCatalog?: typeof loadBoardCatalog;
  *   gitPullWithOptionalAutostash?: typeof gitPullWithOptionalAutostash;
- *   commitPathIfChanged?: typeof commitPathIfChanged;
+ *   commitSnapshotPathsIfChanged?: typeof commitSnapshotPathsIfChanged;
  *   gitPush?: (opts: { cwd: string, env: Record<string, string | undefined>, maxBuffer: number }) => Promise<void>;
  *   dataRootHasGit?: () => boolean;
  *   runGitSerialized?: typeof runGitSerialized;
@@ -60,9 +84,11 @@ export async function ensureMillraceSnapshotLayout() {
 export async function runMillraceSnapshotLayoutStartup(deps = {}) {
   const layoutFn = deps.ensureMillraceSnapshotLayout ?? ensureMillraceSnapshotLayout;
   const captureFn = deps.captureTodayColumnSnapshots ?? captureTodayColumnSnapshots;
+  const loadCatalog = deps.loadBoardCatalog ?? loadBoardCatalog;
   const pullFn =
     deps.gitPullWithOptionalAutostash ?? gitPullWithOptionalAutostash;
-  const commitFn = deps.commitPathIfChanged ?? commitPathIfChanged;
+  const commitFn =
+    deps.commitSnapshotPathsIfChanged ?? commitSnapshotPathsIfChanged;
   const pushFn =
     deps.gitPush ??
     (async (opts) => {
@@ -104,10 +130,11 @@ export async function runMillraceSnapshotLayoutStartup(deps = {}) {
       if (!pullOk) return;
 
       try {
+        const catalog = await loadCatalog();
         const committed = await commitFn(
           opts,
-          SNAPSHOT_DATA_REL,
-          SNAPSHOT_COMMIT_MESSAGE
+          SNAPSHOT_COMMIT_MESSAGE,
+          catalog
         );
         if (!committed) return;
         await pushFn(opts);

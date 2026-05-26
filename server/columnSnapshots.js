@@ -1,4 +1,6 @@
+import { existsSync } from "fs";
 import fs from "fs/promises";
+import path from "path";
 import {
   columnIsDone,
   columnTypeOf,
@@ -12,16 +14,21 @@ import { loadBoardCatalog, loadBoardColumnAndSwimlaneDefsForSlug, loadBoardModel
 import {
   isAggregateBoard,
 } from "../assets/js/models/aggregateBoard.js";
-import { snapshotsJsonPath } from "./dataRoot.js";
+import { SNAPSHOTS_JSON_BASENAME } from "./constants.js";
+import {
+  boardSnapshotsJsonPath,
+  dataRoot,
+  legacySnapshotsJsonPath,
+  millraceDataDirPath,
+} from "./dataRoot.js";
 
-/** Reserved top-level key for snapshot settings (not a board slug). */
+/** Reserved top-level key in legacy `tasks/.millrace/snapshots.json`. */
 export const SNAPSHOTS_SETTINGS_KEY = "settings";
 
 /**
  * @typedef {{ name: string, type: string, count: number }} ColumnCountSnapshot
  * @typedef {{ date: string, columns: ColumnCountSnapshot[] }} BoardColumnSnapshot
- * @typedef {{ boards?: string[] }} SnapshotsSettings
- * @typedef {{ settings: SnapshotsSettings, boardSnapshots: Record<string, BoardColumnSnapshot[]> }} SnapshotsDocument
+ * @typedef {Record<string, BoardColumnSnapshot[]>} BoardSnapshotsBySlug
  */
 
 /**
@@ -30,17 +37,6 @@ export const SNAPSHOTS_SETTINGS_KEY = "settings";
  */
 export function utcSnapshotDateString(ms = Date.now()) {
   return new Date(ms).toISOString().slice(0, 10);
-}
-
-/**
- * @param {SnapshotsSettings | undefined} settings
- * @returns {string[] | null} `null` = all non-aggregate catalog boards
- */
-export function boardSlugsFromSnapshotSettings(settings) {
-  const raw = settings?.boards;
-  if (!Array.isArray(raw)) return null;
-  const list = raw.map((s) => String(s).trim()).filter(Boolean);
-  return list.length > 0 ? list : null;
 }
 
 /**
@@ -69,54 +65,40 @@ export function normalizeBoardSnapshot(snap) {
 
 /**
  * @param {unknown} raw
- * @returns {SnapshotsDocument}
+ * @returns {BoardColumnSnapshot[]}
+ */
+export function parseBoardSnapshotsFile(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr.map(normalizeBoardSnapshot);
+}
+
+/**
+ * @param {BoardColumnSnapshot[]} snapshots
+ * @returns {string}
+ */
+export function serializeBoardSnapshots(snapshots) {
+  return `${JSON.stringify(snapshots, null, 2)}\n`;
+}
+
+/**
+ * Parse legacy monolithic `tasks/.millrace/snapshots.json`.
+ * @param {unknown} raw
+ * @returns {BoardSnapshotsBySlug}
  */
 export function parseSnapshotsDocument(raw) {
   const data =
     raw && typeof raw === "object" && !Array.isArray(raw)
       ? /** @type {Record<string, unknown>} */ (raw)
       : {};
-  const settingsRaw =
-    data[SNAPSHOTS_SETTINGS_KEY] && typeof data[SNAPSHOTS_SETTINGS_KEY] === "object"
-      ? /** @type {SnapshotsSettings} */ (data[SNAPSHOTS_SETTINGS_KEY])
-      : {};
-  const settings = {
-    boards: Array.isArray(settingsRaw.boards)
-      ? settingsRaw.boards.map((s) => String(s).trim()).filter(Boolean)
-      : [],
-  };
 
-  /** @type {Record<string, BoardColumnSnapshot[]>} */
+  /** @type {BoardSnapshotsBySlug} */
   const boardSnapshots = {};
   for (const [key, value] of Object.entries(data)) {
     if (key === SNAPSHOTS_SETTINGS_KEY || !Array.isArray(value)) continue;
     boardSnapshots[key] = value.map(normalizeBoardSnapshot);
   }
 
-  return { settings, boardSnapshots };
-}
-
-/**
- * @param {SnapshotsSettings} settings
- * @param {Record<string, BoardColumnSnapshot[]>} boardSnapshots
- * @returns {string}
- */
-export function serializeSnapshotsDocument(settings, boardSnapshots) {
-  /** @type {Record<string, unknown>} */
-  const out = {
-    [SNAPSHOTS_SETTINGS_KEY]: {
-      boards: settings.boards ?? [],
-    },
-  };
-
-  const slugs = Object.keys(boardSnapshots).sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" })
-  );
-  for (const slug of slugs) {
-    out[slug] = boardSnapshots[slug] ?? [];
-  }
-
-  return `${JSON.stringify(out, null, 2)}\n`;
+  return boardSnapshots;
 }
 
 /**
@@ -267,17 +249,138 @@ export function snapshotDateToUtcMs(dateStr) {
 
 /**
  * @param {{
+ *   readdir?: typeof fs.readdir;
+ * }} [deps]
+ * @returns {Promise<string[]>} board slugs with `tasks/{slug}/snapshots.json`
+ */
+export async function discoverBoardSnapshotSlugs(deps = {}) {
+  const readdir = deps.readdir ?? fs.readdir.bind(fs);
+  const tasksDir = path.join(dataRoot(), "tasks");
+  /** @type {string[]} */
+  const slugs = [];
+  let dirents;
+  try {
+    dirents = await readdir(tasksDir, { withFileTypes: true });
+  } catch {
+    return slugs;
+  }
+  for (const ent of dirents) {
+    if (!ent.isDirectory() || ent.name.startsWith(".")) continue;
+    const snapPath = path.join(tasksDir, ent.name, SNAPSHOTS_JSON_BASENAME);
+    if (existsSync(snapPath)) slugs.push(ent.name);
+  }
+  return slugs.sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" })
+  );
+}
+
+/**
+ * @param {string} slug
+ * @param {{
  *   readFile?: typeof fs.readFile;
  * }} [deps]
- * @returns {Promise<SnapshotsDocument>}
+ * @returns {Promise<BoardColumnSnapshot[]>}
  */
-export async function loadSnapshotsDocument(deps = {}) {
+export async function loadBoardSnapshotsForSlug(slug, deps = {}) {
   const readFile = deps.readFile ?? fs.readFile.bind(fs);
   try {
-    const text = await readFile(snapshotsJsonPath(), "utf8");
-    return parseSnapshotsDocument(JSON.parse(text.replace(/^\uFEFF/, "")));
+    const text = await readFile(boardSnapshotsJsonPath(slug), "utf8");
+    return parseBoardSnapshotsFile(JSON.parse(text.replace(/^\uFEFF/, "")));
   } catch {
-    return { settings: { boards: [] }, boardSnapshots: {} };
+    return [];
+  }
+}
+
+/**
+ * @param {{
+ *   discoverBoardSnapshotSlugs?: typeof discoverBoardSnapshotSlugs;
+ *   loadBoardSnapshotsForSlug?: typeof loadBoardSnapshotsForSlug;
+ *   loadBoardCatalog?: typeof loadBoardCatalog;
+ * }} [deps]
+ * @returns {Promise<BoardSnapshotsBySlug>}
+ */
+export async function loadSnapshotsDocument(deps = {}) {
+  const discoverSlugs = deps.discoverBoardSnapshotSlugs ?? discoverBoardSnapshotSlugs;
+  const loadBoardSnaps =
+    deps.loadBoardSnapshotsForSlug ?? loadBoardSnapshotsForSlug;
+  const loadCatalog = deps.loadBoardCatalog ?? loadBoardCatalog;
+
+  const [discovered, catalog] = await Promise.all([discoverSlugs(), loadCatalog()]);
+
+  const slugSet = new Set(discovered);
+  for (const entry of catalog) {
+    if (entry.kind === "aggregate") continue;
+    slugSet.add(entry.slug);
+  }
+
+  /** @type {BoardSnapshotsBySlug} */
+  const boardSnapshots = {};
+  await Promise.all(
+    [...slugSet].map(async (slug) => {
+      boardSnapshots[slug] = await loadBoardSnaps(slug);
+    })
+  );
+
+  return boardSnapshots;
+}
+
+/** Obsolete settings file from an earlier per-board snapshot layout. */
+const OBSOLETE_SNAPSHOT_SETTINGS_BASENAME = "snapshot-settings.json";
+
+/**
+ * Move legacy `tasks/.millrace/snapshots.json` into per-board files.
+ * @param {{
+ *   readFile?: typeof fs.readFile;
+ *   writeFile?: typeof fs.writeFile;
+ *   unlink?: typeof fs.unlink;
+ *   mkdir?: typeof fs.mkdir;
+ * }} [deps]
+ * @returns {Promise<boolean>} whether migration ran
+ */
+export async function migrateLegacySnapshotsJson(deps = {}) {
+  const readFile = deps.readFile ?? fs.readFile.bind(fs);
+  const writeFile = deps.writeFile ?? fs.writeFile.bind(fs);
+  const unlink = deps.unlink ?? fs.unlink.bind(fs);
+  const mkdir = deps.mkdir ?? fs.mkdir.bind(fs);
+
+  const legacyPath = legacySnapshotsJsonPath();
+  let text;
+  try {
+    text = await readFile(legacyPath, "utf8");
+  } catch {
+    return false;
+  }
+
+  const boardSnapshots = parseSnapshotsDocument(
+    JSON.parse(text.replace(/^\uFEFF/, ""))
+  );
+
+  for (const [slug, snapshots] of Object.entries(boardSnapshots)) {
+    const boardDir = path.join(dataRoot(), "tasks", slug);
+    await mkdir(boardDir, { recursive: true });
+    await writeFile(
+      boardSnapshotsJsonPath(slug),
+      serializeBoardSnapshots(snapshots),
+      "utf8"
+    );
+  }
+
+  await unlink(legacyPath);
+  return true;
+}
+
+/**
+ * Remove obsolete `snapshot-settings.json` if present.
+ * @param {{ unlink?: typeof fs.unlink }} [deps]
+ */
+export async function removeObsoleteSnapshotSettings(deps = {}) {
+  const unlink = deps.unlink ?? fs.unlink.bind(fs);
+  try {
+    await unlink(
+      path.join(millraceDataDirPath(), OBSOLETE_SNAPSHOT_SETTINGS_BASENAME)
+    );
+  } catch {
+    /* absent */
   }
 }
 
@@ -315,9 +418,9 @@ export async function buildCumulativeFlowStack(slug, granularity, deps = {}) {
         (model.sources ?? [])
           .map((src) => String(src.slug ?? "").trim())
           .filter(Boolean),
-        doc.boardSnapshots
+        doc
       )
-    : doc.boardSnapshots[slug] ?? [];
+    : doc[slug] ?? [];
 
   const wipCols = [...columns]
     .filter((col) => !columnIsDone(col))
@@ -404,48 +507,48 @@ export async function buildCumulativeFlowStack(slug, granularity, deps = {}) {
  * @param {{
  *   loadBoardCatalog?: typeof loadBoardCatalog;
  *   captureInFlightColumnCountsForSlug?: typeof captureInFlightColumnCountsForSlug;
+ *   loadBoardSnapshotsForSlug?: typeof loadBoardSnapshotsForSlug;
  *   readFile?: typeof fs.readFile;
  *   writeFile?: typeof fs.writeFile;
+ *   mkdir?: typeof fs.mkdir;
  *   nowMs?: () => Promise<number>;
  * }} [deps]
- * @returns {Promise<boolean>} whether `snapshots.json` was rewritten
+ * @returns {Promise<boolean>} whether any board `snapshots.json` was rewritten
  */
 export async function captureTodayColumnSnapshots(deps = {}) {
   const loadCatalog = deps.loadBoardCatalog ?? loadBoardCatalog;
   const captureFn =
     deps.captureInFlightColumnCountsForSlug ?? captureInFlightColumnCountsForSlug;
+  const loadBoardSnaps =
+    deps.loadBoardSnapshotsForSlug ?? loadBoardSnapshotsForSlug;
   const readFile = deps.readFile ?? fs.readFile.bind(fs);
   const writeFile = deps.writeFile ?? fs.writeFile.bind(fs);
+  const mkdir = deps.mkdir ?? fs.mkdir.bind(fs);
   const nowMs = deps.nowMs ?? (async () => Date.now());
 
-  const jsonPath = snapshotsJsonPath();
-  let doc = await loadSnapshotsDocument({ readFile });
-
   const catalog = await loadCatalog();
-  const filter = boardSlugsFromSnapshotSettings(doc.settings);
-  const boards = catalog.filter((entry) => {
-    if (entry.kind === "aggregate") return false;
-    if (!filter) return true;
-    return filter.includes(entry.slug);
-  });
+  const boards = catalog.filter((entry) => entry.kind !== "aggregate");
 
-  const boardSnapshots = { ...doc.boardSnapshots };
+  let anyWritten = false;
   for (const entry of boards) {
     const today = await captureFn(entry.slug, nowMs);
-    boardSnapshots[entry.slug] = upsertTodayBoardSnapshot(
-      boardSnapshots[entry.slug] ?? [],
-      today
-    );
+    const existing = await loadBoardSnaps(entry.slug, { readFile });
+    const next = upsertTodayBoardSnapshot(existing, today);
+    const nextText = serializeBoardSnapshots(next);
+    const jsonPath = boardSnapshotsJsonPath(entry.slug);
+
+    let previous = "";
+    try {
+      previous = await readFile(jsonPath, "utf8");
+    } catch {
+      /* new file */
+    }
+    if (previous === nextText) continue;
+
+    await mkdir(path.dirname(jsonPath), { recursive: true });
+    await writeFile(jsonPath, nextText, "utf8");
+    anyWritten = true;
   }
 
-  const nextText = serializeSnapshotsDocument(doc.settings, boardSnapshots);
-  let previous = "";
-  try {
-    previous = await readFile(jsonPath, "utf8");
-  } catch {
-    /* new file */
-  }
-  if (previous === nextText) return false;
-  await writeFile(jsonPath, nextText, "utf8");
-  return true;
+  return anyWritten;
 }

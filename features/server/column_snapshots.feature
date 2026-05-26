@@ -1,11 +1,11 @@
-Feature: Column count snapshots in snapshots.json
-  Capture today's open card counts per column (excluding done) into board sections.
+Feature: Column count snapshots in board snapshots.json
+  Capture today's open card counts per column (excluding done) into each board's snapshots.json.
 
   Scenario: captureTodayColumnSnapshots writes one board key with today's snapshot counts
     Given a millrace data root with a test board and open cards for snapshots
     And the millrace snapshot layout exists
     When I capture today's column snapshots
-    Then snapshots.json should include a test board key with today's snapshot counts
+    Then the test board snapshots.json should include today's snapshot counts
 
   Scenario: captureTodayColumnSnapshots omits done columns from snapshots
     Given a millrace data root with a test board and open cards for snapshots

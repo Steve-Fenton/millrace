@@ -1,8 +1,7 @@
 /**
  * Reset `tasks/demo/` cards from `scripts/demo-board-template/`.
  * Clears `tasks/demo/archive/` so stale archived copies do not duplicate template cards.
- * Replaces the `demo` entry in `tasks/.millrace/snapshots.json` with dated WIP history
- * for cumulative flow charts (other boards in that file are left unchanged).
+ * Replaces `tasks/demo/snapshots.json` with dated WIP history for cumulative flow charts.
  *
  * Shifts `created`, `closed`, and `next_action_date` so offsets from the
  * reference day (default 2026-05-17, local calendar) match offsets from the
@@ -29,7 +28,7 @@ const snapshotsTemplatePath = path.join(
 );
 const demoDir = path.join(root, "tasks", "demo");
 const demoArchiveDir = path.join(demoDir, "archive");
-const snapshotsJsonPath = path.join(root, "tasks", ".millrace", "snapshots.json");
+const demoSnapshotsJsonPath = path.join(root, "tasks", "demo", "snapshots.json");
 const CARD_INI_RE = /^FLOW-[\w.-]+\.ini$/i;
 
 const REFERENCE_YMD =
@@ -117,20 +116,12 @@ function resetDemoSnapshots(deltaMs) {
     date: shiftUtcYmd(row.date, deltaMs),
   }));
 
-  /** @type {Record<string, unknown>} */
-  let doc = { settings: { boards: [] } };
-  try {
-    doc = JSON.parse(readFileSync(snapshotsJsonPath, "utf8"));
-  } catch {
-    /* new or invalid file */
-  }
-  if (!doc.settings || typeof doc.settings !== "object") {
-    doc.settings = { boards: [] };
-  }
-  doc.demo = demoSnapshots;
-
-  mkdirSync(path.dirname(snapshotsJsonPath), { recursive: true });
-  writeFileSync(snapshotsJsonPath, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
+  mkdirSync(path.dirname(demoSnapshotsJsonPath), { recursive: true });
+  writeFileSync(
+    demoSnapshotsJsonPath,
+    `${JSON.stringify(demoSnapshots, null, 2)}\n`,
+    "utf8"
+  );
   return demoSnapshots.length;
 }
 
@@ -203,5 +194,5 @@ const snapshotCount = resetDemoSnapshots(deltaMs);
 
 console.log(`reset-demo-board: wrote ${templates.length} cards to tasks/demo/`);
 console.log(
-  `reset-demo-board: wrote ${snapshotCount} snapshot(s) for demo in tasks/.millrace/snapshots.json`
+  `reset-demo-board: wrote ${snapshotCount} snapshot(s) for demo in tasks/demo/snapshots.json`
 );

@@ -109,20 +109,20 @@ When("I capture today's column snapshots again", async function () {
 });
 
 Then(
-  "snapshots.json should include a test board key with today's snapshot counts",
+  "the test board snapshots.json should include today's snapshot counts",
   async function () {
     const text = await fs.readFile(
-      path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", ".millrace", "snapshots.json"),
+      path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", "test", "snapshots.json"),
       "utf8"
     );
     const data = JSON.parse(text);
-    assert.ok(Array.isArray(data.test));
-    assert.strictEqual(data.test.length, 1);
+    assert.ok(Array.isArray(data));
+    assert.strictEqual(data.length, 1);
     assert.strictEqual(
-      data.test[0].date,
+      data[0].date,
       utcSnapshotDateString(FIXED_NOW_MS)
     );
-    assert.deepStrictEqual(data.test[0].columns, [
+    assert.deepStrictEqual(data[0].columns, [
       { name: "To Do", type: "to_do", count: 1 },
       { name: "In Progress", type: "in_progress", count: 1 },
     ]);
@@ -131,14 +131,14 @@ Then(
 
 Then("today's test board snapshot should not include a done column", async function () {
   const text = await fs.readFile(
-    path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", ".millrace", "snapshots.json"),
+    path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", "test", "snapshots.json"),
     "utf8"
   );
   const data = JSON.parse(text);
-  const names = (data.test?.[0]?.columns ?? []).map(
+  const names = (data[0]?.columns ?? []).map(
     (col) => /** @type {{ name: string }} */ (col).name
   );
-  const types = (data.test?.[0]?.columns ?? []).map(
+  const types = (data[0]?.columns ?? []).map(
     (col) => /** @type {{ type: string }} */ (col).type
   );
   assert.ok(!names.includes("Done"));
@@ -147,13 +147,11 @@ Then("today's test board snapshot should not include a done column", async funct
 
 Then("the test board should have only one snapshot for today", async function () {
   const text = await fs.readFile(
-    path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", ".millrace", "snapshots.json"),
+    path.join(SNAPSHOT_CAPTURE_ROOT, "tasks", "test", "snapshots.json"),
     "utf8"
   );
   const data = JSON.parse(text);
-  const dates = (data.test ?? []).map(
-    (snap) => /** @type {{ date: string }} */ (snap).date
-  );
+  const dates = data.map((snap) => /** @type {{ date: string }} */ (snap).date);
   assert.deepStrictEqual(dates, [utcSnapshotDateString(FIXED_NOW_MS)]);
 });
 

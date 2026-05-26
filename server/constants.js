@@ -2,7 +2,7 @@
 export const BOARD_CATALOG_INI_BASENAME = ".millrace.ini";
 /** Millrace-managed data under `tasks/` (column snapshots, etc.). */
 export const MILLRACE_DATA_DIRNAME = ".millrace";
-/** Column count snapshots (`tasks/.millrace/snapshots.json`). */
+/** Column count snapshots per board (`tasks/{slug}/snapshots.json`). */
 export const SNAPSHOTS_JSON_BASENAME = "snapshots.json";
 /** Section in that file listing board INI basenames. Legacy section name: `flow`. */
 export const BOARD_CATALOG_SECTION = "millrace";

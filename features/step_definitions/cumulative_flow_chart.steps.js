@@ -46,23 +46,19 @@ Given(
       boardIniTestWithSwimlanes(),
       "utf8"
     );
-    await fs.mkdir(path.join(tasksDir, ".millrace"), { recursive: true });
     await fs.writeFile(
-      path.join(tasksDir, ".millrace", "snapshots.json"),
+      path.join(testDir, "snapshots.json"),
       JSON.stringify(
-        {
-          settings: { boards: [] },
-          test: [
-            {
-              date: utcSnapshotDateString(WEEK_ONE_MS),
-              columns: [{ name: "To Do", type: "to_do", count: 4 }],
-            },
-            {
-              date: utcSnapshotDateString(WEEK_TWO_MS),
-              columns: [{ name: "To Do", type: "to_do", count: 2 }],
-            },
-          ],
-        },
+        [
+          {
+            date: utcSnapshotDateString(WEEK_ONE_MS),
+            columns: [{ name: "To Do", type: "to_do", count: 4 }],
+          },
+          {
+            date: utcSnapshotDateString(WEEK_TWO_MS),
+            columns: [{ name: "To Do", type: "to_do", count: 2 }],
+          },
+        ],
         null,
         2
       ),
@@ -110,7 +106,8 @@ Given(
   async function () {
     await fs.rm(AGGREGATE_FLOW_ROOT, { recursive: true, force: true });
     const tasksDir = path.join(AGGREGATE_FLOW_ROOT, "tasks");
-    await fs.mkdir(path.join(tasksDir, ".millrace"), { recursive: true });
+    await fs.mkdir(path.join(tasksDir, "demo"), { recursive: true });
+    await fs.mkdir(path.join(tasksDir, "project"), { recursive: true });
     await fs.writeFile(
       path.join(tasksDir, ".millrace.ini"),
       `[millrace]
@@ -168,30 +165,35 @@ type = done
       "utf8"
     );
     await fs.writeFile(
-      path.join(tasksDir, ".millrace", "snapshots.json"),
+      path.join(tasksDir, "demo", "snapshots.json"),
       JSON.stringify(
-        {
-          settings: { boards: [] },
-          demo: [
-            {
-              date: SNAPSHOT_DATE,
-              columns: [
-                { name: "To Do", type: "options", count: 2 },
-                { name: "Doing", type: "in_progress", count: 3 },
-              ],
-            },
-          ],
-          project: [
-            {
-              date: SNAPSHOT_DATE,
-              columns: [
-                { name: "Ideas", type: "options", count: 5 },
-                { name: "Doing", type: "in_progress", count: 1 },
-                { name: "Review", type: "waiting", count: 4 },
-              ],
-            },
-          ],
-        },
+        [
+          {
+            date: SNAPSHOT_DATE,
+            columns: [
+              { name: "To Do", type: "options", count: 2 },
+              { name: "Doing", type: "in_progress", count: 3 },
+            ],
+          },
+        ],
+        null,
+        2
+      ),
+      "utf8"
+    );
+    await fs.writeFile(
+      path.join(tasksDir, "project", "snapshots.json"),
+      JSON.stringify(
+        [
+          {
+            date: SNAPSHOT_DATE,
+            columns: [
+              { name: "Ideas", type: "options", count: 5 },
+              { name: "Doing", type: "in_progress", count: 1 },
+              { name: "Review", type: "waiting", count: 4 },
+            ],
+          },
+        ],
         null,
         2
       ),
@@ -203,19 +205,17 @@ type = done
 
 Given("the charts profile has cumulative flow snapshot data", async function () {
   const tasksRoot = path.join(INTEGRATION_DATA_ROOT, "tasks");
-  await fs.mkdir(path.join(tasksRoot, ".millrace"), { recursive: true });
+  const testDir = path.join(tasksRoot, "test");
+  await fs.mkdir(testDir, { recursive: true });
   await fs.writeFile(
-    path.join(tasksRoot, ".millrace", "snapshots.json"),
+    path.join(testDir, "snapshots.json"),
     JSON.stringify(
-      {
-        settings: { boards: [] },
-        test: [
-          {
-            date: utcSnapshotDateString(Date.now()),
-            columns: [{ name: "To Do", type: "to_do", count: 2 }],
-          },
-        ],
-      },
+      [
+        {
+          date: utcSnapshotDateString(Date.now()),
+          columns: [{ name: "To Do", type: "to_do", count: 2 }],
+        },
+      ],
       null,
       2
     ),

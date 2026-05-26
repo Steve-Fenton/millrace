@@ -32,7 +32,7 @@ Given("a tasks directory exists without a Millrace snapshot layout", async funct
 });
 
 Given(
-  "a tasks directory exists with a custom millrace snapshots.json",
+  "a tasks directory exists with legacy millrace snapshots.json",
   async function () {
     await fs.rm(SNAPSHOT_BOOTSTRAP_ROOT, { recursive: true, force: true });
     const millraceDir = path.join(
@@ -40,15 +40,20 @@ Given(
       "tasks",
       ".millrace"
     );
+    const demoDir = path.join(SNAPSHOT_BOOTSTRAP_ROOT, "tasks", "demo");
     await fs.mkdir(millraceDir, { recursive: true });
+    await fs.mkdir(demoDir, { recursive: true });
     await fs.writeFile(
       path.join(millraceDir, "snapshots.json"),
       JSON.stringify(
         {
-          settings: {
-            boards: [],
-            "custom snapshot marker": "yes",
-          },
+          settings: { boards: ["demo"] },
+          demo: [
+            {
+              date: "2026-05-25",
+              columns: [{ name: "To Do", type: "options", count: 3 }],
+            },
+          ],
         },
         null,
         2
@@ -72,7 +77,7 @@ When("I run the millrace snapshot layout startup with git mocked", async functio
     gitPullWithOptionalAutostash: async () => {
       gitPullCalled = true;
     },
-    commitPathIfChanged: async () => {
+    commitSnapshotPathsIfChanged: async () => {
       gitCommitCalled = true;
       return false;
     },
@@ -100,7 +105,7 @@ When("I run the millrace snapshot layout startup", async function () {
     captureTodayColumnSnapshots: async () => {
       gitPullOrder.push("capture");
     },
-    commitPathIfChanged: async () => {
+    commitSnapshotPathsIfChanged: async () => {
       gitCommitCalled = true;
       gitPullOrder.push("commit");
       return true;
@@ -135,29 +140,24 @@ Then("the millrace snapshot folder should exist under tasks", async function () 
   assert.ok(stat.isDirectory());
 });
 
-Then(
-  "snapshots.json in the millrace snapshot folder should include settings",
-  async function () {
-    const text = await fs.readFile(
-      path.join(SNAPSHOT_BOOTSTRAP_ROOT, "tasks", ".millrace", "snapshots.json"),
-      "utf8"
-    );
-    const data = JSON.parse(text);
-    assert.ok(Array.isArray(data.settings?.boards));
-  }
-);
+Then("legacy snapshots.json should be removed", async function () {
+  await assert.rejects(
+    fs.stat(
+      path.join(SNAPSHOT_BOOTSTRAP_ROOT, "tasks", ".millrace", "snapshots.json")
+    )
+  );
+});
 
-Then(
-  "snapshots.json in the millrace snapshot folder should still say custom snapshot marker",
-  async function () {
-    const text = await fs.readFile(
-      path.join(SNAPSHOT_BOOTSTRAP_ROOT, "tasks", ".millrace", "snapshots.json"),
-      "utf8"
-    );
-    const data = JSON.parse(text);
-    assert.strictEqual(data.settings?.["custom snapshot marker"], "yes");
-  }
-);
+Then("board demo should have migrated snapshots.json", async function () {
+  const text = await fs.readFile(
+    path.join(SNAPSHOT_BOOTSTRAP_ROOT, "tasks", "demo", "snapshots.json"),
+    "utf8"
+  );
+  const data = JSON.parse(text);
+  assert.ok(Array.isArray(data));
+  assert.strictEqual(data[0].date, "2026-05-25");
+  assert.strictEqual(data[0].columns[0].count, 3);
+});
 
 After(function () {
   setMillraceDataRootForTesting(INTEGRATION_DATA_ROOT);
