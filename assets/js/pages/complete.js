@@ -405,12 +405,12 @@ function renderCompleteShell(
   deepCb.type = "checkbox";
   deepCb.id = "flow-complete-deep";
   deepCb.checked = deepSearch;
-  deepCb.setAttribute("aria-label", "Include cold storage");
+  deepCb.setAttribute("aria-label", "Search all");
   const deepText = document.createElement("span");
   deepText.className = "complete-deep-text";
-  deepText.textContent = "Include cold storage";
+  deepText.textContent = "Search all";
   deepLabel.title =
-    "Include tasks in cold-storage. Applied when you click Search.";
+    "Also search cold storage, abandoned cards, and in-flight cards. Applied when you click Search.";
   deepLabel.append(deepCb, deepText);
 
   function applyCompletedSearch() {
@@ -445,7 +445,7 @@ function renderCompleteShell(
       applyCompletedSearch();
     }
   });
-  searchWrap.append(searchLabel, searchFieldWrap, searchBtn, deepLabel);
+  searchWrap.append(searchLabel, searchFieldWrap, deepLabel, searchBtn);
   topLeft.append(brand, titleOrPicker);
 
   const topActions = document.createElement("div");
@@ -577,7 +577,7 @@ function renderCompleteShell(
     const fn = card.filename && String(card.filename).trim();
     const colIdx = card.columnIndex;
     const canEdit =
-      source === "board" &&
+      (source === "board" || source === "in-flight") &&
       fn &&
       colIdx != null &&
       Number.isFinite(Number(colIdx)) &&
@@ -633,10 +633,22 @@ function renderCompleteShell(
         ? " complete-source-badge--archive"
         : source === "cold"
           ? " complete-source-badge--cold"
-          : "";
+          : source === "abandoned"
+            ? " complete-source-badge--abandoned"
+            : source === "in-flight"
+              ? " complete-source-badge--in-flight"
+              : "";
     srcBadge.className = "complete-source-badge" + srcCls;
     srcBadge.textContent =
-      source === "archive" ? "Archive" : source === "cold" ? "Cold" : "Board";
+      source === "archive"
+        ? "Archive"
+        : source === "cold"
+          ? "Cold"
+          : source === "abandoned"
+            ? "Abandoned"
+            : source === "in-flight"
+              ? "In-flight"
+              : "Board";
     titleInner.append(titleMain, srcBadge);
     tdTitle.append(titleInner);
 

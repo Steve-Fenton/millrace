@@ -52,10 +52,16 @@ app.get("/api/completed-cards", async (req, res) => {
     const me = String(req.query.me ?? "").trim();
 
     const deepRaw = String(req.query.deep ?? "").trim().toLowerCase();
-    const includeCold =
+    const searchAllRaw = String(req.query.searchAll ?? "")
+      .trim()
+      .toLowerCase();
+    const searchAll =
       deepRaw === "1" ||
       deepRaw === "true" ||
       deepRaw === "yes" ||
+      searchAllRaw === "1" ||
+      searchAllRaw === "true" ||
+      searchAllRaw === "yes" ||
       String(req.query.includeCold ?? "")
         .trim()
         .toLowerCase() === "1";
@@ -64,7 +70,7 @@ app.get("/api/completed-cards", async (req, res) => {
     const laneRaw = String(req.query.lane ?? "").trim();
     const whenFilter = parseCompletedWhenFilter(req.query.when);
 
-    const all = await gatherCompletedArchiveAndOptionalCold(slug, includeCold);
+    const all = await gatherCompletedArchiveAndOptionalCold(slug, searchAll);
 
     const ownerSet = new Set();
     for (const row of all) {

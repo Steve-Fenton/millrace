@@ -1,6 +1,6 @@
 # Completed
 
-The **Completed** view shows cards that are finished. These cards come from the board, from the archive, and if you choose to include them, from cold storage.
+The **Completed** view shows cards that are finished. These cards come from the board, from the archive, and if you choose **Search all**, from cold storage, abandoned cards, and in-flight cards too.
 
 ![Screenshot: The completed view](../screenshots/demo-completed-full.png)
 

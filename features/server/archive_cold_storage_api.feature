@@ -1,5 +1,6 @@
 Feature: Archive and cold-storage in completed cards API
-  Completed-cards lists archive paths and, with `deep=1`, walks cold-storage folders.
+  Completed-cards lists archive paths and, with `deep=1`, also walks cold-storage,
+  abandoned, and in-flight folders.
 
   Scenario: archived cards show up in completed-cards
     Given the Millrace integration server has profile "with-archive-card"
@@ -37,6 +38,23 @@ Feature: Archive and cold-storage in completed cards API
     Then the response status should be 200
     And the last JSON field "total" should equal number 1
     And the first completed card title should be "Cold Storage Card"
+
+  Scenario: search-all includes abandoned and in-flight cards
+    Given the Millrace integration server has profile "with-search-all-extras"
+    When I fetch JSON from "/api/completed-cards?boardSlug=test"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 0
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&deep=1"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 3
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&deep=1&q=abandoned"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 1
+    And the first completed card title should be "Abandoned Card"
+    When I fetch JSON from "/api/completed-cards?boardSlug=test&deep=1&q=in-flight"
+    Then the response status should be 200
+    And the last JSON field "total" should equal number 1
+    And the first completed card title should be "In-flight Card"
 
   Scenario: cycle-time scatter ignores cold storage
     Given the Millrace integration server has profile "with-cold-storage-card"

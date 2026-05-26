@@ -1245,6 +1245,18 @@ dialog.git-conflict-dialog::backdrop {
   background: var(--blue-soft-dim);
 }
 
+.complete-source-badge--abandoned {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.complete-source-badge--in-flight {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+}
+
 .complete-empty {
   padding-block: 2.5rem !important;
   padding-inline: 1rem !important;

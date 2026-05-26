@@ -494,6 +494,60 @@ closed = 2022-01-05T00:00:00.000Z
       );
       break;
     }
+    case "with-search-all-extras": {
+      await writeMillraceProfile("flow-board", dataRoot);
+      await fs.mkdir(path.join(tasksRoot, "test"), { recursive: true });
+      await fs.writeFile(
+        path.join(tasksRoot, "test", "FLOW-inflight-1.ini"),
+        `[item]
+id = FLOW-inflight-1
+title = In-flight Card
+description =
+owner =
+column = To Do
+sort_order = 10
+created = 2024-06-01T00:00:00.000Z
+`,
+        "utf8"
+      );
+      const abandonedDir = path.join(tasksRoot, "test", "abandoned", "2024");
+      await fs.mkdir(abandonedDir, { recursive: true });
+      await fs.writeFile(
+        path.join(abandonedDir, "FLOW-abandoned-1.ini"),
+        `[item]
+id = FLOW-abandoned-1
+title = Abandoned Card
+description =
+owner =
+column = To Do
+sort_order = 10
+created = 2024-05-01T00:00:00.000Z
+`,
+        "utf8"
+      );
+      const coldDir = path.join(
+        tasksRoot,
+        "test",
+        "cold-storage",
+        "2022"
+      );
+      await fs.mkdir(coldDir, { recursive: true });
+      await fs.writeFile(
+        path.join(coldDir, "FLOW-cold-1.ini"),
+        `[item]
+id = FLOW-cold-1
+title = Cold Storage Card
+description =
+owner =
+column = Done
+sort_order = 10
+created = 2022-01-01T00:00:00.000Z
+closed = 2022-01-05T00:00:00.000Z
+`,
+        "utf8"
+      );
+      break;
+    }
     default:
       throw new Error(`Unknown Millrace test profile: ${profile}`);
   }
