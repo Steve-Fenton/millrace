@@ -77,6 +77,21 @@
           "count": 3
         }
       ]
+    },
+    {
+      "date": "2026-05-26",
+      "columns": [
+        {
+          "name": "To Do",
+          "type": "options",
+          "count": 22
+        },
+        {
+          "name": "Doing",
+          "type": "in_progress",
+          "count": 3
+        }
+      ]
     }
   ],
   "project": [
@@ -97,6 +112,26 @@
           "name": "Review",
           "type": "waiting",
           "count": 0
+        }
+      ]
+    },
+    {
+      "date": "2026-05-26",
+      "columns": [
+        {
+          "name": "Ideas",
+          "type": "options",
+          "count": 3
+        },
+        {
+          "name": "Doing",
+          "type": "in_progress",
+          "count": 0
+        },
+        {
+          "name": "Review",
+          "type": "waiting",
+          "count": 1
         }
       ]
     }
