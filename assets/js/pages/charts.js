@@ -267,13 +267,15 @@ function swimlaneStackFill(i, n) {
 }
 
 /**
- * Bottom-to-top stack order for cumulative flow (done band at the base).
+ * Bottom-to-top stack order for cumulative flow: done at the base, earliest
+ * workflow column at the top (work flows downward through the stack).
  * @param {{ key: string, label: string, index: number }[]} logicalSeries
  */
 function cumulativeFlowStackSeries(logicalSeries) {
   const done = logicalSeries.find((s) => s.key === "done");
   const wip = logicalSeries.filter((s) => s.key !== "done");
-  return done ? [done, ...wip] : wip;
+  const wipNearDoneToEarliest = [...wip].reverse();
+  return done ? [done, ...wipNearDoneToEarliest] : wipNearDoneToEarliest;
 }
 
 /**
