@@ -4,14 +4,15 @@ The **Admin** view lists your boards and let's you manage them. You can add new 
 
 ![Screenshot: The admin view](../screenshots/demo-admin-full.png)
 
-- **Edit** boards by using the edit icon (shown on hover)
+- **Edit** boards by using the edit button
+- **Rename** boards using the rename button
 - **Add** boards by entering a name and selecting **Add board**
 
 The **Current** board indicates your local selected project.
 
 ## Customizing boards
 
-When you **Edit** a board you can change it's name and customize the columns and swimlanes.
+When you **Edit** a board you can customize the columns and swimlanes.
 
 ![Screenshot: Editing boards](../screenshots/demo-admin-edit-board-dialog.png)
 
