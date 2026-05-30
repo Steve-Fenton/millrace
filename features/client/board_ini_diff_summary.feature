@@ -1001,6 +1001,204 @@ Feature: Board INI change summary
       ["(No tracked board changes — whitespace or comments only.)"]
       """
 
+  Scenario: explicit column type field changed
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = Review
+      type = waiting
+
+      [columns.2]
+      title = Done
+      type = done
+      """
+    And the later board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = Review
+      type = options
+
+      [columns.2]
+      title = Done
+      type = done
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["Column type (Review): Waiting → Options"]
+      """
+
+  Scenario: board name removed
+    Given the earlier board INI text is:
+      """
+      [board]
+      name = Demo
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    And the later board INI text is:
+      """
+      [board]
+      slug = demo
+
+      [columns.1]
+      title = To Do
+
+      [columns.2]
+      title = Done
+      is_done = true
+      """
+    When I summarize the board INI diff
+    Then the board diff summary JSON should be:
+      """
+      ["Board name: Demo → ∅"]
+      """
+
+  Scenario: sparse parsed models with missing list fields and titles
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": {
+          "board": { "name": "Before" },
+          "columns": [{ "index": 1, "title": null }],
+          "swimlanes": [{ "index": 1, "title": null }],
+          "users": [{ "email": null, "name": null }]
+        },
+        "after": {
+          "board": {},
+          "columns": [{ "index": 1, "title": "Lane", "wipLimit": 2 }]
+        }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      [
+        "Board name: Before → ∅",
+        "Column added: Lane",
+        "Column removed: ∅",
+        "Swimlane removed: ∅"
+      ]
+      """
+
+  Scenario: user display name added when parsed name was missing
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": [{ "email": "a@x.com" }]
+        },
+        "after": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": [{ "email": "a@x.com", "name": "Ann" }]
+        }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      ["User name (a@x.com): ∅ → Ann"]
+      """
+
+  Scenario: user display name cleared when parsed name was missing
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": [{ "email": "a@x.com", "name": "Ann" }]
+        },
+        "after": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": [{ "email": "a@x.com" }]
+        }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      ["User name (a@x.com): Ann → ∅"]
+      """
+
+  Scenario: parsed models omit columns swimlanes and users arrays
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": { "board": { "name": "Demo" } },
+        "after": { "board": { "name": "Demo" } }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      ["(No tracked board changes — whitespace or comments only.)"]
+      """
+
+  Scenario: WIP limit change on column without explicit type field
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": {
+          "board": { "name": "Demo" },
+          "columns": [{ "index": 1, "title": "Doing", "wipLimit": 1 }],
+          "swimlanes": [],
+          "users": []
+        },
+        "after": {
+          "board": { "name": "Demo" },
+          "columns": [{ "index": 1, "title": "Doing", "wipLimit": 2 }],
+          "swimlanes": [],
+          "users": []
+        }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      ["WIP limit (Doing): 1 → 2"]
+      """
+
+  Scenario: later parsed users list includes entry with missing email
+    When I summarize the board INI diff using custom parsed models:
+      """
+      {
+        "before": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": []
+        },
+        "after": {
+          "board": { "name": "Demo" },
+          "columns": [],
+          "swimlanes": [],
+          "users": [{ "email": null, "name": "Ghost" }]
+        }
+      }
+      """
+    Then the board diff summary JSON should be:
+      """
+      ["(No tracked board changes — whitespace or comments only.)"]
+      """
+
   Scenario: column added and renamed in the same edit
     Given the earlier board INI text is:
       """

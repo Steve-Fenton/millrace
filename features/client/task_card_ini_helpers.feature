@@ -546,7 +546,7 @@ Feature: Task card INI helpers
   Scenario: serializeFullCardIni skips blank scalar fields in the ordered pass then emits them from the rest loop
     Given the full card item JSON is:
       """
-      {"id":"e1","title":"X","description":"","owner":"","created":"2024-01-01T00:00:00.000Z","next_action_date":"","strategic":""}
+      {"id":"e1","title":"X","description":"","owner":"","created":"2024-01-01T00:00:00.000Z","note":"","next_action_date":"","strategic":""}
       """
     And the full card links JSON is:
       """
@@ -562,6 +562,7 @@ Feature: Task card INI helpers
       owner = 
       created = 2024-01-01T00:00:00.000Z
       next_action_date = 
+      note = 
       strategic = 
 
       """
@@ -622,3 +623,17 @@ Feature: Task card INI helpers
       ]
       """
     Then the sorted card ids for next action today display should be "b,d,a,c,e"
+
+  Scenario: sortCardsWithNextActionTodayFirst returns non-array input unchanged
+    When I sort cards for next action today display with today "2026-05-11":
+      """
+      null
+      """
+    Then the next action today sort result is unchanged from the input
+
+  Scenario: sortCardsWithNextActionTodayFirst returns a single-card array unchanged
+    When I sort cards for next action today display with today "2026-05-11":
+      """
+      [{"id":"only"}]
+      """
+    Then the next action today sort result is unchanged from the input

@@ -63,6 +63,22 @@ When(
   }
 );
 
+When(
+  "I summarize the board INI diff using custom parsed models:",
+  function (docString) {
+    const { before, after } = JSON.parse(docString.trim());
+    let n = 0;
+    this.boardDiffSummary = summarizeBoardIniDiff(
+      "[board]\nname=stub",
+      "[board]\nname=stub",
+      () => {
+        n++;
+        return n === 1 ? before : after;
+      }
+    );
+  }
+);
+
 Then("the board diff summary JSON should be:", function (docString) {
   assert.deepStrictEqual(this.boardDiffSummary, JSON.parse(docString.trim()));
 });

@@ -219,6 +219,7 @@ When(
   "I sort cards for next action today display with today {string}:",
   function (todayYmd, docString) {
     const cards = JSON.parse(docString);
+    this.nextActionTodaySortInput = cards;
     const [y, m, d] = String(todayYmd).split("-").map((n) => Number.parseInt(n, 10));
     const todayMs = new Date(y, m - 1, d, 12, 0, 0).getTime();
     this.nextActionTodaySortResult = sortCardsWithNextActionTodayFirst(cards, todayMs);
@@ -230,5 +231,12 @@ Then(
   function (expected) {
     const ids = this.nextActionTodaySortResult.map((c) => c.id).join(",");
     assert.strictEqual(ids, expected);
+  }
+);
+
+Then(
+  "the next action today sort result is unchanged from the input",
+  function () {
+    assert.strictEqual(this.nextActionTodaySortResult, this.nextActionTodaySortInput);
   }
 );
