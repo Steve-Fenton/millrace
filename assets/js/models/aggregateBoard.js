@@ -116,12 +116,13 @@ export function validateAggregateBoard(model, catalogBoards, options = {}) {
   const requireSources = options.requireSources !== false;
   const selfSlug = String(model.board?.slug ?? "").trim();
   const sources = model.sources ?? [];
+  const boards = catalogBoards ?? [];
   if (sources.length === 0) {
     return requireSources
       ? "An aggregate board must include at least one source board."
       : null;
   }
-  const catalogSlugs = new Set((catalogBoards ?? []).map((b) => b.slug));
+  const catalogSlugs = new Set(boards.map((b) => b.slug));
   /** @type {Set<string>} */
   const seen = new Set();
   for (const src of sources) {
@@ -139,7 +140,7 @@ export function validateAggregateBoard(model, catalogBoards, options = {}) {
     if (!catalogSlugs.has(slug)) {
       return `Aggregate source board not found in catalog: ${slug}.`;
     }
-    const hit = (catalogBoards ?? []).find((b) => b.slug === slug);
+    const hit = boards.find((b) => b.slug === slug);
     if (hit?.kind === AGGREGATE_BOARD_KIND) {
       return `Aggregate boards cannot include other aggregate boards (${slug}).`;
     }
@@ -149,11 +150,14 @@ export function validateAggregateBoard(model, catalogBoards, options = {}) {
 
 /**
  * @param {string} iniText
+ * @param {(raw: string) => import("./boardModel.js").BoardModel} [parseBoard]
  * @returns {boolean}
  */
-export function iniTextIsAggregateBoard(iniText) {
+export function iniTextIsAggregateBoard(iniText, parseBoard = parseBoardIni) {
   try {
-    return isAggregateBoard(parseBoardIni(String(iniText ?? "").replace(/^\uFEFF/, "")));
+    return isAggregateBoard(
+      parseBoard(String(iniText ?? "").replace(/^\uFEFF/, ""))
+    );
   } catch {
     return false;
   }

@@ -4,7 +4,13 @@ import path from "node:path";
 import { Given, Then, When } from "@cucumber/cucumber";
 import {
   aggregateColumnIndexForSourceColumn,
+  cardStorageBoardSlug,
+  columnWithType,
   enrichAggregateBoardModel,
+  iniTextIsAggregateBoard,
+  isAggregateBoard,
+  sourceColumnIndexForAggregateColumn,
+  sourceColumnIndexForAggregateViewColumn,
   validateAggregateBoard,
 } from "../../assets/js/models/aggregateBoard.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
@@ -19,6 +25,28 @@ When("I map a source column to an aggregate column index", function () {
     o.sourceColumnIndex,
     o.sourceColumns,
     o.aggregateColumns
+  );
+});
+
+When("I map an aggregate column to a source column index", function () {
+  const o = this.aggMapInput;
+  this.aggNumericResult = sourceColumnIndexForAggregateColumn(
+    o.aggregateColumnIndex,
+    o.aggregateColumns,
+    o.sourceColumns
+  );
+});
+
+When("I map an aggregate view column to a source column index", function () {
+  const o = this.aggMapInput;
+  const sourceColumnDefs = o.sourceColumnDefs
+    ? new Map(Object.entries(o.sourceColumnDefs))
+    : undefined;
+  this.aggNumericResult = sourceColumnIndexForAggregateViewColumn(
+    o.card,
+    o.viewModel,
+    sourceColumnDefs,
+    o.aggregateColumnIndex
   );
 });
 
@@ -38,14 +66,90 @@ Given("aggregate validation input as JSON:", function (docString) {
 });
 
 When("I validate the aggregate board", function () {
+  const o = this.aggValidationInput;
   this.bmValidationMessage = validateAggregateBoard(
-    this.aggValidationInput.model,
-    this.aggValidationInput.catalog
+    o.model,
+    o.catalog,
+    o.options
   );
+});
+
+Given("aggregate board model JSON:", function (docString) {
+  this.aggBoardModel = JSON.parse(docString.trim());
+});
+
+When("I check whether the board model is aggregate", function () {
+  this.aggBoolResult = isAggregateBoard(this.aggBoardModel);
+});
+
+Given("aggregate board INI text:", function (docString) {
+  this.aggIniText = docString;
+});
+
+Given("aggregate board INI text has a UTF-8 BOM prefix and content:", function (docString) {
+  this.aggIniText = `\uFEFF${docString}`;
+});
+
+When("I detect whether the INI text is an aggregate board", function () {
+  this.aggBoolResult = iniTextIsAggregateBoard(this.aggIniText);
+});
+
+Given("the aggregate board INI text is null", function () {
+  this.aggIniText = null;
+});
+
+When(
+  "I detect whether the INI text is an aggregate board assuming parse fails",
+  function () {
+    this.aggBoolResult = iniTextIsAggregateBoard("[board]\nkind=aggregate", () => {
+      throw new Error("parse");
+    });
+  }
+);
+
+Given("card storage slug input as JSON:", function (docString) {
+  this.aggCardStorageInput = JSON.parse(docString.trim());
+});
+
+When("I resolve the card storage board slug", function () {
+  const o = this.aggCardStorageInput;
+  this.aggStringResult = cardStorageBoardSlug(o.card, o.viewBoardSlug, o.model);
+});
+
+Given("columnWithType lookup input as JSON:", function (docString) {
+  this.aggColumnWithTypeInput = JSON.parse(docString.trim());
+});
+
+When("I look up a column by type", function () {
+  const o = this.aggColumnWithTypeInput;
+  this.aggColumnWithTypeResult = columnWithType(o.columns, o.type);
 });
 
 Then("the numeric result should be {int}", function (value) {
   assert.strictEqual(this.aggNumericResult, value);
+});
+
+Then("the numeric result should be null", function () {
+  assert.strictEqual(this.aggNumericResult, null);
+});
+
+Then("the aggregate boolean result is {string}", function (value) {
+  assert.strictEqual(this.aggBoolResult, value === "true");
+});
+
+Then("the aggregate string result should be:", function (docString) {
+  assert.strictEqual(this.aggStringResult, docString.trim());
+});
+
+Then("the looked-up column JSON should be:", function (docString) {
+  assert.deepStrictEqual(
+    this.aggColumnWithTypeResult,
+    JSON.parse(docString.trim())
+  );
+});
+
+Then("the looked-up column should be undefined", function () {
+  assert.strictEqual(this.aggColumnWithTypeResult, undefined);
 });
 
 Then(
