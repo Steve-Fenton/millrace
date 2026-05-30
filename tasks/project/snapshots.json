@@ -58,5 +58,25 @@
         "count": 0
       }
     ]
+  },
+  {
+    "date": "2026-05-30",
+    "columns": [
+      {
+        "name": "Ideas",
+        "type": "options",
+        "count": 0
+      },
+      {
+        "name": "Doing",
+        "type": "in_progress",
+        "count": 0
+      },
+      {
+        "name": "Review",
+        "type": "waiting",
+        "count": 0
+      }
+    ]
   }
 ]
