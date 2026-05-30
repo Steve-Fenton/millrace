@@ -27,7 +27,7 @@ export function showFlowToast(message, opts = {}) {
   const text = String(message ?? "").trim();
   if (!text) return;
 
-  if (!toastEl) {
+  if (!toastEl || !toastEl.isConnected) {
     toastEl = document.createElement("div");
     toastEl.className = "flow-toast";
     toastEl.setAttribute("role", "status");

@@ -167,7 +167,7 @@ export async function copyCardDeepLinkToClipboard(opts) {
  * @param {{ durationMs?: number }} [opts]
  */
 export function showCopyLinkButtonCopied(btn, opts = {}) {
-  if (!(btn instanceof HTMLButtonElement)) return;
+  if (!btn || btn.tagName !== "BUTTON") return;
   const durationMs =
     typeof opts.durationMs === "number" && opts.durationMs >= 0
       ? opts.durationMs
