@@ -2132,36 +2132,30 @@ a.column-done-truncation-link:focus-visible {
   flex: 0 1 auto;
 }
 
-/* Insertion slot while dragging — real height so siblings reflow (not height:0 + ::before only). */
+/* Insertion slot while dragging — sized to a card preview so siblings reflow naturally. */
 .column-card-drop-marker {
   display: block;
   flex-shrink: 0;
   margin: 0;
-  padding-block: 12px;
-  padding-inline: 0;
+  padding: 0;
   border: none;
   list-style: none;
   pointer-events: none;
   box-sizing: border-box;
 }
 
-.column-card-drop-marker::before {
-  content: "";
-  display: block;
-  height: 28px;
-  margin: 0;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    var(--accent-muted),
-    var(--accent),
-    var(--accent-muted)
-  );
+.column-card--drop-preview {
+  margin-block-end: 0.4rem;
+  border-style: dashed;
+  border-color: var(--accent-medium);
   box-shadow: var(--shadow-accent-glow);
+  opacity: 0.92;
 }
 
-.column-card-list:has(> .column-card-drop-marker:only-child) {
-  min-height: 4.25rem;
+/* Keep edit-btn layout space so preview height matches the source card. */
+.column-card--drop-preview .flow-card-edit-btn {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .flow-card-edit-btn {

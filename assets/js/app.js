@@ -666,7 +666,9 @@ function mergeOwnerFilteredReorder(fullPeers, visibleSet, newVisibleOrder) {
  */
 function getDragAfterElement(container, y) {
   const draggable = [
-    ...container.querySelectorAll(".column-card:not(.column-card--dragging)"),
+    ...container.querySelectorAll(
+      ":scope > .column-card:not(.column-card--dragging)"
+    ),
   ];
   return draggable.reduce(
     (closest, child) => {
@@ -698,6 +700,26 @@ function removeFlowDropMarker() {
   }
 }
 
+/** Clone visible card content into the drop marker so the slot previews the move. */
+function syncDropMarkerPreview() {
+  const marker = getDropMarkerLi();
+  marker.replaceChildren();
+  const dragging = document.querySelector(".column-card--dragging");
+  if (!dragging) return;
+
+  const preview = document.createElement("div");
+  preview.className = "column-card column-card--drop-preview";
+  if (dragging.classList.contains("column-card--strategic")) {
+    preview.classList.add("column-card--strategic");
+  }
+
+  for (const child of dragging.children) {
+    if (child.classList.contains("column-card-compass")) continue;
+    preview.append(child.cloneNode(true));
+  }
+  marker.append(preview);
+}
+
 /**
  * Show where the card will insert in this list (caller ensures list belongs to hovered cell).
  * @param {HTMLUListElement} list
@@ -705,6 +727,7 @@ function removeFlowDropMarker() {
  * @param {"precise" | "append-only"} mode
  */
 function positionDropMarker(list, clientY, mode) {
+  syncDropMarkerPreview();
   const marker = getDropMarkerLi();
   if (mode === "append-only") {
     list.append(marker);
@@ -1455,6 +1478,7 @@ function renderBoard(
             e.dataTransfer.setData("text/plain", payload);
             e.dataTransfer.effectAllowed = "move";
             li.classList.add("column-card--dragging");
+            syncDropMarkerPreview();
           });
           li.addEventListener("dragend", () => {
             li.classList.remove("column-card--dragging");
