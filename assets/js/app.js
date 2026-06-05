@@ -1076,7 +1076,9 @@ function renderBoard(
     head.textContent =
       limit != null
         ? `${col.title} (${totalInColumn}/${limit})`
-        : col.title;
+        : columnIsDone(col)
+          ? col.title
+          : `${col.title} (${totalInColumn})`;
     head.setAttribute("role", "columnheader");
     headerRow.append(head);
   }
