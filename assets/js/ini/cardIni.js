@@ -118,7 +118,7 @@ export function isNextActionDateImminent(raw, todayMs = Date.now()) {
 }
 
 /**
- * True when an open card's next action date is today (local time).
+ * True when an open card's next action date is today or overdue (local time).
  * @param {{ closed?: string, next_action_date?: string }} card
  * @param {number} [todayMs]
  */
@@ -126,11 +126,12 @@ export function shouldFloatNextActionTodayCard(card, todayMs = Date.now()) {
   if (String(card?.closed ?? "").trim()) return false;
   const nad = normalizeNextActionDate(card?.next_action_date);
   if (!nad) return false;
-  return daysUntilNextActionDate(nad, todayMs) === 0;
+  const days = daysUntilNextActionDate(nad, todayMs);
+  return days !== null && days <= 0;
 }
 
 /**
- * Stable display order: open cards with next action today float to the top.
+ * Stable display order: open cards due today or overdue float to the top.
  * @param {object[]} cards
  * @param {number} [todayMs]
  */
