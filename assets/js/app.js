@@ -1856,8 +1856,11 @@ async function loadApp(fullReload = true) {
   }
 
   const scrollSnapshot = captureBoardViewScroll(mount);
+  const existingShell = mount.querySelector(".board-shell");
   setFlowDocumentTitle("Board");
-  mount.innerHTML = `<div class="app-loading">Loading board…</div>`;
+  if (!existingShell) {
+    mount.innerHTML = `<div class="app-loading">Loading board…</div>`;
+  }
 
   const cardDeepLink = parseCardDeepLinkParams(
     new URLSearchParams(window.location.search)
@@ -1938,18 +1941,21 @@ async function loadApp(fullReload = true) {
 
     applyStoredOwnerFilter();
 
-    mount.replaceChildren();
-    mount.append(
-      renderBoard(
-        model,
-        cardsByColumn,
-        mineEmail,
-        gitRepoAvailable,
-        flowCtx,
-        pendingSync,
-        swimlaneCollapse[boardSlug]
-      )
+    const next = renderBoard(
+      model,
+      cardsByColumn,
+      mineEmail,
+      gitRepoAvailable,
+      flowCtx,
+      pendingSync,
+      swimlaneCollapse[boardSlug]
     );
+    const shell = mount.querySelector(".board-shell");
+    if (shell) shell.replaceWith(next);
+    else {
+      mount.replaceChildren();
+      mount.append(next);
+    }
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
 
     const pendingOpen = takePendingCardEditorOpen();
@@ -1960,7 +1966,11 @@ async function loadApp(fullReload = true) {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    mount.innerHTML = `<div class="app-error">Could not load board: ${escapeHtml(msg)}</div>`;
+    if (existingShell) {
+      showFlowToast(`Could not refresh board: ${msg}`);
+    } else {
+      mount.innerHTML = `<div class="app-error">Could not load board: ${escapeHtml(msg)}</div>`;
+    }
     scheduleRestoreBoardViewScroll(scrollSnapshot, mount);
   }
 }
