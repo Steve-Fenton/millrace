@@ -118,5 +118,20 @@
         "count": 3
       }
     ]
+  },
+  {
+    "date": "2026-06-05",
+    "columns": [
+      {
+        "name": "To Do",
+        "type": "options",
+        "count": 22
+      },
+      {
+        "name": "Doing",
+        "type": "in_progress",
+        "count": 3
+      }
+    ]
   }
 ]
