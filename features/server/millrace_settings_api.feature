@@ -42,3 +42,25 @@ Feature: Millrace catalog settings API
       { "admin": "not-an-email" }
       """
     Then the flow API response status should be 400
+
+  Scenario: local user matches Millrace admin when Mine equals admin email
+    Given the millrace catalog INI under the integration data root contains:
+      """
+      [millrace]
+      boards = test.ini
+      admin_email = owner@example.com
+      """
+    And local user Mine is "owner@example.com"
+    When I check whether the local user matches Millrace admin
+    Then the local user should match Millrace admin
+
+  Scenario: local user does not match when Mine differs from admin email
+    Given the millrace catalog INI under the integration data root contains:
+      """
+      [millrace]
+      boards = test.ini
+      admin_email = owner@example.com
+      """
+    And local user Mine is "other@example.com"
+    When I check whether the local user matches Millrace admin
+    Then the local user should not match Millrace admin

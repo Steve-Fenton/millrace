@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { MS_PER_MONTH } from "./constants.js";
 import { readMillraceCatalogRetentionSettings } from "./catalogRetention.js";
+import { localUserMatchesMillraceAdmin } from "./millraceCatalogSettings.js";
 import { dataRoot } from "./dataRoot.js";
 import { ensureDir } from "./fsUtil.js";
 import {
@@ -167,10 +168,20 @@ export async function syncGitAfterArchiveMoves(movedCount, opts, deps = {}) {
  *   runGitSerialized?: typeof runGitSerialized;
  *   markDataRootPendingSync?: typeof markDataRootPendingSync;
  *   clearDataRootPendingSync?: typeof clearDataRootPendingSync;
+ *   localUserMatchesMillraceAdmin?: typeof localUserMatchesMillraceAdmin;
  * }} [deps]
  * @returns {Promise<number>} total files moved
  */
 export async function runStartupArchiveStaleForCatalogSlugs(deps = {}) {
+  const ownerCheckFn =
+    deps.localUserMatchesMillraceAdmin ?? localUserMatchesMillraceAdmin;
+  if (!(await ownerCheckFn())) {
+    console.error(
+      "[millrace] archive: skipped (Mine preference does not match Millrace admin)"
+    );
+    return 0;
+  }
+
   const hasGitFn =
     deps.dataRootHasGit ?? (() => existsSync(path.join(dataRoot(), ".git")));
   const pullFn =

@@ -6,7 +6,10 @@ import {
   millraceCatalogKeyBag,
 } from "./dataRoot.js";
 import { parseIni } from "../assets/js/ini/parseIni.js";
-import { markDataRootPendingSync } from "./localUserIni.js";
+import {
+  markDataRootPendingSync,
+  readLocalUserIniSections,
+} from "./localUserIni.js";
 
 const ADMIN_INI_KEY = "admin_email";
 
@@ -89,4 +92,18 @@ export async function writeMillraceCatalogAdminEmail(email) {
 
   await fs.writeFile(catalogPath, out.join("\n"), "utf8");
   await markDataRootPendingSync();
+}
+
+/**
+ * Whether this machine should run Millrace-owner background work (e.g. archiving).
+ * True when `tasks/localuser.ini` `[user]` mine matches `[millrace]` admin_email.
+ * @returns {Promise<boolean>}
+ */
+export async function localUserMatchesMillraceAdmin() {
+  const admin = await readMillraceCatalogAdminEmail();
+  if (!admin) return false;
+  const sections = await readLocalUserIniSections();
+  const mine = String(sections.user?.mine ?? sections.user?.Mine ?? "").trim();
+  if (!mine) return false;
+  return mine.toLowerCase() === admin.toLowerCase();
 }

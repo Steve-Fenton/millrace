@@ -7,6 +7,7 @@ import { setMillraceDataRootForTesting } from "../../server/dataRoot.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 
 const ARCHIVE_GIT_ROOT = path.join(INTEGRATION_DATA_ROOT, "archive-git-unit");
+const ARCHIVE_OWNER_EMAIL = "archive-owner@example.com";
 
 /** @type {string[]} */
 let gitPullOrder = [];
@@ -19,6 +20,16 @@ let gitPushCalled = false;
 
 const STALE_CARD = "FLOW-stale-archive-test.ini";
 
+async function writeArchiveOwnerLocalUser(root) {
+  await fs.writeFile(
+    path.join(root, "tasks", "localuser.ini"),
+    `[user]
+mine = ${ARCHIVE_OWNER_EMAIL}
+`,
+    "utf8"
+  );
+}
+
 Given("a board with no stale closed cards for archive", async function () {
   await fs.rm(ARCHIVE_GIT_ROOT, { recursive: true, force: true });
   await fs.mkdir(path.join(ARCHIVE_GIT_ROOT, "tasks", "test"), {
@@ -26,9 +37,13 @@ Given("a board with no stale closed cards for archive", async function () {
   });
   await fs.writeFile(
     path.join(ARCHIVE_GIT_ROOT, "tasks", ".millrace.ini"),
-    "[millrace]\nboards = test.ini\n",
+    `[millrace]
+boards = test.ini
+admin_email = ${ARCHIVE_OWNER_EMAIL}
+`,
     "utf8"
   );
+  await writeArchiveOwnerLocalUser(ARCHIVE_GIT_ROOT);
   await fs.writeFile(
     path.join(ARCHIVE_GIT_ROOT, "tasks", "test.ini"),
     `[board]
@@ -59,9 +74,14 @@ Given("a board with a stale closed card eligible for archive", async function ()
   });
   await fs.writeFile(
     path.join(ARCHIVE_GIT_ROOT, "tasks", ".millrace.ini"),
-    "[millrace]\nboards = test.ini\narchive_closed_after_days = 1\n",
+    `[millrace]
+boards = test.ini
+admin_email = ${ARCHIVE_OWNER_EMAIL}
+archive_closed_after_days = 1
+`,
     "utf8"
   );
+  await writeArchiveOwnerLocalUser(ARCHIVE_GIT_ROOT);
   await fs.writeFile(
     path.join(ARCHIVE_GIT_ROOT, "tasks", "test.ini"),
     `[board]
@@ -86,6 +106,55 @@ closed = ${closed}
   );
   setMillraceDataRootForTesting(ARCHIVE_GIT_ROOT);
 });
+
+Given(
+  "a board with a stale closed card and Mine does not match Millrace admin",
+  async function () {
+    await fs.rm(ARCHIVE_GIT_ROOT, { recursive: true, force: true });
+    await fs.mkdir(path.join(ARCHIVE_GIT_ROOT, "tasks", "test"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(ARCHIVE_GIT_ROOT, "tasks", ".millrace.ini"),
+      `[millrace]
+boards = test.ini
+admin_email = ${ARCHIVE_OWNER_EMAIL}
+archive_closed_after_days = 1
+`,
+      "utf8"
+    );
+    await fs.writeFile(
+      path.join(ARCHIVE_GIT_ROOT, "tasks", "localuser.ini"),
+      `[user]
+mine = someone-else@example.com
+`,
+      "utf8"
+    );
+    await fs.writeFile(
+      path.join(ARCHIVE_GIT_ROOT, "tasks", "test.ini"),
+      `[board]
+name = Test
+slug = test
+
+[columns.1]
+title = Done
+type = done
+`,
+      "utf8"
+    );
+    const closed = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    await fs.writeFile(
+      path.join(ARCHIVE_GIT_ROOT, "tasks", "test", STALE_CARD),
+      `[item]
+title = Stale closed
+column = Done
+closed = ${closed}
+`,
+      "utf8"
+    );
+    setMillraceDataRootForTesting(ARCHIVE_GIT_ROOT);
+  }
+);
 
 When("I run the millrace archive startup with git mocked", async function () {
   gitPullOrder = [];
@@ -165,6 +234,13 @@ Then("the stale card should be in archive", async function () {
   );
   await fs.access(
     path.join(ARCHIVE_GIT_ROOT, "tasks", "test", "archive", STALE_CARD)
+  );
+});
+
+Then("the stale card should remain on the board", async function () {
+  await fs.access(path.join(ARCHIVE_GIT_ROOT, "tasks", "test", STALE_CARD));
+  await assert.rejects(
+    fs.access(path.join(ARCHIVE_GIT_ROOT, "tasks", "test", "archive", STALE_CARD))
   );
 });
 

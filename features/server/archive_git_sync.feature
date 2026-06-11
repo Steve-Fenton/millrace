@@ -19,3 +19,9 @@ Feature: Archive git sync
     Then a git pull should have run before the archive check
     And archive changes should be committed and pushed
     And the stale card should be in archive
+
+  Scenario: archive startup skips when Mine does not match Millrace admin
+    Given a board with a stale closed card and Mine does not match Millrace admin
+    When I run the millrace archive startup with git mocked
+    Then no archive git pull should have run
+    And the stale card should remain on the board

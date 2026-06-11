@@ -5,6 +5,7 @@ import path from "node:path";
 import { Given, Then, When } from "@cucumber/cucumber";
 import supertest from "supertest";
 import { registerFlowRoutes } from "../../server/routes/flowRoutes.js";
+import { localUserMatchesMillraceAdmin } from "../../server/millraceCatalogSettings.js";
 import { millraceHttp } from "../support/integration_request.js";
 import { startMillraceForProfile } from "../support/millrace_test_harness.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
@@ -67,6 +68,29 @@ Then("the millrace catalog INI should contain {string}", async function (snippet
     "utf8"
   );
   assert.ok(text.includes(snippet), `expected catalog INI to contain ${snippet}`);
+});
+
+Given("local user Mine is {string}", async function (email) {
+  await fs.mkdir(path.join(INTEGRATION_DATA_ROOT, "tasks"), { recursive: true });
+  await fs.writeFile(
+    path.join(INTEGRATION_DATA_ROOT, "tasks", "localuser.ini"),
+    `[user]
+mine = ${email}
+`,
+    "utf8"
+  );
+});
+
+When("I check whether the local user matches Millrace admin", async function () {
+  this.localUserMatchesMillraceAdmin = await localUserMatchesMillraceAdmin();
+});
+
+Then("the local user should match Millrace admin", function () {
+  assert.strictEqual(this.localUserMatchesMillraceAdmin, true);
+});
+
+Then("the local user should not match Millrace admin", function () {
+  assert.strictEqual(this.localUserMatchesMillraceAdmin, false);
 });
 
 Then("the flow API boards JSON should be:", function (docString) {
