@@ -125,17 +125,17 @@
       {
         "name": "Ideas",
         "type": "options",
-        "count": 1
+        "count": 0
       },
       {
         "name": "Doing",
         "type": "in_progress",
-        "count": 0
+        "count": 1
       },
       {
         "name": "Review",
         "type": "waiting",
-        "count": 1
+        "count": 0
       }
     ]
   }
