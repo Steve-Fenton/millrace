@@ -18,7 +18,7 @@ Add a `package.json` file. You can use this example.
   "type": "module",
   "scripts": {
     "start": "pnpm exec millrace",
-    "cycle": "pm2 restart millrace-devrel"
+    "cycle": "pm2 restart millrace"
   },
   "dependencies": {
     "millrace": "^0.0.39"
@@ -28,15 +28,7 @@ Add a `package.json` file. You can use this example.
 
 You can choose your own port by adding it to the `start` command, i.e.: `pnpm exec millrace 8080`.
 
-## 3. Add an ignore file
-
-Add a `.gitignore` to make sure you don't commit your local settings.
-
-```text
-tasks/localuser.ini
-```
-
-## 4. Get ready
+## 3. Get ready
 
 Run the following scripts.
 
@@ -50,6 +42,18 @@ Install PM2 globally:
 
 ```bash
 pnpm add -g pm2
+```
+
+Spin it up for the first time:
+
+```bash
+pnpm start
+```
+
+Then set to it to auto-start:
+
+```bash
+pnpm cycle
 ```
 
 ## Go
