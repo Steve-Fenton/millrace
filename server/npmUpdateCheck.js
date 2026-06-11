@@ -5,6 +5,7 @@ import {
   writeLocalUserIniSections,
 } from "./localUserIni.js";
 import { readMillraceLockfileDrift } from "./millraceLockDrift.js";
+import { prepareBeforeNpmUpdateCheck } from "./npmUpdatePrepare.js";
 import { readProjectHasCycleScript } from "./projectCycleAfterUpdate.js";
 import { REPO_ROOT } from "./repoRoot.js";
 
@@ -65,7 +66,7 @@ export function semverIsNewer(latest, current) {
  * @param {string} iso
  * @returns {number | null} epoch ms or null if invalid
  */
-function parseLastCheckMs(iso) {
+export function parseLastCheckMs(iso) {
   const s = String(iso ?? "").trim();
   if (!s) return null;
   const t = Date.parse(s);
@@ -114,6 +115,8 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  *   fetchLatest?: typeof fetchLatestNpmVersion,
  *   nowMs?: number,
  *   intervalMs?: number,
+ *   skipPrepare?: boolean,
+ *   prepareBeforeCheck?: typeof prepareBeforeNpmUpdateCheck,
  * }} [opts]
  * @returns {Promise<{
  *   currentVersion: string,
@@ -139,16 +142,36 @@ export async function runNpmUpdateCheck(opts = {}) {
     typeof opts.intervalMs === "number" && opts.intervalMs >= 0
       ? opts.intervalMs
       : NPM_UPDATE_CHECK_INTERVAL_MS;
+  const prepare =
+    opts.prepareBeforeCheck ?? prepareBeforeNpmUpdateCheck;
+
+  let sections = await readLocalUserIniSections();
+  let flow = sections.flow ?? {};
+  const lastGitPullRaw =
+    flow.last_auto_git_pull ?? flow.lastAutoGitPull ?? "";
+  const lastGitPullMs = parseLastCheckMs(String(lastGitPullRaw));
+  const withinPrepareCooldown =
+    lastGitPullMs != null && nowMs - lastGitPullMs < intervalMs;
+
+  if (!opts.skipPrepare && !withinPrepareCooldown) {
+    await prepare({
+      nowMs,
+      gitPull: opts.gitPull,
+      runGitSerialized: opts.runGitSerialized,
+      runPnpm: opts.runPnpm,
+      dataRootHasGit: opts.dataRootHasGit,
+    });
+    sections = await readLocalUserIniSections();
+    flow = sections.flow ?? {};
+  }
 
   const { version: currentVersion, packageName } =
     await readInstalledMillracePackageMeta();
 
-  const [projectHasCycleScript, sections, drift] = await Promise.all([
+  const [projectHasCycleScript, drift] = await Promise.all([
     readProjectHasCycleScript(),
-    readLocalUserIniSections(),
     readMillraceLockfileDrift(),
   ]);
-  const flow = sections.flow ?? {};
   const lastRaw =
     flow.last_npm_update_check ?? flow.lastNpmUpdateCheck ?? "";
   const lastMs = parseLastCheckMs(String(lastRaw));
@@ -176,6 +199,7 @@ export async function runNpmUpdateCheck(opts = {}) {
 
   const latestVersion = await fetchLatest(packageName);
 
+  sections = await readLocalUserIniSections();
   sections.flow = sections.flow ?? {};
   sections.flow.last_npm_update_check = new Date(nowMs).toISOString();
   delete sections.flow.lastNpmUpdateCheck;

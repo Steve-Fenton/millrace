@@ -153,6 +153,36 @@ Given("project cycle git artifact committer is mocked", function () {
   });
 });
 
+Given("npm update prepare git pull is mocked", function () {
+  /** @type {object[]} */
+  const calls = [];
+  this.npmPrepareGitPullCalls = calls;
+  this.npmPrepareGitPullMock = async (opts) => {
+    calls.push(opts);
+  };
+});
+
+Given("npm update prepare pnpm is mocked", function () {
+  /** @type {{ args: string[], cwd: string }[]} */
+  const calls = [];
+  this.npmPreparePnpmCalls = calls;
+  this.npmPreparePnpmMock = async (args, cwd) => {
+    calls.push({ args: [...args], cwd });
+  };
+});
+
+Given(
+  "localuser.ini records last automatic git pull one hour before fixed test time",
+  async function () {
+    const iso = new Date(NPM_UNIT_FIXED_NOW_MS - ONE_HOUR_MS).toISOString();
+    await fs.writeFile(
+      path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
+      `[flow]\nlast_auto_git_pull = ${iso}\n`,
+      "utf8"
+    );
+  }
+);
+
 When("I run npm update check with JSON:", async function (doc) {
   const opts = JSON.parse(doc.trim());
   let fetchCalls = 0;
@@ -171,6 +201,14 @@ When("I run npm update check with JSON:", async function (doc) {
     fetchLatest,
     nowMs: opts.nowMs,
     intervalMs,
+    skipPrepare: opts.runPrepare !== true,
+    gitPull: this.npmPrepareGitPullMock,
+    runPnpm: this.npmPreparePnpmMock,
+    runGitSerialized: async (fn) => fn(),
+    dataRootHasGit:
+      typeof opts.dataRootHasGit === "boolean"
+        ? () => opts.dataRootHasGit
+        : undefined,
   });
   this.npmFetchCalls = fetchCalls;
 });
@@ -297,6 +335,31 @@ Then("mocked pnpm should have run install then cycle", function () {
   assert.deepStrictEqual(calls[0].args, ["install"]);
   assert.deepStrictEqual(calls[1].args, ["cycle"]);
 });
+
+Then("npm update prepare git pull call count should be {int}", function (n) {
+  const calls = this.npmPrepareGitPullCalls ?? [];
+  assert.strictEqual(calls.length, n);
+});
+
+Then("npm update prepare pnpm call count should be {int}", function (n) {
+  const calls = this.npmPreparePnpmCalls ?? [];
+  assert.strictEqual(calls.length, n);
+});
+
+Then(
+  "localuser.ini should record last_auto_git_pull at fixed test time",
+  async function () {
+    const expected = new Date(NPM_UNIT_FIXED_NOW_MS).toISOString();
+    const text = await fs.readFile(
+      path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
+      "utf8"
+    );
+    assert.ok(
+      text.includes(`last_auto_git_pull = ${expected}`),
+      `expected last_auto_git_pull = ${expected}, file:\n${text}`
+    );
+  }
+);
 
 Then(
   "the pnpm artifact committer should have been called once with message {string}",

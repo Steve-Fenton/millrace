@@ -111,6 +111,9 @@ function runPnpm(args, cwd) {
   return runPnpmSpawn(args, cwd);
 }
 
+/** Shared by in-app update flows and {@link prepareBeforeNpmUpdateCheck}. */
+export const runProjectPnpm = runPnpm;
+
 /**
  * Whether `package.json` at the data root defines `scripts.cycle` (used by update-check JSON).
  * @returns {Promise<boolean>}

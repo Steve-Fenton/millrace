@@ -174,6 +174,46 @@ Feature: NPM update check and project cycle helpers
     Then npm update fetchLatest call count should be 0
     And npm update result lockfileOutOfSync should be true
 
+  Scenario: runNpmUpdateCheck pulls and installs before the registry check
+    Given the npm cycle fixture data root is prepared
+    And localuser.ini is absent for the npm cycle fixture
+    And package.json includes a cycle script for the npm cycle fixture
+    And npm update prepare git pull is mocked
+    And npm update prepare pnpm is mocked
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "0.0.100",
+        "runPrepare": true,
+        "dataRootHasGit": true
+      }
+      """
+    Then npm update prepare git pull call count should be 1
+    And npm update prepare pnpm call count should be 1
+    And localuser.ini should record last_auto_git_pull at fixed test time
+    And npm update fetchLatest call count should be at least 1
+
+  Scenario: runNpmUpdateCheck skips prepare within git pull cooldown
+    Given the npm cycle fixture data root is prepared
+    And localuser.ini records last automatic git pull one hour before fixed test time
+    And package.json includes a cycle script for the npm cycle fixture
+    And npm update prepare git pull is mocked
+    And npm update prepare pnpm is mocked
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "0.0.100",
+        "runPrepare": true,
+        "dataRootHasGit": true
+      }
+      """
+    Then npm update prepare git pull call count should be 0
+    And npm update prepare pnpm call count should be 0
+
   Scenario: runProjectInstallThenCycle succeeds with mocked pnpm
     Given the npm cycle fixture data root is prepared
     And package.json includes a cycle script for the npm cycle fixture
