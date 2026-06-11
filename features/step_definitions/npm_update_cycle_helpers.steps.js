@@ -19,6 +19,7 @@ import {
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 
 const NPM_UNIT_ROOT = path.join(INTEGRATION_DATA_ROOT, "npm-update-unit");
+const NPM_OWNER_EMAIL = "npm-owner@example.com";
 
 /** Matches When JSON `nowMs` in cooldown scenarios. */
 const NPM_UNIT_FIXED_NOW_MS = 1704193200000;
@@ -27,6 +28,21 @@ const ONE_HOUR_MS = 3600000;
 Given("the npm cycle fixture data root is prepared", async function () {
   await fs.rm(NPM_UNIT_ROOT, { recursive: true, force: true });
   await fs.mkdir(path.join(NPM_UNIT_ROOT, "tasks"), { recursive: true });
+  await fs.writeFile(
+    path.join(NPM_UNIT_ROOT, "tasks", ".millrace.ini"),
+    `[millrace]
+admin_email = ${NPM_OWNER_EMAIL}
+boards = demo.ini
+`,
+    "utf8"
+  );
+  await fs.writeFile(
+    path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
+    `[user]
+mine = ${NPM_OWNER_EMAIL}
+`,
+    "utf8"
+  );
   setMillraceDataRootForTesting(NPM_UNIT_ROOT);
 });
 
@@ -36,19 +52,39 @@ Given(
     const iso = new Date(NPM_UNIT_FIXED_NOW_MS - ONE_HOUR_MS).toISOString();
     await fs.writeFile(
       path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
-      `[flow]\nlast_npm_update_check = ${iso}\n`,
+      `[user]
+mine = ${NPM_OWNER_EMAIL}
+
+[flow]
+last_npm_update_check = ${iso}
+`,
       "utf8"
     );
   }
 );
 
 Given("localuser.ini is absent for the npm cycle fixture", async function () {
-  try {
-    await fs.unlink(path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"));
-  } catch {
-    /* absent */
-  }
+  await fs.writeFile(
+    path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
+    `[user]
+mine = ${NPM_OWNER_EMAIL}
+`,
+    "utf8"
+  );
 });
+
+Given(
+  "local user Mine does not match Millrace admin for the npm cycle fixture",
+  async function () {
+    await fs.writeFile(
+      path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
+      `[user]
+mine = someone-else@example.com
+`,
+      "utf8"
+    );
+  }
+);
 
 Given("package.json includes a cycle script for the npm cycle fixture", async function () {
   await fs.writeFile(
@@ -177,7 +213,12 @@ Given(
     const iso = new Date(NPM_UNIT_FIXED_NOW_MS - ONE_HOUR_MS).toISOString();
     await fs.writeFile(
       path.join(NPM_UNIT_ROOT, "tasks", "localuser.ini"),
-      `[flow]\nlast_auto_git_pull = ${iso}\n`,
+      `[user]
+mine = ${NPM_OWNER_EMAIL}
+
+[flow]
+last_auto_git_pull = ${iso}
+`,
       "utf8"
     );
   }

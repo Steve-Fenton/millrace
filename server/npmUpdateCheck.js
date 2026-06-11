@@ -5,6 +5,7 @@ import {
   writeLocalUserIniSections,
 } from "./localUserIni.js";
 import { readMillraceLockfileDrift } from "./millraceLockDrift.js";
+import { localUserMatchesMillraceAdmin } from "./millraceCatalogSettings.js";
 import { prepareBeforeNpmUpdateCheck } from "./npmUpdatePrepare.js";
 import { readProjectHasCycleScript } from "./projectCycleAfterUpdate.js";
 import { REPO_ROOT } from "./repoRoot.js";
@@ -117,6 +118,7 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  *   intervalMs?: number,
  *   skipPrepare?: boolean,
  *   prepareBeforeCheck?: typeof prepareBeforeNpmUpdateCheck,
+ *   localUserMatchesMillraceAdmin?: typeof localUserMatchesMillraceAdmin,
  * }} [opts]
  * @returns {Promise<{
  *   currentVersion: string,
@@ -131,6 +133,27 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  * }>}
  */
 export async function runNpmUpdateCheck(opts = {}) {
+  const ownerCheckFn =
+    opts.localUserMatchesMillraceAdmin ?? localUserMatchesMillraceAdmin;
+  if (!(await ownerCheckFn())) {
+    console.info(
+      "[millrace] NPM update check: skipped (Mine preference does not match Millrace admin)"
+    );
+    const { version: currentVersion } = await readInstalledMillracePackageMeta();
+    const projectHasCycleScript = await readProjectHasCycleScript();
+    return {
+      currentVersion,
+      latestVersion: null,
+      updateAvailable: false,
+      checkedRegistry: false,
+      projectHasCycleScript,
+      lockfileOutOfSync: false,
+      packageMillraceSpec: null,
+      lockSpecifier: null,
+      lockResolvedVersion: null,
+    };
+  }
+
   const fetchLatest =
     opts.fetchLatest ??
     ((/** @type {string} */ pkg) => fetchLatestNpmVersion(pkg));
