@@ -202,13 +202,15 @@ function buildModel(initialModel, colRows, swimRows, userRows, sourceSlugs) {
       }));
   /** @type {import("../models/boardModel.js").BoardUserDef[]} */
   const users = [];
-  let userIdx = 1;
-  for (const r of userRows) {
-    const email = String(r.email ?? "").trim();
-    if (!email) continue;
-    const display = String(r.name ?? "").trim() || email;
-    const active = r.active !== false;
-    users.push({ index: userIdx++, email, name: display, active });
+  if (!aggregate) {
+    let userIdx = 1;
+    for (const r of userRows) {
+      const email = String(r.email ?? "").trim();
+      if (!email) continue;
+      const display = String(r.name ?? "").trim() || email;
+      const active = r.active !== false;
+      users.push({ index: userIdx++, email, name: display, active });
+    }
   }
   const ib = initialModel.board ?? {};
   const rest = { ...ib };
@@ -358,7 +360,9 @@ export async function openBoardEditorDialog(ctx) {
           : [{ title: "Backlog", wipLimit: "", type: "in_progress" }]
       );
   const swimEditor = aggregate ? null : createSortableSwimlaneList(swimSeeds);
-  const userEditor = createSortableBoardUserList(userSeeds);
+  const userEditor = aggregate
+    ? null
+    : createSortableBoardUserList(userSeeds);
 
   /** @type {HTMLFieldSetElement | null} */
   let sourceFieldset = null;
@@ -425,7 +429,7 @@ export async function openBoardEditorDialog(ctx) {
 
   if (colEditor) sortWrap.append(colEditor.root);
   if (swimEditor) sortWrap.append(swimEditor.root);
-  sortWrap.append(userEditor.root);
+  if (userEditor) sortWrap.append(userEditor.root);
 
   function getSelectedSourceSlugs() {
     /** @type {string[]} */
@@ -451,11 +455,13 @@ export async function openBoardEditorDialog(ctx) {
           }))
         : [],
       sources: aggregate ? getSelectedSourceSlugs() : [],
-      users: userEditor.getRows().map((r) => ({
-        email: String(r.email ?? "").trim(),
-        name: String(r.name ?? "").trim(),
-        active: r.active !== false,
-      })),
+      users: userEditor
+        ? userEditor.getRows().map((r) => ({
+            email: String(r.email ?? "").trim(),
+            name: String(r.name ?? "").trim(),
+            active: r.active !== false,
+          }))
+        : [],
     });
   }
 
@@ -505,9 +511,10 @@ export async function openBoardEditorDialog(ctx) {
         });
         return false;
       }
-      const rawUserRows = userEditor.getRows();
-      const seenEmails = new Set();
-      for (const r of rawUserRows) {
+      const rawUserRows = userEditor ? userEditor.getRows() : [];
+      if (userEditor) {
+        const seenEmails = new Set();
+        for (const r of rawUserRows) {
         const em = String(r.email ?? "").trim();
         const nm = String(r.name ?? "").trim();
         if (!em && !nm) continue;
@@ -534,6 +541,7 @@ export async function openBoardEditorDialog(ctx) {
           return false;
         }
         seenEmails.add(low);
+        }
       }
 
       const model = buildModel(

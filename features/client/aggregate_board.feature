@@ -150,7 +150,7 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"Demo Board"},{"index":2,"title":"Project"}],"sources":[{"index":1,"slug":"demo"},{"index":2,"slug":"project"}]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"Demo Board"},{"index":2,"title":"Project"}],"users":[],"sources":[{"index":1,"slug":"demo"},{"index":2,"slug":"project"}]}
       """
 
   Scenario: enrichAggregateBoardModel returns non-aggregate models unchanged
@@ -172,7 +172,7 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"missing-name"},{"index":2,"title":"blank-name"}],"sources":[{"index":1,"slug":""},{"index":2,"slug":"missing-name"},{"index":3,"slug":"blank-name"},{"index":4}]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"missing-name"},{"index":2,"title":"blank-name"}],"users":[],"sources":[{"index":1,"slug":""},{"index":2,"slug":"missing-name"},{"index":3,"slug":"blank-name"},{"index":4}]}
       """
 
   Scenario: enrichAggregateBoardModel treats missing source slug like blank
@@ -183,7 +183,7 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[],"sources":[{"index":1}]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[],"users":[],"sources":[{"index":1}]}
       """
 
   Scenario: enrichAggregateBoardModel tolerates missing sources and catalog
@@ -194,7 +194,7 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[],"users":[]}
       """
 
   Scenario: enrichAggregateBoardModel uses slug titles when catalog is null
@@ -205,7 +205,29 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"demo"}],"sources":[{"slug":"demo"}]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"demo"}],"users":[],"sources":[{"slug":"demo"}]}
+      """
+
+  Scenario: enrichAggregateBoardModel merges users from source board models
+    Given aggregate enrich input as JSON:
+      """
+      {"model":{"board":{"kind":"aggregate","slug":"all"},"sources":[{"slug":"demo"},{"slug":"project"}]},"catalog":[{"slug":"demo","name":"Demo"},{"slug":"project","name":"Project"}],"options":{"sourceModels":[{"users":[{"index":1,"email":"a@b.c","name":"Alice"}]},{"users":[{"index":1,"email":"b@c.d","name":"Bob"},{"index":2,"email":"a@b.c","name":"Al"}]}]}}
+      """
+    When I enrich the aggregate board model
+    Then the board model JSON should be:
+      """
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"Demo"},{"index":2,"title":"Project"}],"users":[{"index":1,"email":"a@b.c","name":"Alice","active":true},{"index":2,"email":"b@c.d","name":"Bob","active":true}],"sources":[{"slug":"demo"},{"slug":"project"}]}
+      """
+
+  Scenario: mergeUsersFromSourceBoards dedupes by email and sorts by display name
+    Given aggregate source board models as JSON:
+      """
+      [{"users":[{"index":1,"email":"zed@x.y","name":"Zed"}]},{"users":[{"index":1,"email":"a@b.c","name":"Alice"}]}]
+      """
+    When I merge users from aggregate source boards
+    Then the JSON array result should be:
+      """
+      [{"index":1,"email":"a@b.c","name":"Alice","active":true},{"index":2,"email":"zed@x.y","name":"Zed","active":true}]
       """
 
   Scenario: validateAggregateBoard requires at least one source

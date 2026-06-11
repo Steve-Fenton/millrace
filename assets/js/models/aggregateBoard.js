@@ -1,4 +1,8 @@
-import { columnTypeOf, parseBoardIni } from "./boardModel.js";
+import {
+  boardUsersSortedForUi,
+  columnTypeOf,
+  parseBoardIni,
+} from "./boardModel.js";
 
 /** @typedef {'normal' | 'aggregate'} BoardKind */
 
@@ -79,11 +83,38 @@ export function sourceColumnIndexForAggregateColumn(
 }
 
 /**
+ * Merge board users from source boards (dedupe by email, preserve first name/active).
+ * @param {import("./boardModel.js").BoardModel[]} sourceModels
+ * @returns {import("./boardModel.js").BoardUserDef[]}
+ */
+export function mergeUsersFromSourceBoards(sourceModels) {
+  /** @type {Map<string, import("./boardModel.js").BoardUserDef>} */
+  const byEmail = new Map();
+  for (const src of sourceModels ?? []) {
+    for (const u of src?.users ?? []) {
+      const email = String(u.email ?? "").trim();
+      if (!email) continue;
+      const low = email.toLowerCase();
+      if (byEmail.has(low)) continue;
+      byEmail.set(low, {
+        index: 0,
+        email,
+        name: String(u.name ?? "").trim() || email,
+        active: u.active !== false,
+      });
+    }
+  }
+  const sorted = boardUsersSortedForUi([...byEmail.values()]);
+  return sorted.map((u, i) => ({ ...u, index: i + 1 }));
+}
+
+/**
  * @param {import("./boardModel.js").BoardModel} model
  * @param {{ slug: string, name?: string }[]} catalogBoards
+ * @param {{ sourceModels?: import("./boardModel.js").BoardModel[] }} [options]
  * @returns {import("./boardModel.js").BoardModel}
  */
-export function enrichAggregateBoardModel(model, catalogBoards) {
+export function enrichAggregateBoardModel(model, catalogBoards, options = {}) {
   if (!isAggregateBoard(model)) return model;
   const sources = model.sources ?? [];
   /** @type {import("./boardModel.js").SwimlaneDef[]} */
@@ -98,10 +129,16 @@ export function enrichAggregateBoardModel(model, catalogBoards) {
       title: String(hit?.name ?? slug).trim() || slug,
     });
   }
+  const sourceModels = options.sourceModels;
+  const users =
+    sourceModels && sourceModels.length > 0
+      ? mergeUsersFromSourceBoards(sourceModels)
+      : [];
   return {
     ...model,
     columns: standardAggregateColumns(),
     swimlanes,
+    users,
   };
 }
 

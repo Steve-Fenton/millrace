@@ -18,6 +18,7 @@ import {
 import {
   enrichAggregateBoardModel,
   isAggregateBoard,
+  mergeUsersFromSourceBoards,
 } from "../assets/js/models/aggregateBoard.js";
 import { parseIni } from "../assets/js/ini/parseIni.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
@@ -394,6 +395,34 @@ export async function loadBoardUsersForOwnerPolicy(slug) {
     const text = await fs.readFile(boardPath, "utf8");
     const m = parseBoardIni(text.replace(/^\uFEFF/, ""));
     return m.users ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Board users for owner filter dropdowns (aggregate boards merge source board users). */
+export async function loadBoardUsersForFilter(slug) {
+  try {
+    const boardPath = await resolveBoardIniPathForSlug(slug);
+    const text = await fs.readFile(boardPath, "utf8");
+    const m = parseBoardIni(text.replace(/^\uFEFF/, ""));
+    if (!isAggregateBoard(m)) {
+      return m.users ?? [];
+    }
+    /** @type {import("../assets/js/models/boardModel.js").BoardModel[]} */
+    const sourceModels = [];
+    for (const src of m.sources ?? []) {
+      const srcSlug = String(src.slug ?? "").trim();
+      if (!srcSlug) continue;
+      try {
+        const srcPath = await resolveBoardIniPathForSlug(srcSlug);
+        const srcText = await fs.readFile(srcPath, "utf8");
+        sourceModels.push(parseBoardIni(srcText.replace(/^\uFEFF/, "")));
+      } catch {
+        /* skip missing source */
+      }
+    }
+    return mergeUsersFromSourceBoards(sourceModels);
   } catch {
     return [];
   }

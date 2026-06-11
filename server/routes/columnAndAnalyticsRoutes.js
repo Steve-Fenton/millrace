@@ -15,7 +15,13 @@ import {
   resolveCompletedLaneFilterIndices,
 } from "../archiveAnalytics.js";
 import { buildCumulativeFlowStack } from "../columnSnapshots.js";
-import { resolveBoardIniPathForSlug, sanitizeSegment } from "../boardCatalog.js";
+import { enrichAggregateBoardModel } from "../../assets/js/models/aggregateBoard.js";
+import {
+  loadBoardCatalog,
+  loadBoardUsersForFilter,
+  resolveBoardIniPathForSlug,
+  sanitizeSegment,
+} from "../boardCatalog.js";
 import { sendColumnCards } from "../columnCards.js";
 
 /** @param {import("express").Application} app */
@@ -88,8 +94,13 @@ app.get("/api/completed-cards", async (req, res) => {
       const boardPath = await resolveBoardIniPathForSlug(slug);
       const boardText = await fs.readFile(boardPath, "utf8");
       const boardModel = parseBoardIni(boardText);
-      ownerNames = boardOwnerEmailsForFilter(boardModel.users ?? []);
-      swimlanes = boardModel.swimlanes ?? [];
+      ownerNames = boardOwnerEmailsForFilter(await loadBoardUsersForFilter(slug));
+      if (boardModel.board?.kind === "aggregate") {
+        const catalog = await loadBoardCatalog();
+        swimlanes = enrichAggregateBoardModel(boardModel, catalog).swimlanes ?? [];
+      } else {
+        swimlanes = boardModel.swimlanes ?? [];
+      }
     } catch {
       ownerNames = [];
       swimlanes = [];

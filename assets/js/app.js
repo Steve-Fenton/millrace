@@ -1880,6 +1880,8 @@ async function loadApp(fullReload = true) {
     const sourceSwimlaneDefs = new Map();
 
     if (isAggregateBoard(model)) {
+      /** @type {import("./models/boardModel.js").BoardModel[]} */
+      const sourceModels = [];
       model = enrichAggregateBoardModel(model, boards);
       await Promise.all(
         (model.sources ?? []).map(async (src) => {
@@ -1887,10 +1889,12 @@ async function loadApp(fullReload = true) {
           if (!slug) return;
           const srcText = await fetchBoardIni(slug);
           const srcModel = parseBoardIni(srcText);
+          sourceModels.push(srcModel);
           sourceColumnDefs.set(slug, srcModel.columns ?? []);
           sourceSwimlaneDefs.set(slug, srcModel.swimlanes ?? []);
         })
       );
+      model = enrichAggregateBoardModel(model, boards, { sourceModels });
     }
 
     if (model.columns.length === 0) {

@@ -70,6 +70,10 @@ export function serializeBoardIniFromModel(model) {
     lines.push("");
   }
 
+  if (isAggregateBoard(model)) {
+    return lines.join("\n").replace(/\n+$/, "\n");
+  }
+
   const users = [...(model.users ?? [])].sort((a, b) => a.index - b.index);
   for (let i = 0; i < users.length; i++) {
     const u = users[i];

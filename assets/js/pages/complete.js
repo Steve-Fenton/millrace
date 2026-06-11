@@ -8,7 +8,7 @@ import {
   ownerDisplayLabel,
   parseBoardIni,
 } from "../models/boardModel.js";
-import { enrichAggregateBoardModel } from "../models/aggregateBoard.js";
+import { enrichAggregateBoardModel, isAggregateBoard } from "../models/aggregateBoard.js";
 import {
   normalizeOwnerFilter,
   ownerFilterToSelectValue,
@@ -810,7 +810,23 @@ async function main() {
     const flowCtx = { boards, activeSlug };
     const text = await fetchBoardIni(activeSlug);
     let model = parseBoardIni(text);
-    model = enrichAggregateBoardModel(model, boards);
+    /** @type {import("../models/boardModel.js").BoardModel[]} */
+    const sourceModels = [];
+    if (isAggregateBoard(model)) {
+      await Promise.all(
+        (model.sources ?? []).map(async (src) => {
+          const slug = String(src.slug ?? "").trim();
+          if (!slug) return;
+          try {
+            const srcText = await fetchBoardIni(slug);
+            sourceModels.push(parseBoardIni(srcText));
+          } catch {
+            /* ignore missing source */
+          }
+        })
+      );
+    }
+    model = enrichAggregateBoardModel(model, boards, { sourceModels });
     if (model.columns.length === 0) {
       mount.innerHTML = `<div class="app-error">No columns found in board.ini.</div>`;
       return;

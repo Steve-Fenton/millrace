@@ -197,3 +197,44 @@ Feature: Board model to tasks INI format
       active = false
 
       """
+
+  Scenario: aggregate board models omit users sections when serialized
+    Given a board model:
+      """
+      {"board":{"name":"All","slug":"all-boards","kind":"aggregate"},"sources":[{"index":1,"slug":"demo"}],"columns":[{"index":1,"title":"Done","type":"done","isDone":true}],"users":[{"index":1,"email":"a@b.c","name":"Alice"}]}
+      """
+    When I serialize the board model to tasks INI
+    Then the INI output should be:
+      """
+      [board]
+      name = All
+      slug = all-boards
+      kind = aggregate
+
+      ; Aggregate boards include tasks from the listed source boards (by column type).
+      [sources.1]
+      slug = demo
+
+      ; Columns appear in list order by section index (columns.1, columns.2, …).
+      [columns.1]
+      title = Options
+      type = options
+
+      [columns.2]
+      title = To do
+      type = to_do
+
+      [columns.3]
+      title = In progress
+      type = in_progress
+
+      [columns.4]
+      title = Waiting
+      type = waiting
+
+      [columns.5]
+      title = Done
+      type = done
+
+      ; Swimlanes split the board horizontally (e.g. by team or stream).
+      """

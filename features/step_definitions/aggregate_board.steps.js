@@ -9,6 +9,7 @@ import {
   enrichAggregateBoardModel,
   iniTextIsAggregateBoard,
   isAggregateBoard,
+  mergeUsersFromSourceBoards,
   sourceColumnIndexForAggregateColumn,
   sourceColumnIndexForAggregateViewColumn,
   validateAggregateBoard,
@@ -57,8 +58,17 @@ Given("aggregate enrich input as JSON:", function (docString) {
 When("I enrich the aggregate board model", function () {
   this.bmModel = enrichAggregateBoardModel(
     this.aggEnrichInput.model,
-    this.aggEnrichInput.catalog
+    this.aggEnrichInput.catalog,
+    this.aggEnrichInput.options
   );
+});
+
+Given("aggregate source board models as JSON:", function (docString) {
+  this.aggSourceModels = JSON.parse(docString.trim());
+});
+
+When("I merge users from aggregate source boards", function () {
+  this.bmArrayResult = mergeUsersFromSourceBoards(this.aggSourceModels);
 });
 
 Given("aggregate validation input as JSON:", function (docString) {
