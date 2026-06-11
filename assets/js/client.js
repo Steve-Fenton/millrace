@@ -575,6 +575,42 @@ export async function patchLocalUserPreferences(body) {
   }
 }
 
+/**
+ * Millrace-wide settings from `tasks/.millrace.ini` (`[millrace]` section).
+ * @returns {Promise<{ admin: string }>}
+ */
+export async function fetchMillraceSettings() {
+  try {
+    const res = await fetch("/api/millrace-settings", NO_STORE);
+    if (!res.ok) return { admin: "" };
+    const data = await res.json();
+    return { admin: String(data.admin ?? "").trim() };
+  } catch {
+    return { admin: "" };
+  }
+}
+
+/**
+ * @param {{ admin: string }} body
+ */
+export async function patchMillraceSettings(body) {
+  const res = await fetch("/api/millrace-settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ admin: String(body.admin ?? "").trim() }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  return { admin: String(data.admin ?? "").trim() };
+}
+
 /** @returns {Promise<string>} */
 export async function readLocalUserIni() {
   const { owner } = await fetchLocalUserProfile();

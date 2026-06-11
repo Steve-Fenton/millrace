@@ -1664,6 +1664,20 @@ dialog.git-conflict-dialog::backdrop {
   cursor: pointer;
 }
 
+.admin-millrace-panel {
+  margin-inline: 0;
+  align-self: flex-start;
+  max-width: min(28rem, 100%);
+}
+
+.admin-millrace-panel .preferences-grid {
+  grid-template-columns: 1fr;
+}
+
+.admin-millrace-panel .preferences-grid .preferences-field {
+  max-width: 100%;
+}
+
 .flow-aggregate-board-intro {
   margin-block: 0 0.75rem;
 }

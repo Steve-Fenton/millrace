@@ -1,0 +1,92 @@
+import fs from "fs/promises";
+import { BOARD_CATALOG_SECTION } from "./constants.js";
+import {
+  boardCatalogIniPath,
+  isBoardCatalogIniSection,
+  millraceCatalogKeyBag,
+} from "./dataRoot.js";
+import { parseIni } from "../assets/js/ini/parseIni.js";
+import { markDataRootPendingSync } from "./localUserIni.js";
+
+const ADMIN_INI_KEY = "admin_email";
+
+/**
+ * Millrace admin email from `[millrace]` in `tasks/.millrace.ini`.
+ * @returns {Promise<string>}
+ */
+export async function readMillraceCatalogAdminEmail() {
+  try {
+    const text = await fs.readFile(boardCatalogIniPath(), "utf8");
+    const sections = parseIni(text.replace(/^\uFEFF/, ""));
+    const bag = millraceCatalogKeyBag(sections);
+    const raw = bag.admin_email ?? bag.adminEmail ?? bag.admin ?? "";
+    return String(raw).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * @param {string} email trimmed; empty clears the stored value
+ */
+export async function writeMillraceCatalogAdminEmail(email) {
+  const value = String(email ?? "").trim().replace(/\r?\n/g, " ");
+  const catalogPath = boardCatalogIniPath();
+
+  let catalogText = "";
+  try {
+    catalogText = await fs.readFile(catalogPath, "utf8");
+  } catch {
+    /* missing catalog */
+  }
+
+  if (!catalogText.trim()) {
+    const lines = [`[${BOARD_CATALOG_SECTION}]`];
+    if (value) lines.push(`${ADMIN_INI_KEY} = ${value}`);
+    await fs.writeFile(catalogPath, `${lines.join("\n")}\n`, "utf8");
+    await markDataRootPendingSync();
+    return;
+  }
+
+  const lines = catalogText.split(/\r?\n/);
+  /** @type {string[]} */
+  const out = [];
+  let inCatalogSection = false;
+  let updatedAdmin = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
+    if (secMatch) {
+      if (isBoardCatalogIniSection(secMatch[1])) {
+        inCatalogSection = true;
+        out.push(`[${BOARD_CATALOG_SECTION}]`);
+        continue;
+      }
+      inCatalogSection = false;
+      out.push(line);
+      continue;
+    }
+    if (inCatalogSection && /^admin(?:_email)?\s*=/i.test(trimmed)) {
+      if (value) {
+        const indent = line.match(/^\s*/)?.[0] ?? "";
+        out.push(`${indent}${ADMIN_INI_KEY} = ${value}`);
+      }
+      updatedAdmin = true;
+      continue;
+    }
+    out.push(line);
+  }
+
+  if (!updatedAdmin && value) {
+    const idx = out.findIndex((l) => l === `[${BOARD_CATALOG_SECTION}]`);
+    if (idx >= 0) {
+      out.splice(idx + 1, 0, `${ADMIN_INI_KEY} = ${value}`);
+    } else {
+      out.push("", `[${BOARD_CATALOG_SECTION}]`, `${ADMIN_INI_KEY} = ${value}`);
+    }
+  }
+
+  await fs.writeFile(catalogPath, out.join("\n"), "utf8");
+  await markDataRootPendingSync();
+}
