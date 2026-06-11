@@ -1981,6 +1981,16 @@ async function maybeNotifyNpmUpdate() {
 
     const info = await fetchNpmUpdateCheck();
 
+    if (info.followerSyncRan && info.followerSyncOk && info.restarting) {
+      if (sessionStorage.getItem("millrace.npmFollowerSyncToast")) return;
+      sessionStorage.setItem("millrace.npmFollowerSyncToast", "1");
+      showFlowToast(
+        "Applying an update from the Millrace owner. Restarting the app now — the page may reload.",
+        { durationMs: 9000 }
+      );
+      return;
+    }
+
     const lockDrift = Boolean(info.lockfileOutOfSync);
     const lockKey = [
       info.packageMillraceSpec ?? "",

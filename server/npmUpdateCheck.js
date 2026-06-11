@@ -6,12 +6,16 @@ import {
 } from "./localUserIni.js";
 import { readMillraceLockfileDrift } from "./millraceLockDrift.js";
 import { localUserMatchesMillraceAdmin } from "./millraceCatalogSettings.js";
-import { prepareBeforeNpmUpdateCheck } from "./npmUpdatePrepare.js";
+import { runNonOwnerMillraceFollowerSync } from "./npmFollowerSync.js";
+import {
+  NPM_UPDATE_CHECK_INTERVAL_MS,
+  parseLastCheckMs,
+  prepareBeforeNpmUpdateCheck,
+} from "./npmUpdatePrepare.js";
 import { readProjectHasCycleScript } from "./projectCycleAfterUpdate.js";
 import { REPO_ROOT } from "./repoRoot.js";
 
-/** Minimum time between registry lookups (successful checks write `last_npm_update_check`). */
-export const NPM_UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+export { NPM_UPDATE_CHECK_INTERVAL_MS, parseLastCheckMs } from "./npmUpdatePrepare.js";
 
 const NPM_REGISTRY_LATEST = "https://registry.npmjs.org";
 
@@ -64,17 +68,6 @@ export function semverIsNewer(latest, current) {
 }
 
 /**
- * @param {string} iso
- * @returns {number | null} epoch ms or null if invalid
- */
-export function parseLastCheckMs(iso) {
-  const s = String(iso ?? "").trim();
-  if (!s) return null;
-  const t = Date.parse(s);
-  return Number.isFinite(t) ? t : null;
-}
-
-/**
  * @param {string} packageName
  * @param {typeof fetch} [fetchFn]
  * @returns {Promise<string | null>}
@@ -119,6 +112,8 @@ export async function fetchLatestNpmVersion(packageName, fetchFn = fetch) {
  *   skipPrepare?: boolean,
  *   prepareBeforeCheck?: typeof prepareBeforeNpmUpdateCheck,
  *   localUserMatchesMillraceAdmin?: typeof localUserMatchesMillraceAdmin,
+ *   localUserIsNonOwnerMillraceFollower?: typeof import("./millraceCatalogSettings.js").localUserIsNonOwnerMillraceFollower,
+ *   runInstallThenCycle?: typeof import("./projectCycleAfterUpdate.js").runProjectInstallThenCycle,
  * }} [opts]
  * @returns {Promise<{
  *   currentVersion: string,
@@ -136,21 +131,45 @@ export async function runNpmUpdateCheck(opts = {}) {
   const ownerCheckFn =
     opts.localUserMatchesMillraceAdmin ?? localUserMatchesMillraceAdmin;
   if (!(await ownerCheckFn())) {
-    console.info(
-      "[millrace] NPM update check: skipped (Mine preference does not match Millrace admin)"
-    );
+    const followerResult = await runNonOwnerMillraceFollowerSync({
+      nowMs:
+        typeof opts.nowMs === "number" && Number.isFinite(opts.nowMs)
+          ? opts.nowMs
+          : Date.now(),
+      intervalMs:
+        typeof opts.intervalMs === "number" && opts.intervalMs >= 0
+          ? opts.intervalMs
+          : NPM_UPDATE_CHECK_INTERVAL_MS,
+      gitPull: opts.gitPull,
+      runGitSerialized: opts.runGitSerialized,
+      dataRootHasGit: opts.dataRootHasGit,
+      localUserMatchesMillraceAdmin: ownerCheckFn,
+      localUserIsNonOwnerMillraceFollower: opts.localUserIsNonOwnerMillraceFollower,
+      runInstallThenCycle: opts.runInstallThenCycle,
+    });
     const { version: currentVersion } = await readInstalledMillracePackageMeta();
-    const projectHasCycleScript = await readProjectHasCycleScript();
+    const [projectHasCycleScript, drift] = await Promise.all([
+      readProjectHasCycleScript(),
+      readMillraceLockfileDrift(),
+    ]);
+    const driftPayload = {
+      lockfileOutOfSync: followerResult.ok
+        ? false
+        : drift.lockfileOutOfSync,
+      packageMillraceSpec: drift.packageMillraceSpec,
+      lockSpecifier: drift.lockSpecifier,
+      lockResolvedVersion: drift.lockResolvedVersion,
+    };
     return {
       currentVersion,
       latestVersion: null,
       updateAvailable: false,
       checkedRegistry: false,
       projectHasCycleScript,
-      lockfileOutOfSync: false,
-      packageMillraceSpec: null,
-      lockSpecifier: null,
-      lockResolvedVersion: null,
+      ...driftPayload,
+      followerSyncRan: followerResult.ran,
+      followerSyncOk: followerResult.ok ?? false,
+      restarting: Boolean(followerResult.restarting),
     };
   }
 

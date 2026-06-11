@@ -23,6 +23,21 @@ export function parsePnpmLockMillrace(lockText) {
   return { specifier, version };
 }
 
+/** @returns {Promise<string | null>} */
+export async function readDataRootInstalledMillraceVersion() {
+  try {
+    const raw = await fs.readFile(
+      path.join(dataRoot(), "node_modules", "millrace", "package.json"),
+      "utf8"
+    );
+    const pkg = JSON.parse(raw);
+    const v = String(pkg.version ?? "").trim();
+    return v || null;
+  } catch {
+    return null;
+  }
+}
+
 /** @param {string} s */
 function stripQuotes(s) {
   const t = String(s ?? "").trim();

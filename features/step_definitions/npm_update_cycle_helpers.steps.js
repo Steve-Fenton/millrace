@@ -207,6 +207,28 @@ Given("npm update prepare pnpm is mocked", function () {
   };
 });
 
+Given("npm follower install cycle is mocked", function () {
+  /** @type {number} */
+  this.npmFollowerInstallCalls = 0;
+  this.npmFollowerInstallMock = async () => {
+    this.npmFollowerInstallCalls += 1;
+    return { ok: true, restarting: true };
+  };
+});
+
+Given(
+  "data root node_modules millrace version is {string}",
+  async function (version) {
+    const dir = path.join(NPM_UNIT_ROOT, "node_modules", "millrace");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "millrace", version }),
+      "utf8"
+    );
+  }
+);
+
 Given(
   "localuser.ini records last automatic git pull one hour before fixed test time",
   async function () {
@@ -250,6 +272,7 @@ When("I run npm update check with JSON:", async function (doc) {
       typeof opts.dataRootHasGit === "boolean"
         ? () => opts.dataRootHasGit
         : undefined,
+    runInstallThenCycle: this.npmFollowerInstallMock,
   });
   this.npmFetchCalls = fetchCalls;
 });
@@ -386,6 +409,17 @@ Then("npm update prepare pnpm call count should be {int}", function (n) {
   const calls = this.npmPreparePnpmCalls ?? [];
   assert.strictEqual(calls.length, n);
 });
+
+Then("npm follower install cycle call count should be {int}", function (n) {
+  assert.strictEqual(this.npmFollowerInstallCalls ?? 0, n);
+});
+
+Then(
+  "npm update result followerSyncRan should be {word}",
+  function (word) {
+    assert.strictEqual(this.npmUpdateResult.followerSyncRan, word === "true");
+  }
+);
 
 Then(
   "localuser.ini should record last_auto_git_pull at fixed test time",

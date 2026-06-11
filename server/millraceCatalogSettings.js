@@ -107,3 +107,12 @@ export async function localUserMatchesMillraceAdmin() {
   if (!mine) return false;
   return mine.toLowerCase() === admin.toLowerCase();
 }
+
+/**
+ * Whether this machine should follow Millrace-owner updates (install/cycle after git pull).
+ * True for anyone who is not the Millrace admin.
+ * @returns {Promise<boolean>}
+ */
+export async function localUserIsNonOwnerMillraceFollower() {
+  return !(await localUserMatchesMillraceAdmin());
+}

@@ -5,7 +5,7 @@ import path from "node:path";
 import { Given, Then, When } from "@cucumber/cucumber";
 import supertest from "supertest";
 import { registerFlowRoutes } from "../../server/routes/flowRoutes.js";
-import { localUserMatchesMillraceAdmin } from "../../server/millraceCatalogSettings.js";
+import { localUserMatchesMillraceAdmin, localUserIsNonOwnerMillraceFollower } from "../../server/millraceCatalogSettings.js";
 import { millraceHttp } from "../support/integration_request.js";
 import { startMillraceForProfile } from "../support/millrace_test_harness.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
@@ -85,12 +85,21 @@ When("I check whether the local user matches Millrace admin", async function () 
   this.localUserMatchesMillraceAdmin = await localUserMatchesMillraceAdmin();
 });
 
+When("I check whether the local user is a non-owner Millrace follower", async function () {
+  this.localUserIsNonOwnerMillraceFollower =
+    await localUserIsNonOwnerMillraceFollower();
+});
+
 Then("the local user should match Millrace admin", function () {
   assert.strictEqual(this.localUserMatchesMillraceAdmin, true);
 });
 
 Then("the local user should not match Millrace admin", function () {
   assert.strictEqual(this.localUserMatchesMillraceAdmin, false);
+});
+
+Then("the local user should be a non-owner Millrace follower", function () {
+  assert.strictEqual(this.localUserIsNonOwnerMillraceFollower, true);
 });
 
 Then("the flow API boards JSON should be:", function (docString) {

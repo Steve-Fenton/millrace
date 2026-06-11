@@ -13,7 +13,8 @@ Feature: NPM update check and project cycle helpers
       {
         "nowMs": 1704193200000,
         "intervalMs": 86400000,
-        "registryLatest": "99.0.0"
+        "registryLatest": "99.0.0",
+        "dataRootHasGit": true
       }
       """
     Then npm update fetchLatest call count should be 0
@@ -168,7 +169,8 @@ Feature: NPM update check and project cycle helpers
       {
         "nowMs": 1704193200000,
         "intervalMs": 86400000,
-        "registryLatest": "99.0.0"
+        "registryLatest": "99.0.0",
+        "dataRootHasGit": true
       }
       """
     Then npm update fetchLatest call count should be 0
@@ -214,25 +216,49 @@ Feature: NPM update check and project cycle helpers
     Then npm update prepare git pull call count should be 0
     And npm update prepare pnpm call count should be 0
 
-  Scenario: runNpmUpdateCheck skips when Mine does not match Millrace admin
+  Scenario: runNpmUpdateCheck follower pulls and runs install cycle when behind owner
     Given the npm cycle fixture data root is prepared
     And local user Mine does not match Millrace admin for the npm cycle fixture
+    And package.json depends on millrace "^1.0.0" with a cycle script
+    And pnpm-lock.yaml pins millrace specifier "^1.0.0" at version "1.0.1"
+    And data root node_modules millrace version is "1.0.0"
     And npm update prepare git pull is mocked
-    And npm update prepare pnpm is mocked
+    And npm follower install cycle is mocked
     When I run npm update check with JSON:
       """
       {
         "nowMs": 1704193200000,
         "intervalMs": 86400000,
-        "registryLatest": "0.0.100",
-        "runPrepare": true,
+        "registryLatest": "99.0.0",
         "dataRootHasGit": true
       }
       """
     Then npm update fetchLatest call count should be 0
-    And npm update prepare git pull call count should be 0
-    And npm update prepare pnpm call count should be 0
+    And npm update prepare git pull call count should be 1
+    And npm follower install cycle call count should be 1
+    And npm update result followerSyncRan should be true
     And npm update result checkedRegistry should be false
+
+  Scenario: runNpmUpdateCheck follower skips install when already synced
+    Given the npm cycle fixture data root is prepared
+    And local user Mine does not match Millrace admin for the npm cycle fixture
+    And package.json depends on millrace "^1.0.0" with a cycle script
+    And pnpm-lock.yaml pins millrace specifier "^1.0.0" at version "1.0.1"
+    And data root node_modules millrace version is "1.0.1"
+    And npm update prepare git pull is mocked
+    And npm follower install cycle is mocked
+    When I run npm update check with JSON:
+      """
+      {
+        "nowMs": 1704193200000,
+        "intervalMs": 86400000,
+        "registryLatest": "99.0.0",
+        "dataRootHasGit": true
+      }
+      """
+    Then npm update fetchLatest call count should be 0
+    And npm follower install cycle call count should be 0
+    And npm update result followerSyncRan should be false
 
   Scenario: runProjectInstallThenCycle succeeds with mocked pnpm
     Given the npm cycle fixture data root is prepared

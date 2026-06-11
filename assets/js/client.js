@@ -389,6 +389,9 @@ export async function patchSwimlaneCollapse(payload) {
  *   packageMillraceSpec: string | null,
  *   lockSpecifier: string | null,
  *   lockResolvedVersion: string | null,
+ *   followerSyncRan?: boolean,
+ *   followerSyncOk?: boolean,
+ *   restarting?: boolean,
  * }>}
  */
 export async function fetchNpmUpdateCheck() {
@@ -402,6 +405,9 @@ export async function fetchNpmUpdateCheck() {
     packageMillraceSpec: null,
     lockSpecifier: null,
     lockResolvedVersion: null,
+    followerSyncRan: false,
+    followerSyncOk: false,
+    restarting: false,
   };
   try {
     const res = await fetch("/api/npm-update-check", NO_STORE);
@@ -434,6 +440,9 @@ export async function fetchNpmUpdateCheck() {
         String(data.lockResolvedVersion).trim()
           ? String(data.lockResolvedVersion).trim()
           : null,
+      followerSyncRan: Boolean(data.followerSyncRan),
+      followerSyncOk: Boolean(data.followerSyncOk),
+      restarting: Boolean(data.restarting),
     };
   } catch {
     return empty;
