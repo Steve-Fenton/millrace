@@ -1,9 +1,21 @@
+import { existsSync } from "fs";
 import fs from "fs/promises";
 import path from "path";
 import { MS_PER_MONTH } from "./constants.js";
 import { readMillraceCatalogRetentionSettings } from "./catalogRetention.js";
 import { dataRoot } from "./dataRoot.js";
 import { ensureDir } from "./fsUtil.js";
+import {
+  commitOutstandingTasksDir,
+  execFileAsync,
+  gitChildEnv,
+  gitPullWithOptionalAutostash,
+  runGitSerialized,
+} from "./gitOps.js";
+import {
+  clearDataRootPendingSync,
+  markDataRootPendingSync,
+} from "./localUserIni.js";
 import { resolveCardColumnIndex } from "../assets/js/ini/columnResolve.js";
 import { resolveCardSwimlaneIndex } from "../assets/js/ini/swimlaneResolve.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
@@ -85,6 +97,7 @@ const archiveStaleInFlight = new Map();
 
 /**
  * @param {string} slug
+ * @returns {Promise<number>} files moved to archive/ or cold-storage/
  */
 export async function runArchiveStaleClosedForSlug(slug) {
   let p = archiveStaleInFlight.get(slug);
@@ -93,11 +106,12 @@ export async function runArchiveStaleClosedForSlug(slug) {
   p = (async () => {
     const { archiveClosedAfterDays, coldStorageArchiveAfterMonths } =
       await readMillraceCatalogRetentionSettings();
-    await archiveStaleClosedTaskFiles(slug, archiveClosedAfterDays);
-    await moveStaleArchiveFilesToColdStorage(
+    const archived = await archiveStaleClosedTaskFiles(slug, archiveClosedAfterDays);
+    const coldMoved = await moveStaleArchiveFilesToColdStorage(
       slug,
       coldStorageArchiveAfterMonths
     );
+    return archived + coldMoved;
   })().finally(() => {
     archiveStaleInFlight.delete(slug);
   });
@@ -107,20 +121,111 @@ export async function runArchiveStaleClosedForSlug(slug) {
 }
 
 /**
- * Archive stale closed cards and cold-storage moves — once per board at process start.
- * Avoids doing this on every column / completed-cards request (parallel column loads
- * were each queuing work and made the board feel slow).
+ * Commit `tasks/` changes and push after archive/cold-storage moves.
+ * @param {number} movedCount
+ * @param {{ cwd: string, env: Record<string, string | undefined>, maxBuffer: number }} opts
+ * @param {{
+ *   commitOutstandingTasksDir?: typeof commitOutstandingTasksDir;
+ *   gitPush?: (opts: { cwd: string, env: Record<string, string | undefined>, maxBuffer: number }) => Promise<void>;
+ *   markDataRootPendingSync?: typeof markDataRootPendingSync;
+ *   clearDataRootPendingSync?: typeof clearDataRootPendingSync;
+ * }} [deps]
  */
-export async function runStartupArchiveStaleForCatalogSlugs() {
+export async function syncGitAfterArchiveMoves(movedCount, opts, deps = {}) {
+  if (movedCount <= 0) return;
+
+  const commitFn = deps.commitOutstandingTasksDir ?? commitOutstandingTasksDir;
+  const pushFn =
+    deps.gitPush ??
+    (async (pushOpts) => {
+      await execFileAsync("git", ["push"], pushOpts);
+    });
+  const markPendingFn = deps.markDataRootPendingSync ?? markDataRootPendingSync;
+  const clearPendingFn = deps.clearDataRootPendingSync ?? clearDataRootPendingSync;
+
+  await markPendingFn();
+
   try {
-    const catalog = await loadBoardCatalog();
-    const slugs = [...new Set(catalog.map((e) => e.slug))];
-    for (const slug of slugs) {
-      await runArchiveStaleClosedForSlug(slug);
-    }
+    await commitFn(opts);
+    await pushFn(opts);
+    await clearPendingFn();
+    console.error("[millrace] archive: git commit/push ok");
   } catch (e) {
-    console.error("[millrace] startup archive:", e);
+    console.error("[millrace] archive: git commit/push failed", e);
   }
+}
+
+/**
+ * Archive stale closed cards and cold-storage moves — once per board at process start.
+ * Pulls latest changes before archiving so another host's archive run is visible first;
+ * commits and pushes when this run moved files.
+ * @param {{
+ *   dataRootHasGit?: () => boolean;
+ *   gitPullWithOptionalAutostash?: typeof gitPullWithOptionalAutostash;
+ *   commitOutstandingTasksDir?: typeof commitOutstandingTasksDir;
+ *   gitPush?: (opts: { cwd: string, env: Record<string, string | undefined>, maxBuffer: number }) => Promise<void>;
+ *   runGitSerialized?: typeof runGitSerialized;
+ *   markDataRootPendingSync?: typeof markDataRootPendingSync;
+ *   clearDataRootPendingSync?: typeof clearDataRootPendingSync;
+ * }} [deps]
+ * @returns {Promise<number>} total files moved
+ */
+export async function runStartupArchiveStaleForCatalogSlugs(deps = {}) {
+  const hasGitFn =
+    deps.dataRootHasGit ?? (() => existsSync(path.join(dataRoot(), ".git")));
+  const pullFn =
+    deps.gitPullWithOptionalAutostash ?? gitPullWithOptionalAutostash;
+  const serializeFn = deps.runGitSerialized ?? runGitSerialized;
+  const markPendingFn = deps.markDataRootPendingSync ?? markDataRootPendingSync;
+
+  const runArchiveWork = async () => {
+    let totalMoved = 0;
+    try {
+      const catalog = await loadBoardCatalog();
+      const slugs = [...new Set(catalog.map((e) => e.slug))];
+      for (const slug of slugs) {
+        totalMoved += await runArchiveStaleClosedForSlug(slug);
+      }
+    } catch (e) {
+      console.error("[millrace] startup archive:", e);
+    }
+    return totalMoved;
+  };
+
+  if (!hasGitFn()) {
+    const totalMoved = await runArchiveWork();
+    if (totalMoved > 0) await markPendingFn();
+    return totalMoved;
+  }
+
+  const cwd = dataRoot();
+  const opts = {
+    cwd,
+    env: gitChildEnv(),
+    maxBuffer: 10 * 1024 * 1024,
+  };
+
+  let totalMoved = 0;
+  try {
+    await serializeFn(async () => {
+      let pullOk = true;
+      try {
+        await pullFn(opts);
+      } catch (e) {
+        pullOk = false;
+        console.error("[millrace] archive: git pull failed", e);
+      }
+
+      totalMoved = await runArchiveWork();
+
+      if (!pullOk) return;
+
+      await syncGitAfterArchiveMoves(totalMoved, opts, deps);
+    });
+  } catch (e) {
+    console.error("[millrace] archive: git safety failed", e);
+  }
+  return totalMoved;
 }
 export function parseIsoMs(raw) {
   const t = raw && String(raw).trim();
