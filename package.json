@@ -1,6 +1,6 @@
 {
   "name": "millrace",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "Git-friendly Kanban work items as INI files under tasks/ — local server and web UI",
   "repository": {
     "type": "git",
