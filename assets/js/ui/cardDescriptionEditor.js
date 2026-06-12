@@ -13,8 +13,11 @@ export function createCardDescriptionEditor({
   modal,
   descInput,
   descField = descInput.closest(".flow-field"),
-  initialMode = "preview",
+  initialMode,
 }) {
+  const resolvedInitialMode =
+    initialMode ??
+    (String(descInput.value ?? "").trim() ? "preview" : "edit");
   descField?.classList.add("flow-field--description");
   const descriptionIdSuffix = Math.random().toString(36).slice(2, 8);
   const descriptionTabListId = `flow-description-tabs-${descriptionIdSuffix}`;
@@ -190,7 +193,7 @@ export function createCardDescriptionEditor({
 
   syncDescriptionExpandUi();
   refreshDescriptionPreview();
-  setDescriptionMode(initialMode);
+  setDescriptionMode(resolvedInitialMode);
   descExpandToggle.addEventListener("click", () => {
     setDescriptionExpanded(!descriptionEditorExpanded, {
       focusEditor: !showingDescriptionPreview,
