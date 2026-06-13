@@ -141,7 +141,7 @@ test.describe("doc screenshots", () => {
     });
     const out = path.join(
       process.cwd(),
-      "docs/screenshots/demo-admin-full.png"
+      "docs/screenshots/demo-boards-full.png"
     );
     await page.screenshot({
       path: out,
@@ -183,7 +183,7 @@ test.describe("doc screenshots", () => {
 
     const out = path.join(
       process.cwd(),
-      "docs/screenshots/demo-admin-edit-board-dialog.png"
+      "docs/screenshots/demo-boards-edit-board-dialog.png"
     );
     await dialog.screenshot({ path: out, scale: "css" });
 

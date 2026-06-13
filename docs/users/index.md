@@ -9,7 +9,7 @@ The **Users** view manages Millrace users stored in **`tasks/.millrace.ini`** as
 - **Deactivate** users to hide them from owner pickers while keeping cards assigned to them
 - **Save** writes changes to **`tasks/.millrace.ini`**
 
-Board access is configured separately for each board from the [Boards](../admin/index.md) editor.
+Board access is configured separately for each board from the [Boards](../boards/index.md) editor.
 
 ## Under the hood
 

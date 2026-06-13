@@ -23,7 +23,7 @@ You can find documentation for each of the views here:
 - **[Charts](charts/index.md)**: Informational charts and cycle-time analytics
 - **[Preferences](preferences/index.md)**: Local profile (Mine, default owner, sync mode)
 - **[Users](users/index.md)**: Millrace users (email, display name, admin)
-- **[Boards](admin/index.md)**: Create and customise boards
+- **[Boards](boards/index.md)**: Create and customise boards
 
 ## Under the hood
 

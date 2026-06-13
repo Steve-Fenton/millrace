@@ -2,7 +2,7 @@
 
 The **Boards** view lists your boards and lets you manage them. You can add new boards, or edit existing boards from this view.
 
-![Screenshot: The boards view](../screenshots/demo-admin-full.png)
+![Screenshot: The boards view](../screenshots/demo-boards-full.png)
 
 - **Edit** boards by using the edit button
 - **Rename** boards using the rename button
@@ -22,7 +22,7 @@ Each column has a **type** (Options, To do, In progress, Waiting, Done). Exactly
 
 **Board access** — tick [Millrace users](../users/index.md) to grant access to the board. Users with access power the owner filter and owner picker when creating or editing cards. Inactive Millrace users stay in the catalog but are hidden from pickers until you reactivate them on the Users page.
 
-![Screenshot: Editing boards](../screenshots/demo-admin-edit-board-dialog.png)
+![Screenshot: Editing boards](../screenshots/demo-boards-edit-board-dialog.png)
 
 > [!Tip]
 > When you rename a column or swimlane, current cards will be automatically updated with the change. Cards in the archive and cold storage aren't updated, but they are not shown on boards, only the completed view.
