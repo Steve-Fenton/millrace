@@ -70,6 +70,14 @@ Then("the millrace catalog INI should contain {string}", async function (snippet
   assert.ok(text.includes(snippet), `expected catalog INI to contain ${snippet}`);
 });
 
+Then("the millrace catalog INI should not contain {string}", async function (snippet) {
+  const text = await fs.readFile(
+    path.join(INTEGRATION_DATA_ROOT, "tasks", ".millrace.ini"),
+    "utf8"
+  );
+  assert.ok(!text.includes(snippet), `expected catalog INI not to contain ${snippet}`);
+});
+
 Given("local user Mine is {string}", async function (email) {
   await fs.mkdir(path.join(INTEGRATION_DATA_ROOT, "tasks"), { recursive: true });
   await fs.writeFile(

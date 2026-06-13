@@ -22,7 +22,7 @@ You can find documentation for each of the views here:
 - **[Completed](completed/index.md)**: Browse closed items or search
 - **[Charts](charts/index.md)**: Informational charts and cycle-time analytics
 - **[Preferences](preferences/index.md)**: Local profile (Mine, default owner, sync mode)
-- **[Admin](admin/index.md)**: Create and customise boards
+- **[Boards](admin/index.md)**: Create and customise boards
 
 ## Under the hood
 

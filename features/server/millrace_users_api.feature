@@ -10,6 +10,7 @@ Feature: Millrace users API
       [users.1]
       email = alice@example.com
       name = Alice
+      admin = true
 
       [users.2]
       email = bob@example.com
@@ -22,8 +23,29 @@ Feature: Millrace users API
     And the flow API JSON field "users" should equal:
       """
       [
-        { "email": "alice@example.com", "name": "Alice", "active": true },
-        { "email": "bob@example.com", "name": "Bob", "active": false }
+        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true },
+        { "email": "bob@example.com", "name": "Bob", "active": false, "admin": false }
+      ]
+      """
+
+  Scenario: GET /api/millrace-users derives admin from legacy admin_email
+    Given the millrace catalog INI under the integration data root contains:
+      """
+      [millrace]
+      boards = test.ini
+      admin_email = alice@example.com
+
+      [users.1]
+      email = alice@example.com
+      name = Alice
+      """
+    And an Express app with flow routes registered
+    When I request GET "/api/millrace-users"
+    Then the flow API response status should be 200
+    And the flow API JSON field "users" should equal:
+      """
+      [
+        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true }
       ]
       """
 
@@ -32,20 +54,23 @@ Feature: Millrace users API
       """
       [millrace]
       boards = test.ini
+      admin_email = legacy@example.com
       """
     And an Express app with flow routes registered
     When I PATCH "/api/millrace-users" with JSON:
       """
       {
         "users": [
-          { "email": "ops@example.com", "name": "Ops", "active": true },
-          { "email": "old@example.com", "name": "Former", "active": false }
+          { "email": "ops@example.com", "name": "Ops", "active": true, "admin": true },
+          { "email": "old@example.com", "name": "Former", "active": false, "admin": false }
         ]
       }
       """
     Then the flow API response status should be 200
     And the millrace catalog INI should contain "email = ops@example.com"
+    And the millrace catalog INI should contain "admin = true"
     And the millrace catalog INI should contain "active = false"
+    And the millrace catalog INI should not contain "admin_email ="
 
   Scenario: PATCH /api/millrace-users rejects duplicate emails
     Given the millrace catalog INI under the integration data root contains:

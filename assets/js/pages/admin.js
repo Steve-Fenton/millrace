@@ -5,8 +5,6 @@ import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import {
   createBoardDefinition,
-  fetchMillraceSettings,
-  patchMillraceSettings,
 } from "../client.js";
 import {
   resolveActiveBoardSelection,
@@ -14,7 +12,6 @@ import {
 } from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
 import { initFlowTheme } from "../ui/applyTheme.js";
-import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 
 const ADMIN_BOARD_CREATED_FLASH_KEY = "flow:admin-board-created-flash";
 
@@ -257,82 +254,10 @@ function renderAddBoardRow(onCreated) {
 }
 
 /**
- * @param {{ admin: string }} initial
- */
-function renderMillraceAdminForm(initial) {
-  const panel = document.createElement("div");
-  panel.className = "preferences-panel admin-millrace-panel";
-
-  const secTitle = document.createElement("h2");
-  secTitle.className = "charts-section-title preferences-panel__title";
-  secTitle.textContent = "Millrace settings";
-
-  const blurb = document.createElement("p");
-  blurb.className = "flow-modal-context preferences-panel__intro";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/.millrace.ini")}</code> under <code class="flow-board-editor-file">[millrace]</code>.`;
-
-  const form = document.createElement("form");
-  form.className = "preferences-form";
-
-  const grid = document.createElement("div");
-  grid.className = "preferences-grid";
-
-  const adminLabel = document.createElement("label");
-  adminLabel.className = "flow-field preferences-field";
-  const adminSpan = document.createElement("span");
-  adminSpan.className = "flow-field-label";
-  adminSpan.textContent = "Millrace Admin";
-  const adminInput = document.createElement("input");
-  adminInput.type = "email";
-  adminInput.className = "flow-input";
-  adminInput.name = "admin";
-  adminInput.autocomplete = "email";
-  adminInput.placeholder = "admin@company.com";
-  adminInput.setAttribute("aria-label", "Millrace admin email");
-  adminInput.value = initial.admin;
-  adminLabel.append(adminSpan, adminInput);
-
-  grid.append(adminLabel);
-
-  const actions = document.createElement("div");
-  actions.className = "preferences-form-actions";
-  const saveBtn = document.createElement("button");
-  saveBtn.type = "submit";
-  saveBtn.className = "flow-btn flow-btn-primary";
-  saveBtn.textContent = "Save";
-  actions.append(saveBtn);
-
-  form.append(grid, actions);
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    void (async () => {
-      saveBtn.disabled = true;
-      try {
-        const saved = await patchMillraceSettings({
-          admin: String(adminInput.value ?? ""),
-        });
-        adminInput.value = saved.admin;
-        showFlowToast("Millrace settings saved.");
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        await showFlowAlert(msg, { title: "Could not save Millrace settings" });
-      } finally {
-        saveBtn.disabled = false;
-      }
-    })();
-  });
-
-  panel.append(secTitle, blurb, form);
-  return panel;
-}
-
-/**
  * @param {HTMLElement} boardsSection
- * @param {HTMLElement} millracePanel
  */
-function renderAdminShell(boardsSection, millracePanel) {
-  setFlowDocumentTitle("Admin");
+function renderAdminShell(boardsSection) {
+  setFlowDocumentTitle("Boards");
   const root = document.createElement("div");
   root.className = "board-shell admin-shell";
 
@@ -344,28 +269,25 @@ function renderAdminShell(boardsSection, millracePanel) {
   const brand = createMillraceBrandMark();
   const title = document.createElement("h1");
   title.className = "board-title";
-  title.textContent = "Admin";
+  title.textContent = "Boards";
   topLeft.append(brand, title);
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
   const badge = document.createElement("span");
   badge.className = "board-badge";
-  badge.textContent = "Admin";
+  badge.textContent = "Boards";
   const navMenu = createFlowNavMenu({ current: "admin" });
   topActions.append(badge, navMenu);
   top.append(topLeft, topActions);
 
   const body = document.createElement("div");
   body.className = "admin-body";
-  const secTitle = document.createElement("h2");
-  secTitle.className = "charts-section-title";
-  secTitle.textContent = "Boards";
   const addRow = renderAddBoardRow((slug) => {
     writeStoredActiveBoardSlug(slug);
     document.dispatchEvent(new CustomEvent("flow:admin-refresh"));
   });
-  body.append(secTitle, boardsSection, addRow, millracePanel);
+  body.append(boardsSection, addRow);
   root.append(top, body);
   return root;
 }
@@ -374,20 +296,12 @@ async function main() {
   void initFlowTheme();
   const mount = document.getElementById("app");
   if (!mount) return;
-  setFlowDocumentTitle("Admin");
+  setFlowDocumentTitle("Boards");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
   try {
-    const [selection, millraceSettings] = await Promise.all([
-      resolveActiveBoardSelection(),
-      fetchMillraceSettings(),
-    ]);
+    const selection = await resolveActiveBoardSelection();
     mount.replaceChildren();
-    mount.append(
-      renderAdminShell(
-        renderBoardsTable(selection),
-        renderMillraceAdminForm(millraceSettings)
-      )
-    );
+    mount.append(renderAdminShell(renderBoardsTable(selection)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     mount.innerHTML = `<div class="app-error">Could not load boards: ${escapeHtml(msg)}</div>`;

@@ -8,7 +8,7 @@ import { initFlowTheme } from "../ui/applyTheme.js";
 import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 
 /**
- * @param {{ email: string, name: string, active?: boolean }[]} initial
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} initial
  */
 function renderUsersForm(initial) {
   const form = document.createElement("form");
@@ -16,8 +16,9 @@ function renderUsersForm(initial) {
 
   const userEditor = createSortableBoardUserList(initial, {
     label: "Users (use arrows to reorder)",
-    hint: "Stored in tasks/.millrace.ini as [users.N] sections. Deactivate keeps the record but marks the user inactive.",
+    hint: "Stored in tasks/.millrace.ini as [users.N] sections. Tick Admin for users who run owner-only background tasks on their machine. Deactivate keeps the record but marks the user inactive.",
     addLabel: "Add user",
+    showAdmin: true,
   });
 
   const actions = document.createElement("div");
@@ -113,7 +114,7 @@ function renderUsersShell(form) {
   secTitle.textContent = "Millrace users";
   const blurb = document.createElement("p");
   blurb.className = "flow-modal-context preferences-panel__intro";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/.millrace.ini")}</code> as <code class="flow-board-editor-file">[users.N]</code> sections (email and name).`;
+  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/.millrace.ini")}</code> as <code class="flow-board-editor-file">[users.N]</code> sections (email, name, and optional <code class="flow-board-editor-file">admin</code>).`;
 
   panel.append(secTitle, blurb, form);
   body.append(panel);

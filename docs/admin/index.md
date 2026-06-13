@@ -1,8 +1,8 @@
-# Admin
+# Boards
 
-The **Admin** view lists your boards and lets you manage them. You can add new boards, or edit existing boards from this view.
+The **Boards** view lists your boards and lets you manage them. You can add new boards, or edit existing boards from this view.
 
-![Screenshot: The admin view](../screenshots/demo-admin-full.png)
+![Screenshot: The boards view](../screenshots/demo-admin-full.png)
 
 - **Edit** boards by using the edit button
 - **Rename** boards using the rename button

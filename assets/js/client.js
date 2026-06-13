@@ -585,44 +585,8 @@ export async function patchLocalUserPreferences(body) {
 }
 
 /**
- * Millrace-wide settings from `tasks/.millrace.ini` (`[millrace]` section).
- * @returns {Promise<{ admin: string }>}
- */
-export async function fetchMillraceSettings() {
-  try {
-    const res = await fetch("/api/millrace-settings", NO_STORE);
-    if (!res.ok) return { admin: "" };
-    const data = await res.json();
-    return { admin: String(data.admin ?? "").trim() };
-  } catch {
-    return { admin: "" };
-  }
-}
-
-/**
- * @param {{ admin: string }} body
- */
-export async function patchMillraceSettings(body) {
-  const res = await fetch("/api/millrace-settings", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ admin: String(body.admin ?? "").trim() }),
-    ...NO_STORE,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      typeof data.message === "string" && data.message.trim()
-        ? data.message.trim()
-        : res.statusText || "Request failed"
-    );
-  }
-  return { admin: String(data.admin ?? "").trim() };
-}
-
-/**
  * Millrace users from `tasks/.millrace.ini` (`[users.N]` sections).
- * @returns {Promise<{ email: string, name: string, active: boolean }[]>}
+ * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean }[]>}
  */
 export async function fetchMillraceUsers() {
   try {
@@ -634,6 +598,7 @@ export async function fetchMillraceUsers() {
       email: String(r?.email ?? "").trim(),
       name: String(r?.name ?? "").trim(),
       active: r?.active !== false,
+      admin: r?.admin === true,
     }));
   } catch {
     return [];
@@ -641,8 +606,8 @@ export async function fetchMillraceUsers() {
 }
 
 /**
- * @param {{ email: string, name: string, active?: boolean }[]} users
- * @returns {Promise<{ email: string, name: string, active: boolean }[]>}
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
+ * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean }[]>}
  */
 export async function patchMillraceUsers(users) {
   const res = await fetch("/api/millrace-users", {
@@ -653,6 +618,7 @@ export async function patchMillraceUsers(users) {
         email: String(r?.email ?? "").trim(),
         name: String(r?.name ?? "").trim(),
         active: r?.active !== false,
+        admin: r?.admin === true,
       })),
     }),
     ...NO_STORE,
@@ -670,6 +636,7 @@ export async function patchMillraceUsers(users) {
     email: String(r?.email ?? "").trim(),
     name: String(r?.name ?? "").trim(),
     active: r?.active !== false,
+    admin: r?.admin === true,
   }));
 }
 

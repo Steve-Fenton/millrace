@@ -1,9 +1,5 @@
 import { loadBoardCatalog } from "../boardCatalog.js";
 import {
-  readMillraceCatalogAdminEmail,
-  writeMillraceCatalogAdminEmail,
-} from "../millraceCatalogSettings.js";
-import {
   readMillraceCatalogUsers,
   validateMillraceUsersPayload,
   writeMillraceCatalogUsers,
@@ -24,16 +20,6 @@ export function registerFlowRoutes(app, deps = {}) {
       res
         .status(500)
         .json({ message: "Failed to read board catalog (.millrace.ini)." });
-    }
-  });
-
-  app.get("/api/millrace-settings", async (_req, res) => {
-    try {
-      const admin = await readMillraceCatalogAdminEmail();
-      res.json({ admin });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: "Failed to read Millrace settings." });
     }
   });
 
@@ -68,29 +54,6 @@ export function registerFlowRoutes(app, deps = {}) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "Failed to save Millrace users.";
       res.status(500).json({ message: msg });
-    }
-  });
-
-  app.patch("/api/millrace-settings", async (req, res) => {
-    try {
-      if (req.body?.admin === undefined) {
-        res.status(400).json({
-          message: "Expected JSON body with admin (email address).",
-        });
-        return;
-      }
-      const admin = String(req.body.admin ?? "").trim();
-      if (admin && !admin.includes("@")) {
-        res.status(400).json({
-          message: "admin must look like an email address.",
-        });
-        return;
-      }
-      await writeMillraceCatalogAdminEmail(admin);
-      res.json({ admin });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: "Failed to save Millrace settings." });
     }
   });
 }

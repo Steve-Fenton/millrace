@@ -272,7 +272,7 @@ Feature: Board model from INI and UI helpers
     When I convert INI sections to a board model
     Then the board model JSON should be:
       """
-      {"board":{"name":"Demo","slug":"demo"},"columns":[{"index":1,"title":"Done","type":"done","isDone":true},{"index":2,"title":"Doing","type":"in_progress","wipLimit":3}],"swimlanes":[{"index":1,"title":"Main"}],"users":[{"index":1,"email":"x@x.com","name":"X","active":false}]}
+      {"board":{"name":"Demo","slug":"demo"},"columns":[{"index":1,"title":"Done","type":"done","isDone":true},{"index":2,"title":"Doing","type":"in_progress","wipLimit":3}],"swimlanes":[{"index":1,"title":"Main"}],"users":[]}
       """
 
   Scenario: sectionsToBoardModel accepts camelCase wipLimit and is_done synonyms

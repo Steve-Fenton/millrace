@@ -10,23 +10,49 @@ import {
   markDataRootPendingSync,
   readLocalUserIniSections,
 } from "./localUserIni.js";
+import {
+  applyLegacyAdminEmailToUsers,
+  parseMillraceUsersFromIniSections,
+} from "./millraceUsers.js";
 
 const ADMIN_INI_KEY = "admin_email";
+
+/**
+ * @returns {Promise<string[]>}
+ */
+export async function readMillraceCatalogAdminEmails() {
+  try {
+    const text = await fs.readFile(boardCatalogIniPath(), "utf8");
+    const sections = parseIni(text.replace(/^\uFEFF/, ""));
+    const bag = millraceCatalogKeyBag(sections);
+    const legacyAdmin = String(
+      bag.admin_email ?? bag.adminEmail ?? bag.admin ?? ""
+    ).trim();
+    const users = applyLegacyAdminEmailToUsers(
+      parseMillraceUsersFromIniSections(sections),
+      legacyAdmin
+    );
+    /** @type {Set<string>} */
+    const emails = new Set();
+    for (const u of users) {
+      if (u.admin) emails.add(u.email.toLowerCase());
+    }
+    if (emails.size === 0 && legacyAdmin) {
+      emails.add(legacyAdmin.toLowerCase());
+    }
+    return [...emails];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Millrace admin email from `[millrace]` in `tasks/.millrace.ini`.
  * @returns {Promise<string>}
  */
 export async function readMillraceCatalogAdminEmail() {
-  try {
-    const text = await fs.readFile(boardCatalogIniPath(), "utf8");
-    const sections = parseIni(text.replace(/^\uFEFF/, ""));
-    const bag = millraceCatalogKeyBag(sections);
-    const raw = bag.admin_email ?? bag.adminEmail ?? bag.admin ?? "";
-    return String(raw).trim();
-  } catch {
-    return "";
-  }
+  const admins = await readMillraceCatalogAdminEmails();
+  return admins[0] ?? "";
 }
 
 /**
@@ -96,16 +122,17 @@ export async function writeMillraceCatalogAdminEmail(email) {
 
 /**
  * Whether this machine should run Millrace-owner background work (e.g. archiving).
- * True when `tasks/localuser.ini` `[user]` mine matches `[millrace]` admin_email.
+ * True when `tasks/localuser.ini` `[user]` mine matches a Millrace admin user.
  * @returns {Promise<boolean>}
  */
 export async function localUserMatchesMillraceAdmin() {
-  const admin = await readMillraceCatalogAdminEmail();
-  if (!admin) return false;
+  const admins = await readMillraceCatalogAdminEmails();
+  if (admins.length === 0) return false;
   const sections = await readLocalUserIniSections();
   const mine = String(sections.user?.mine ?? sections.user?.Mine ?? "").trim();
   if (!mine) return false;
-  return mine.toLowerCase() === admin.toLowerCase();
+  const low = mine.toLowerCase();
+  return admins.some((admin) => admin === low);
 }
 
 /**

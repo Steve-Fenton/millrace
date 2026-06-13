@@ -411,11 +411,14 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   wrap.append(label, hint, list, addBtn);
 
-  /** @type {{ email: string, name: string, active: boolean }[]} */
+  const showAdmin = opts.showAdmin === true;
+
+  /** @type {{ email: string, name: string, active: boolean, admin: boolean }[]} */
   let rows = (Array.isArray(initial) ? initial : []).map((r) => ({
     email: String(r?.email ?? "").trim(),
     name: String(r?.name ?? "").trim(),
     active: r?.active !== false,
+    admin: r?.admin === true,
   }));
 
   function moveRow(from, to) {
@@ -428,7 +431,9 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   function buildRow(row, index) {
     const rowEl = document.createElement("div");
-    rowEl.className = "flow-board-sortable-row flow-board-sortable-row--user";
+    rowEl.className = showAdmin
+      ? "flow-board-sortable-row flow-board-sortable-row--user flow-board-sortable-row--user-with-admin"
+      : "flow-board-sortable-row flow-board-sortable-row--user";
     if (!row.active) {
       rowEl.classList.add("flow-board-sortable-row--user-inactive");
     }
@@ -518,7 +523,21 @@ export function createSortableBoardUserList(initial, opts = {}) {
       render();
     });
 
-    rowEl.append(reorder, emailIn, nameIn, toggleAct);
+    rowEl.append(reorder, emailIn, nameIn);
+    if (showAdmin) {
+      const adminLabel = document.createElement("label");
+      adminLabel.className = "flow-board-user-admin-label";
+      const adminCb = document.createElement("input");
+      adminCb.type = "checkbox";
+      adminCb.className = "flow-board-user-admin-input";
+      adminCb.checked = row.admin;
+      adminCb.title =
+        "Millrace admin — runs owner-only background tasks on this machine";
+      adminCb.setAttribute("aria-label", `Millrace admin for ${row.email || "user"}`);
+      adminLabel.append(adminCb, document.createTextNode(" Admin"));
+      rowEl.append(adminLabel);
+    }
+    rowEl.append(toggleAct);
     return rowEl;
   }
 
@@ -529,10 +548,12 @@ export function createSortableBoardUserList(initial, opts = {}) {
       const em = rowEl.querySelector(".flow-board-sortable-user-email");
       const nm = rowEl.querySelector(".flow-board-sortable-user-name");
       if (!rows[i]) break;
+      const adminCb = rowEl.querySelector(".flow-board-user-admin-input");
       rows[i] = {
         email: String(em?.value ?? "").trim(),
         name: String(nm?.value ?? "").trim(),
         active: rows[i].active,
+        admin: adminCb instanceof HTMLInputElement ? adminCb.checked : rows[i].admin,
       };
       i++;
     }
@@ -547,7 +568,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   addBtn.addEventListener("click", () => {
     syncRowInputsToState();
-    rows.push({ email: "", name: "", active: true });
+    rows.push({ email: "", name: "", active: true, admin: false });
     render();
     const last = list.querySelector(
       ".flow-board-sortable-row:last-child .flow-board-sortable-user-email"
@@ -559,7 +580,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   return {
     root: wrap,
-    /** @returns {{ email: string, name: string, active: boolean }[]} */
+    /** @returns {{ email: string, name: string, active: boolean, admin: boolean }[]} */
     getRows() {
       syncRowInputsToState();
       return rows.map((r) => ({ ...r }));

@@ -2693,6 +2693,24 @@ dialog.flow-modal::backdrop {
   grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 0.9fr) auto;
 }
 
+.flow-board-sortable-row--user-with-admin {
+  grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 0.9fr) auto auto;
+}
+
+.flow-board-user-admin-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.flow-board-user-admin-input {
+  margin: 0;
+}
+
 .flow-board-sortable-row--user-inactive {
   opacity: 0.88;
 }

@@ -21,7 +21,7 @@ Feature: Millrace browser tab title
 
     Examples:
       | page        | expected                  |
-      | Admin       | Admin \| Millrace        |
+      | Boards      | Boards \| Millrace       |
       | Preferences | Preferences \| Millrace   |
       | Board       | Board \| Millrace        |
 

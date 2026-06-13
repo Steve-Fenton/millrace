@@ -21,7 +21,7 @@ function navMenuItemIconSvg(kind) {
 }
 
 /**
- * Header hamburger: Board, Completed, Charts, Preferences, Users, Admin.
+ * Header hamburger: Board, Completed, Charts, Preferences, Users, Boards.
  * @param {{ current: "board" | "completed" | "charts" | "preferences" | "users" | "admin" }} opts
  * @returns {HTMLElement}
  */
@@ -162,7 +162,7 @@ export function createFlowNavMenu(opts) {
     "preferences"
   );
   addItem(hrefs.users, "Users", current === "users", "users");
-  addItem(hrefs.admin, "Admin", current === "admin", "admin");
+  addItem(hrefs.admin, "Boards", current === "admin", "admin");
 
   let closeOnDoc = null;
 

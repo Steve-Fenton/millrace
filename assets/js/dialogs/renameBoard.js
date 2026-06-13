@@ -24,7 +24,7 @@ export async function openRenameBoardDialog(ctx) {
         </label>
         <p class="flow-rename-board-slug-preview" aria-live="polite"></p>
         <p class="flow-modal-context flow-rename-board-note">
-          Renaming updates the board slug, config file, and <code>tasks/</code> folder to match. Use Admin → Edit board to change columns and swimlanes.
+          Renaming updates the board slug, config file, and <code>tasks/</code> folder to match. Use Boards → Edit board to change columns and swimlanes.
         </p>
         <div class="flow-modal-actions">
           <button type="button" class="flow-btn flow-btn-ghost flow-cancel">Cancel</button>

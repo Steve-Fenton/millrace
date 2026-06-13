@@ -317,11 +317,11 @@ export async function openBoardEditorDialog(ctx) {
       <form class="flow-modal-form flow-modal-form--edit-board">
         <label class="flow-field">
           <span class="flow-field-label">Board name</span>
-          <input class="flow-input flow-input--readonly" name="boardName" type="text" readonly autocomplete="off" title="Rename the board from Admin" />
+          <input class="flow-input flow-input--readonly" name="boardName" type="text" readonly autocomplete="off" title="Rename the board from Boards" />
         </label>
         <label class="flow-field">
           <span class="flow-field-label">Slug</span>
-          <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Renamed together with the board name from Admin" />
+          <input class="flow-input flow-input--readonly" name="boardSlug" type="text" readonly autocomplete="off" title="Renamed together with the board name from Boards" />
         </label>
         <div class="flow-board-editor-sortables"></div>
         <div class="flow-modal-actions flow-modal-actions--split">

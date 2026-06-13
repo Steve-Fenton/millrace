@@ -95,4 +95,4 @@ On an aggregate board:
 
 The badge in the header reads **Aggregate** instead of **Kanban**. **Completed** and **Charts** work the same way for aggregate boards, with data merged from all selected sources.
 
-Set up an aggregate board from [Admin](../admin/index.md) (tick **Aggregate board** when adding, then **Edit** to choose source boards).
+Set up an aggregate board from [Boards](../admin/index.md) (tick **Aggregate board** when adding, then **Edit** to choose source boards).

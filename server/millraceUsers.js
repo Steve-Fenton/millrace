@@ -1,12 +1,12 @@
 import fs from "fs/promises";
 import { parseIni } from "../assets/js/ini/parseIni.js";
-import { boardCatalogIniPath } from "./dataRoot.js";
+import { boardCatalogIniPath, isBoardCatalogIniSection, millraceCatalogKeyBag } from "./dataRoot.js";
 import { markDataRootPendingSync } from "./localUserIni.js";
 
 const USERS_SECTION_RE = /^users\.(\d+)$/i;
 
 /**
- * @typedef {{ index: number, email: string, name: string, active: boolean }} MillraceUserDef
+ * @typedef {{ index: number, email: string, name: string, active: boolean, admin: boolean }} MillraceUserDef
  */
 
 /**
@@ -39,11 +39,19 @@ export function parseMillraceUsersFromIniSections(sections) {
       activeRaw === "0" ||
       activeRaw === "no";
     const active = !inactive && !activeExplicitFalse;
+    const adminRaw = String(sec.admin ?? sec.Admin ?? "")
+      .trim()
+      .toLowerCase();
+    const admin =
+      adminRaw === "true" ||
+      adminRaw === "1" ||
+      adminRaw === "yes";
     users.push({
       index: idx,
       email,
       name: displayName || email,
       active,
+      admin,
     });
   }
   users.sort((a, b) => a.index - b.index);
@@ -73,6 +81,9 @@ function serializeMillraceUsersIniLines(users) {
     lines.push(`name = ${String(u.name ?? "").trim()}`);
     if (u.active === false) {
       lines.push("active = false");
+    }
+    if (u.admin) {
+      lines.push("admin = true");
     }
     lines.push("");
   }
@@ -104,17 +115,64 @@ function stripUsersSectionsFromLines(lines) {
 }
 
 /**
+ * @param {string[]} lines
+ * @returns {string[]}
+ */
+function stripLegacyAdminEmailFromCatalogLines(lines) {
+  /** @type {string[]} */
+  const out = [];
+  let inCatalogSection = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const secMatch = trimmed.match(/^\[([^\]]+)\]\s*$/);
+    if (secMatch) {
+      inCatalogSection = isBoardCatalogIniSection(secMatch[1]);
+      out.push(line);
+      continue;
+    }
+    if (inCatalogSection && /^admin(?:_email)?\s*=/i.test(trimmed)) {
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+/**
+ * @param {MillraceUserDef[]} users
+ * @param {string} legacyAdminEmail
+ * @returns {MillraceUserDef[]}
+ */
+export function applyLegacyAdminEmailToUsers(users, legacyAdminEmail) {
+  const legacy = String(legacyAdminEmail ?? "").trim();
+  if (!legacy || users.some((u) => u.admin)) return users;
+  const low = legacy.toLowerCase();
+  return users.map((u) =>
+    u.email.toLowerCase() === low ? { ...u, admin: true } : u
+  );
+}
+
+/**
  * Millrace users from `[users.N]` in `tasks/.millrace.ini`.
- * @returns {Promise<{ email: string, name: string, active: boolean }[]>}
+ * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean }[]>}
  */
 export async function readMillraceCatalogUsers() {
   try {
     const text = await fs.readFile(boardCatalogIniPath(), "utf8");
     const sections = parseIni(text.replace(/^\uFEFF/, ""));
-    return parseMillraceUsersFromIniSections(sections).map((u) => ({
+    const bag = millraceCatalogKeyBag(sections);
+    const legacyAdmin = String(
+      bag.admin_email ?? bag.adminEmail ?? bag.admin ?? ""
+    ).trim();
+    const users = applyLegacyAdminEmailToUsers(
+      parseMillraceUsersFromIniSections(sections),
+      legacyAdmin
+    );
+    return users.map((u) => ({
       email: u.email,
       name: u.name,
       active: u.active,
+      admin: u.admin,
     }));
   } catch {
     return [];
@@ -122,7 +180,7 @@ export async function readMillraceCatalogUsers() {
 }
 
 /**
- * @param {{ email: string, name: string, active?: boolean }[]} users
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
  * @returns {string | null} error message, or null if valid
  */
 export function validateMillraceUsersPayload(users) {
@@ -151,7 +209,7 @@ export function validateMillraceUsersPayload(users) {
 
 /**
  * Replace all `[users.N]` sections in `tasks/.millrace.ini`.
- * @param {{ email: string, name: string, active?: boolean }[]} users
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
  */
 export async function writeMillraceCatalogUsers(users) {
   const err = validateMillraceUsersPayload(users);
@@ -169,6 +227,7 @@ export async function writeMillraceCatalogUsers(users) {
       email,
       name,
       active: row?.active !== false,
+      admin: row?.admin === true,
     });
   }
 
@@ -180,9 +239,10 @@ export async function writeMillraceCatalogUsers(users) {
     /* missing catalog */
   }
 
-  const baseLines = catalogText.trim()
+  let baseLines = catalogText.trim()
     ? stripUsersSectionsFromLines(catalogText.split(/\r?\n/))
     : [];
+  baseLines = stripLegacyAdminEmailFromCatalogLines(baseLines);
   const userLines = serializeMillraceUsersIniLines(normalized);
   const out = [...baseLines];
   if (userLines.length > 0) {
