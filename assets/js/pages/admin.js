@@ -287,7 +287,7 @@ function renderAdminShell(boardsSection) {
     writeStoredActiveBoardSlug(slug);
     document.dispatchEvent(new CustomEvent("flow:admin-refresh"));
   });
-  body.append(boardsSection, addRow);
+  body.append(addRow, boardsSection);
   root.append(top, body);
   return root;
 }

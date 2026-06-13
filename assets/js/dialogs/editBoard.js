@@ -453,31 +453,59 @@ export async function openBoardEditorDialog(ctx) {
     return out;
   }
 
-  function snapshotDraft() {
+  /**
+   * @param {{ title: string, wipLimit?: string, type?: import("../models/boardModel.js").ColumnType }[]} columnRows
+   * @param {{ title: string }[]} swimRows
+   * @param {string[]} sourceSlugs
+   * @param {{ email: string, active?: boolean }[]} userRows
+   */
+  function buildDraftSnapshot(columnRows, swimRows, sourceSlugs, userRows) {
     return JSON.stringify({
-      columns: colEditor
-        ? colEditor.getRows().map((r) => ({
-            title: String(r.title ?? "").trim(),
-            wipLimit: String(r.wipLimit ?? "").trim(),
-            type: columnTypeOf({ type: r.type }),
-          }))
+      columns: columnRows.map((r) => ({
+        title: String(r.title ?? "").trim(),
+        wipLimit: String(r.wipLimit ?? "").trim(),
+        type: columnTypeOf({ type: r.type }),
+      })),
+      swimlanes: swimRows.map((r) => ({
+        title: String(r.title ?? "").trim(),
+      })),
+      sources: aggregate
+        ? [...sourceSlugs].map((s) => String(s).trim()).filter(Boolean).sort()
         : [],
-      swimlanes: swimEditor
-        ? swimEditor.getRows().map((r) => ({
-            title: String(r.title ?? "").trim(),
-          }))
-        : [],
-      sources: aggregate ? getSelectedSourceSlugs() : [],
-      users: userEditor
-        ? userEditor.getAccess().map((r) => ({
-            email: String(r.email ?? "").trim(),
-            active: r.active !== false,
-          }))
-        : [],
+      users: userRows
+        .map((r) => ({
+          email: String(r.email ?? "").trim(),
+          active: r.active !== false,
+        }))
+        .filter((r) => r.email && r.active !== false)
+        .sort((a, b) =>
+          a.email.localeCompare(b.email, undefined, { sensitivity: "base" })
+        ),
     });
   }
 
-  const initialDraftSnapshot = snapshotDraft();
+  function snapshotDraft() {
+    const users = userEditor
+      ? userEditor.getAccess()
+      : userSeeds.filter((u) => u.active !== false);
+    const sources =
+      aggregate && sourceCheckboxes.size > 0
+        ? getSelectedSourceSlugs()
+        : initialSourceSlugs;
+    return buildDraftSnapshot(
+      colEditor ? colEditor.getRows() : colSeeds,
+      swimEditor ? swimEditor.getRows() : swimSeeds,
+      sources,
+      users
+    );
+  }
+
+  const initialDraftSnapshot = buildDraftSnapshot(
+    colSeeds,
+    swimSeeds,
+    initialSourceSlugs,
+    userSeeds.filter((u) => u.active !== false)
+  );
 
   modal.querySelector(".flow-btn-history-icon")?.addEventListener("click", () => {
     void openBoardGitHistoryNested({ boardSlug: ctx.boardSlug });
