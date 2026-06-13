@@ -3,6 +3,15 @@
  * @param {{ email: string, name: string, active?: boolean }[]} millraceUsers
  * @param {{ email: string, active?: boolean }[]} boardAccess active users on this board
  */
+
+/** @returns {string} */
+function millraceUsersPageHref() {
+  const p = window.location.pathname;
+  return /\/(admin|charts|complete|preferences|users)(\/|$)/.test(p)
+    ? "../users/"
+    : "users/";
+}
+
 export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   const wrap = document.createElement("div");
   wrap.className = "flow-field flow-board-user-access";
@@ -72,8 +81,11 @@ export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   if (sorted.length === 0) {
     const empty = document.createElement("p");
     empty.className = "flow-board-user-access-empty";
-    empty.textContent =
-      "No users in tasks/.millrace.ini. Add users on the Users page first.";
+    empty.append(document.createTextNode("No users in tasks/.millrace.ini. "));
+    const link = document.createElement("a");
+    link.href = millraceUsersPageHref();
+    link.textContent = "Add users on the Users page";
+    empty.append(link, document.createTextNode(" first."));
     list.append(empty);
   }
 

@@ -28,6 +28,20 @@ Feature: Millrace users API
       ]
       """
 
+  Scenario: GET /api/millrace-users returns empty list when catalog has no user sections
+    Given the millrace catalog INI under the integration data root contains:
+      """
+      [millrace]
+      boards = test.ini
+      """
+    And an Express app with flow routes registered
+    When I request GET "/api/millrace-users"
+    Then the flow API response status should be 200
+    And the flow API JSON field "users" should equal:
+      """
+      []
+      """
+
   Scenario: GET /api/millrace-users derives admin from legacy admin_email
     Given the millrace catalog INI under the integration data root contains:
       """

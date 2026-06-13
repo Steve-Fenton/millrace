@@ -19,7 +19,8 @@
     "admin",
     "charts",
     "complete",
-    "preferences"
+    "preferences",
+    "users"
   ],
   "scripts": {
     "sync-docs": "node scripts/sync-docs-version.mjs",

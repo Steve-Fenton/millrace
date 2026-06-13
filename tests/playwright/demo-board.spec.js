@@ -164,6 +164,27 @@ test.describe("doc screenshots", () => {
     });
   });
 
+  test("demo board — users page with empty catalog", async ({ page }) => {
+    await page.route("**/api/millrace-users", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ users: [] }),
+      });
+    });
+
+    await page.goto("/users/");
+    await page.waitForSelector(".users-shell", { timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Users", level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add user" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save" })).toBeVisible();
+    await expect(page.locator(".flow-nav-menu__trigger")).toBeVisible();
+  });
+
   test("demo board — boards edit board dialog (Demo row)", async ({ page }) => {
     await page.goto("/admin/");
     await page.waitForSelector(".board-shell.admin-shell:not(.preferences-shell)", {

@@ -3,7 +3,6 @@ import { createSortableBoardUserList } from "../ui/boardOrderedRowsEditor.js";
 import { createFlowNavMenu } from "../ui/menu.js";
 import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
-import { escapeHtml } from "../html/escape.js";
 import { initFlowTheme } from "../ui/applyTheme.js";
 import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 
@@ -13,6 +12,14 @@ import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 function renderUsersForm(initial) {
   const form = document.createElement("form");
   form.className = "preferences-form";
+
+  if (!initial.length) {
+    const intro = document.createElement("p");
+    intro.className = "flow-modal-context preferences-panel__intro";
+    intro.textContent =
+      "Add Millrace users here (email and display name). Grant board access from the Boards editor after you save.";
+    form.append(intro);
+  }
 
   const userEditor = createSortableBoardUserList(initial, {
     label: "Users",
@@ -75,9 +82,9 @@ function renderUsersForm(initial) {
 }
 
 /**
- * @param {HTMLElement} form
+ * @param {HTMLElement} bodyContent
  */
-function renderUsersShell(form) {
+function renderUsersShell(bodyContent) {
   setFlowDocumentTitle("Users");
   const root = document.createElement("div");
   root.className = "board-shell admin-shell preferences-shell users-shell";
@@ -112,7 +119,7 @@ function renderUsersShell(form) {
   secTitle.className = "charts-section-title preferences-panel__title";
   secTitle.textContent = "Millrace users";
 
-  panel.append(secTitle, form);
+  panel.append(secTitle, bodyContent);
   body.append(panel);
   root.append(top, body);
   return root;
@@ -130,7 +137,11 @@ async function main() {
     mount.append(renderUsersShell(renderUsersForm(initial)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    mount.innerHTML = `<div class="app-error">Could not load users: ${escapeHtml(msg)}</div>`;
+    const err = document.createElement("div");
+    err.className = "app-error";
+    err.textContent = `Could not load users: ${msg}`;
+    mount.replaceChildren();
+    mount.append(renderUsersShell(err));
   }
 }
 
