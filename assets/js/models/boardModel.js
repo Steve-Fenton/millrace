@@ -59,9 +59,98 @@ export function columnIsDone(col) {
  */
 
 /**
- * @param {Record<string, Record<string, string>>} sections
+ * @param {string | undefined} raw comma-separated emails
+ * @returns {string[]}
+ */
+export function parseEmailList(raw) {
+  return String(raw ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * @param {{ email: string, active?: boolean }[]} access
+ * @param {{ email: string, name: string, active?: boolean }[]} catalogUsers
+ * @returns {BoardUserDef[]}
+ */
+export function enrichBoardUsersWithMillraceCatalog(access, catalogUsers) {
+  /** @type {Map<string, { email: string, name: string, active?: boolean }>} */
+  const catalogByEmail = new Map();
+  for (const u of catalogUsers ?? []) {
+    const email = String(u.email ?? "").trim();
+    if (!email) continue;
+    catalogByEmail.set(email.toLowerCase(), u);
+  }
+  /** @type {BoardUserDef[]} */
+  const rows = [];
+  for (const entry of access ?? []) {
+    const email = String(entry.email ?? "").trim();
+    if (!email) continue;
+    const cat = catalogByEmail.get(email.toLowerCase());
+    const name = String(cat?.name ?? "").trim() || email;
+    rows.push({
+      index: 0,
+      email,
+      name,
+      active: entry.active !== false,
+    });
+  }
+  const sorted = sortBoardUsersByDisplayName(rows);
+  return sorted.map((u, i) => ({ ...u, index: i + 1 }));
+}
+
+/**
+ * @param {BoardModel} model
+ * @param {{ email: string, name: string, active?: boolean }[]} catalogUsers
  * @returns {BoardModel}
  */
+export function enrichBoardModelUsersFromCatalog(model, catalogUsers) {
+  const kind = String(model.board?.kind ?? "").trim().toLowerCase();
+  if (kind === "aggregate") return model;
+  const access = (model.users ?? []).map((u) => ({
+    email: u.email,
+    active: u.active,
+  }));
+  return {
+    ...model,
+    users: enrichBoardUsersWithMillraceCatalog(access, catalogUsers),
+  };
+}
+
+/**
+ * @param {Record<string, Record<string, string>>} sections
+ * @returns {BoardUserDef[]}
+ */
+function parseBoardUserAccessFromSections(sections) {
+  const flat = sections.users;
+  if (
+    flat &&
+    typeof flat === "object" &&
+    (flat.active !== undefined ||
+      flat.inactive !== undefined ||
+      flat.access !== undefined)
+  ) {
+    /** @type {BoardUserDef[]} */
+    const users = [];
+    const seen = new Set();
+    for (const email of parseEmailList(flat.active ?? flat.access)) {
+      const low = email.toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      users.push({ index: 0, email, name: email, active: true });
+    }
+    for (const email of parseEmailList(flat.inactive)) {
+      const low = email.toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      users.push({ index: 0, email, name: email, active: false });
+    }
+    return users;
+  }
+  return [];
+}
+
 /**
  * @param {BoardUserDef[] | undefined} users
  * @param {string | undefined} ownerEmail
@@ -241,8 +330,14 @@ export function sectionsToBoardModel(sections) {
 
   columns.sort((a, b) => a.index - b.index);
   swimlanes.sort((a, b) => a.index - b.index);
-  users.sort((a, b) => a.index - b.index);
   sources.sort((a, b) => a.index - b.index);
+
+  const flatUsers = parseBoardUserAccessFromSections(sections);
+  if (flatUsers.length > 0) {
+    users.length = 0;
+    users.push(...flatUsers);
+  }
+  users.sort((a, b) => a.index - b.index);
 
   /** @type {BoardModel} */
   const out = { board, columns, swimlanes, users };

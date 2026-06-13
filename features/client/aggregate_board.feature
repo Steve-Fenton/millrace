@@ -216,10 +216,10 @@ Feature: Aggregate board model helpers
     When I enrich the aggregate board model
     Then the board model JSON should be:
       """
-      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"Demo"},{"index":2,"title":"Project"}],"users":[{"index":1,"email":"a@b.c","name":"Alice","active":true},{"index":2,"email":"b@c.d","name":"Bob","active":true}],"sources":[{"slug":"demo"},{"slug":"project"}]}
+      {"board":{"kind":"aggregate","slug":"all"},"columns":[{"index":1,"title":"Options","type":"options"},{"index":2,"title":"To do","type":"to_do"},{"index":3,"title":"In progress","type":"in_progress"},{"index":4,"title":"Waiting","type":"waiting"},{"index":5,"title":"Done","type":"done","isDone":true}],"swimlanes":[{"index":1,"title":"Demo"},{"index":2,"title":"Project"}],"users":[{"index":1,"email":"a@b.c","name":"a@b.c","active":true},{"index":2,"email":"b@c.d","name":"b@c.d","active":true}],"sources":[{"slug":"demo"},{"slug":"project"}]}
       """
 
-  Scenario: mergeUsersFromSourceBoards dedupes by email and sorts by display name
+  Scenario: mergeUsersFromSourceBoards dedupes by email and sorts by email
     Given aggregate source board models as JSON:
       """
       [{"users":[{"index":1,"email":"zed@x.y","name":"Zed"}]},{"users":[{"index":1,"email":"a@b.c","name":"Alice"}]}]
@@ -227,7 +227,7 @@ Feature: Aggregate board model helpers
     When I merge users from aggregate source boards
     Then the JSON array result should be:
       """
-      [{"index":1,"email":"a@b.c","name":"Alice","active":true},{"index":2,"email":"zed@x.y","name":"Zed","active":true}]
+      [{"index":1,"email":"a@b.c","name":"a@b.c","active":true},{"index":2,"email":"zed@x.y","name":"zed@x.y","active":true}]
       """
 
   Scenario: validateAggregateBoard requires at least one source

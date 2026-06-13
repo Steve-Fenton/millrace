@@ -11,15 +11,16 @@ import {
 } from "../models/aggregateBoard.js";
 import { serializeBoardIniFromModel } from "../ini/boardIni.js";
 import {
-  createSortableBoardUserList,
   createSortableColumnList,
   createSortableSwimlaneList,
 } from "../ui/boardOrderedRowsEditor.js";
+import { createBoardUserAccessCheckboxes } from "../ui/boardUserAccessCheckboxes.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import {
   deleteBoardDefinition,
   fetchBoardDefinition,
   fetchBoardDefinitionGitHistory,
+  fetchMillraceUsers,
   updateBoardDefinition,
 } from "../client.js";
 import { el } from "../html/element.js";
@@ -169,7 +170,7 @@ async function openBoardGitHistoryNested(ctx) {
  * @param {import("../models/boardModel.js").BoardModel} initialModel
  * @param {{ title: string, wipLimit: string, type: import("../models/boardModel.js").ColumnType }[]} colRows
  * @param {{ title: string }[]} swimRows
- * @param {{ email: string, name: string, active?: boolean }[]} userRows
+ * @param {{ email: string, active?: boolean }[]} userRows
  * @param {string[]} [sourceSlugs]
  */
 function buildModel(initialModel, colRows, swimRows, userRows, sourceSlugs) {
@@ -207,9 +208,8 @@ function buildModel(initialModel, colRows, swimRows, userRows, sourceSlugs) {
     for (const r of userRows) {
       const email = String(r.email ?? "").trim();
       if (!email) continue;
-      const display = String(r.name ?? "").trim() || email;
       const active = r.active !== false;
-      users.push({ index: userIdx++, email, name: display, active });
+      users.push({ index: userIdx++, email, name: email, active });
     }
   }
   const ib = initialModel.board ?? {};
@@ -297,7 +297,6 @@ export async function openBoardEditorDialog(ctx) {
     .sort((a, b) => a.index - b.index)
     .map((u) => ({
       email: u.email,
-      name: String(u.name ?? "").trim(),
       active: u.active !== false,
     }));
 
@@ -360,9 +359,24 @@ export async function openBoardEditorDialog(ctx) {
           : [{ title: "Backlog", wipLimit: "", type: "in_progress" }]
       );
   const swimEditor = aggregate ? null : createSortableSwimlaneList(swimSeeds);
-  const userEditor = aggregate
-    ? null
-    : createSortableBoardUserList(userSeeds);
+
+  /** @type {ReturnType<typeof createBoardUserAccessCheckboxes> | null} */
+  let userEditor = null;
+  if (!aggregate) {
+    const userField = document.createElement("div");
+    userField.className = "flow-board-user-access-loading-wrap";
+    const userLoading = document.createElement("p");
+    userLoading.className = "flow-board-user-access-loading";
+    userLoading.textContent = "Loading users…";
+    userField.append(userLoading);
+    sortWrap.append(userField);
+    void (async () => {
+      const millraceUsers = await fetchMillraceUsers();
+      userLoading.remove();
+      userEditor = createBoardUserAccessCheckboxes(millraceUsers, userSeeds);
+      userField.append(userEditor.root);
+    })();
+  }
 
   /** @type {HTMLFieldSetElement | null} */
   let sourceFieldset = null;
@@ -429,7 +443,6 @@ export async function openBoardEditorDialog(ctx) {
 
   if (colEditor) sortWrap.append(colEditor.root);
   if (swimEditor) sortWrap.append(swimEditor.root);
-  if (userEditor) sortWrap.append(userEditor.root);
 
   function getSelectedSourceSlugs() {
     /** @type {string[]} */
@@ -456,9 +469,8 @@ export async function openBoardEditorDialog(ctx) {
         : [],
       sources: aggregate ? getSelectedSourceSlugs() : [],
       users: userEditor
-        ? userEditor.getRows().map((r) => ({
+        ? userEditor.getAccess().map((r) => ({
             email: String(r.email ?? "").trim(),
-            name: String(r.name ?? "").trim(),
             active: r.active !== false,
           }))
         : [],
@@ -511,38 +523,7 @@ export async function openBoardEditorDialog(ctx) {
         });
         return false;
       }
-      const rawUserRows = userEditor ? userEditor.getRows() : [];
-      if (userEditor) {
-        const seenEmails = new Set();
-        for (const r of rawUserRows) {
-        const em = String(r.email ?? "").trim();
-        const nm = String(r.name ?? "").trim();
-        if (!em && !nm) continue;
-        if (!em) {
-          await showFlowAlert(
-            "Each board user row needs an email (or clear the display name on that row).",
-            { title: "Edit board" }
-          );
-          return false;
-        }
-        if (!em.includes("@")) {
-          await showFlowAlert(
-            `Invalid email for board user: ${em}`,
-            { title: "Edit board" }
-          );
-          return false;
-        }
-        const low = em.toLowerCase();
-        if (seenEmails.has(low)) {
-          await showFlowAlert(
-            `Duplicate board user email: ${em}`,
-            { title: "Edit board" }
-          );
-          return false;
-        }
-        seenEmails.add(low);
-        }
-      }
+      const rawUserRows = userEditor ? userEditor.getAccess() : [];
 
       const model = buildModel(
         initialModel,

@@ -25,9 +25,8 @@ is_done = true
 [swimlanes.1]
 title = Default
 
-[users.1]
-email = millrace@example.com
-name = Steve Fenton
+[users]
+active = millrace@example.com
 `;
 
 function defaultCatalogIniText() {

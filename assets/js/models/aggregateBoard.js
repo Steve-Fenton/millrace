@@ -1,6 +1,7 @@
 import {
   boardUsersSortedForUi,
   columnTypeOf,
+  enrichBoardUsersWithMillraceCatalog,
   parseBoardIni,
 } from "./boardModel.js";
 
@@ -99,7 +100,7 @@ export function mergeUsersFromSourceBoards(sourceModels) {
       byEmail.set(low, {
         index: 0,
         email,
-        name: String(u.name ?? "").trim() || email,
+        name: email,
         active: u.active !== false,
       });
     }
@@ -130,10 +131,17 @@ export function enrichAggregateBoardModel(model, catalogBoards, options = {}) {
     });
   }
   const sourceModels = options.sourceModels;
-  const users =
+  const catalogUsers = options.catalogUsers;
+  let users =
     sourceModels && sourceModels.length > 0
       ? mergeUsersFromSourceBoards(sourceModels)
       : [];
+  if (catalogUsers && catalogUsers.length > 0 && users.length > 0) {
+    users = enrichBoardUsersWithMillraceCatalog(
+      users.map((u) => ({ email: u.email, active: u.active })),
+      catalogUsers
+    );
+  }
   return {
     ...model,
     columns: standardAggregateColumns(),

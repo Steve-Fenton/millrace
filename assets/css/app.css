@@ -1702,6 +1702,34 @@ dialog.git-conflict-dialog::backdrop {
   color: var(--text-muted);
 }
 
+.flow-board-user-access-list {
+  margin-block: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.flow-board-user-access-option {
+  display: block;
+  margin-block: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.flow-board-user-access-option--board-inactive {
+  color: var(--text-muted);
+}
+
+.flow-board-user-access-option--millrace-inactive {
+  opacity: 0.55;
+}
+
+.flow-board-user-access-empty,
+.flow-board-user-access-loading {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 .charts-note {
   margin: 0;
   font-size: 0.82rem;

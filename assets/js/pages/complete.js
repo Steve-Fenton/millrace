@@ -5,6 +5,7 @@ import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import {
   boardOwnerEmailsForFilter,
+  enrichBoardModelUsersFromCatalog,
   ownerDisplayLabel,
   parseBoardIni,
 } from "../models/boardModel.js";
@@ -17,7 +18,7 @@ import {
 } from "../ui/filterByOwner.js";
 import { showFlowAlert } from "../ui/showMessage.js";
 import { ensureMineEmailConfigured } from "../ui/setupMineOwner.js";
-import { fetchBoardIni, fetchLocalUserProfile } from "../client.js";
+import { fetchBoardIni, fetchLocalUserProfile, fetchMillraceUsers } from "../client.js";
 import { boardSlugFrom } from "../html/slug.js";
 import {
   createBoardTitlePicker,
@@ -808,7 +809,10 @@ async function main() {
   try {
     const { boards, activeSlug } = await resolveActiveBoardSelection();
     const flowCtx = { boards, activeSlug };
-    const text = await fetchBoardIni(activeSlug);
+    const [text, millraceUsers] = await Promise.all([
+      fetchBoardIni(activeSlug),
+      fetchMillraceUsers(),
+    ]);
     let model = parseBoardIni(text);
     /** @type {import("../models/boardModel.js").BoardModel[]} */
     const sourceModels = [];
@@ -826,7 +830,13 @@ async function main() {
         })
       );
     }
-    model = enrichAggregateBoardModel(model, boards, { sourceModels });
+    model = enrichAggregateBoardModel(model, boards, {
+      sourceModels,
+      catalogUsers: millraceUsers,
+    });
+    if (!isAggregateBoard(model)) {
+      model = enrichBoardModelUsersFromCatalog(model, millraceUsers);
+    }
     if (model.columns.length === 0) {
       mount.innerHTML = `<div class="app-error">No columns found in board.ini.</div>`;
       return;

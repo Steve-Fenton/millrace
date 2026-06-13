@@ -3,6 +3,7 @@ import { openCardEditorDialog } from "./dialogs/editCard.js";
 import {
   boardOwnerEmailsForFilter,
   columnIsDone,
+  enrichBoardModelUsersFromCatalog,
   ownerDisplayLabel,
   parseBoardIni,
   userPreferenceSyncModeIsAutomatic,
@@ -18,6 +19,7 @@ import {
   fetchColumnCards,
   fetchGitRepoAvailable,
   fetchLocalUserProfile,
+  fetchMillraceUsers,
   fetchNpmUpdateCheck,
   patchSwimlaneCollapse,
   postNpmInstallRunCycle,
@@ -264,7 +266,7 @@ function collectDistinctOwners(cardsByColumn) {
 }
 
 /**
- * Filter dropdown keys: board `[users.N]` emails when configured, else distinct owners on cards.
+ * Filter dropdown keys: active board users (emails) when configured, else distinct owners on cards.
  * @param {import("./models/boardModel.js").BoardModel} model
  * @param {Map<number, object[]>} cardsByColumn
  */
@@ -1872,7 +1874,10 @@ async function loadApp(fullReload = true) {
   try {
     const { boards, activeSlug } = await resolveActiveBoardSelection();
     const flowCtx = { boards, activeSlug };
-    const text = await fetchBoardIni(activeSlug);
+    const [text, millraceUsers] = await Promise.all([
+      fetchBoardIni(activeSlug),
+      fetchMillraceUsers(),
+    ]);
     let model = parseBoardIni(text);
     /** @type {Map<string, import("./models/boardModel.js").ColumnDef[]>} */
     const sourceColumnDefs = new Map();
@@ -1894,7 +1899,12 @@ async function loadApp(fullReload = true) {
           sourceSwimlaneDefs.set(slug, srcModel.swimlanes ?? []);
         })
       );
-      model = enrichAggregateBoardModel(model, boards, { sourceModels });
+      model = enrichAggregateBoardModel(model, boards, {
+        sourceModels,
+        catalogUsers: millraceUsers,
+      });
+    } else {
+      model = enrichBoardModelUsersFromCatalog(model, millraceUsers);
     }
 
     if (model.columns.length === 0) {

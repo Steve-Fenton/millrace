@@ -75,14 +75,21 @@ export function serializeBoardIniFromModel(model) {
   }
 
   const users = [...(model.users ?? [])].sort((a, b) => a.index - b.index);
-  for (let i = 0; i < users.length; i++) {
-    const u = users[i];
-    const idx = i + 1;
-    lines.push(`[users.${idx}]`);
-    lines.push(`email = ${String(u.email ?? "").trim()}`);
-    lines.push(`name = ${String(u.name ?? "").trim()}`);
-    if (u.active === false) {
-      lines.push(`active = false`);
+  const active = users
+    .filter((u) => u.active !== false)
+    .map((u) => String(u.email ?? "").trim())
+    .filter(Boolean);
+  const inactive = users
+    .filter((u) => u.active === false)
+    .map((u) => String(u.email ?? "").trim())
+    .filter(Boolean);
+  if (active.length > 0 || inactive.length > 0) {
+    lines.push("[users]");
+    if (active.length > 0) {
+      lines.push(`active = ${active.join(", ")}`);
+    }
+    if (inactive.length > 0) {
+      lines.push(`inactive = ${inactive.join(", ")}`);
     }
     lines.push("");
   }

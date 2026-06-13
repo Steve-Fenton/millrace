@@ -382,12 +382,9 @@ title = To Do
 title = Done
 is_done = true
 
-[users.1]
-email = active@example.com
-
-[users.2]
-email = removed@example.com
-inactive = true
+[users]
+active = active@example.com
+inactive = removed@example.com
 `,
         "utf8"
       );

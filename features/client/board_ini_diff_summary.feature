@@ -470,9 +470,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = leaving@example.com
-      name = Leaving
+      [users]
+      active = leaving@example.com
       """
     And the later board INI text is:
       """
@@ -487,9 +486,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = joining@example.com
-      name = Joining
+      [users]
+      active = joining@example.com
       """
     When I summarize the board INI diff
     Then the board diff summary JSON should be:
@@ -498,47 +496,6 @@ Feature: Board INI change summary
         "User added: joining@example.com",
         "User removed: leaving@example.com"
       ]
-      """
-
-  Scenario: user display name changed
-    Given the earlier board INI text is:
-      """
-      [board]
-      name = Demo
-      slug = demo
-
-      [columns.1]
-      title = To Do
-
-      [columns.2]
-      title = Done
-      is_done = true
-
-      [users.1]
-      email = alice@example.com
-      name = Alice
-      """
-    And the later board INI text is:
-      """
-      [board]
-      name = Demo
-      slug = demo
-
-      [columns.1]
-      title = To Do
-
-      [columns.2]
-      title = Done
-      is_done = true
-
-      [users.1]
-      email = alice@example.com
-      name = Alice Smith
-      """
-    When I summarize the board INI diff
-    Then the board diff summary JSON should be:
-      """
-      ["User name (alice@example.com): Alice → Alice Smith"]
       """
 
   Scenario: user deactivated
@@ -555,9 +512,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = alice@example.com
-      name = Alice
+      [users]
+      active = alice@example.com
       """
     And the later board INI text is:
       """
@@ -572,10 +528,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = alice@example.com
-      name = Alice
-      active = false
+      [users]
+      inactive = alice@example.com
       """
     When I summarize the board INI diff
     Then the board diff summary JSON should be:
@@ -597,10 +551,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = alice@example.com
-      name = Alice
-      inactive = true
+      [users]
+      inactive = alice@example.com
       """
     And the later board INI text is:
       """
@@ -615,9 +567,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = alice@example.com
-      name = Alice
+      [users]
+      active = alice@example.com
       """
     When I summarize the board INI diff
     Then the board diff summary JSON should be:
@@ -862,13 +813,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = dup@example.com
-      name = Dup One
-
-      [users.2]
-      email = dup@example.com
-      name = Dup Two
+      [users]
+      active = dup@example.com
       """
     And the later board INI text is:
       """
@@ -948,13 +894,8 @@ Feature: Board INI change summary
       title = Done
       is_done = true
 
-      [users.1]
-      email = join@example.com
-      name = Join A
-
-      [users.2]
-      email = join@example.com
-      name = Join B
+      [users]
+      active = join@example.com
       """
     When I summarize the board INI diff
     Then the board diff summary JSON should be:

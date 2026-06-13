@@ -14,12 +14,14 @@ import { ensureDir } from "./fsUtil.js";
 import {
   parseBoardIni,
   parseColumnTypeRaw,
+  enrichBoardUsersWithMillraceCatalog,
 } from "../assets/js/models/boardModel.js";
 import {
   enrichAggregateBoardModel,
   isAggregateBoard,
   mergeUsersFromSourceBoards,
 } from "../assets/js/models/aggregateBoard.js";
+import { readMillraceCatalogUsers } from "./millraceUsers.js";
 import { parseIni } from "../assets/js/ini/parseIni.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
 import {
@@ -388,13 +390,18 @@ export async function loadBoardColumnAndSwimlaneDefsForSlug(slug) {
   }
 }
 
-/** `[users.N]` from the board INI (for owner policy). */
+/** Board user access from the board INI (for owner policy), with names from Millrace catalog. */
 export async function loadBoardUsersForOwnerPolicy(slug) {
   try {
     const boardPath = await resolveBoardIniPathForSlug(slug);
     const text = await fs.readFile(boardPath, "utf8");
     const m = parseBoardIni(text.replace(/^\uFEFF/, ""));
-    return m.users ?? [];
+    const access = (m.users ?? []).map((u) => ({
+      email: u.email,
+      active: u.active,
+    }));
+    const catalogUsers = await readMillraceCatalogUsers();
+    return enrichBoardUsersWithMillraceCatalog(access, catalogUsers);
   } catch {
     return [];
   }
@@ -406,8 +413,13 @@ export async function loadBoardUsersForFilter(slug) {
     const boardPath = await resolveBoardIniPathForSlug(slug);
     const text = await fs.readFile(boardPath, "utf8");
     const m = parseBoardIni(text.replace(/^\uFEFF/, ""));
+    const catalogUsers = await readMillraceCatalogUsers();
     if (!isAggregateBoard(m)) {
-      return m.users ?? [];
+      const access = (m.users ?? []).map((u) => ({
+        email: u.email,
+        active: u.active,
+      }));
+      return enrichBoardUsersWithMillraceCatalog(access, catalogUsers);
     }
     /** @type {import("../assets/js/models/boardModel.js").BoardModel[]} */
     const sourceModels = [];
@@ -422,7 +434,11 @@ export async function loadBoardUsersForFilter(slug) {
         /* skip missing source */
       }
     }
-    return mergeUsersFromSourceBoards(sourceModels);
+    const merged = mergeUsersFromSourceBoards(sourceModels);
+    return enrichBoardUsersWithMillraceCatalog(
+      merged.map((u) => ({ email: u.email, active: u.active })),
+      catalogUsers
+    );
   } catch {
     return [];
   }

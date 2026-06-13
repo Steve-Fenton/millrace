@@ -1,7 +1,6 @@
 Feature: Board model to tasks INI format
   The client turns an in-memory board model into the text shape stored under tasks/*.ini:
-  [board], [columns.n], [swimlanes.n], and [users.n]. Rows are ordered by index;
-  output section numbers are stable (1, 2, …) after sorting.
+  [board], [columns.n], [swimlanes.n], and [users] (active/inactive email lists).
 
   Scenario: empty model yields board header and guidance comments only
     Given a board model:
@@ -138,7 +137,7 @@ Feature: Board model to tasks INI format
 
       """
 
-  Scenario: users are ordered by index and inactive users get active = false
+  Scenario: users are written as email lists under [users]
     Given a board model:
       """
       {"board":{},"columns":[],"swimlanes":[],"users":[{"index":2,"email":"zed@x.y","name":"Zed","active":false},{"index":1,"email":"a@b.c","name":"Alice"}]}
@@ -150,18 +149,13 @@ Feature: Board model to tasks INI format
 
       ; Columns appear in list order by section index (columns.1, columns.2, …).
       ; Swimlanes split the board horizontally (e.g. by team or stream).
-      [users.1]
-      email = a@b.c
-      name = Alice
-
-      [users.2]
-      email = zed@x.y
-      name = Zed
-      active = false
+      [users]
+      active = a@b.c
+      inactive = zed@x.y
 
       """
 
-  Scenario: null titles and optional user fields use defaults or empty values
+  Scenario: null titles and optional user fields omit empty emails
     Given a board model:
       """
       {"board":{},"columns":[{"index":1,"title":"Named"},{"index":2,"title":null}],"swimlanes":[{"index":1,"title":"Named lane"},{"index":2,"title":null}],"users":[{"index":1,"email":"x@y.z","name":null,"active":true},{"index":2,"email":null,"name":null,"active":false}]}
@@ -187,14 +181,8 @@ Feature: Board model to tasks INI format
       [swimlanes.2]
       title = Lane 2
 
-      [users.1]
-      email = x@y.z
-      name = 
-
-      [users.2]
-      email = 
-      name = 
-      active = false
+      [users]
+      active = x@y.z
 
       """
 
