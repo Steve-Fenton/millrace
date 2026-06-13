@@ -1,6 +1,6 @@
 Feature: Board model to tasks INI format
   The client turns an in-memory board model into the text shape stored under tasks/*.ini:
-  [board], [columns.n], [swimlanes.n], and [users] (active/inactive email lists).
+  [board], [columns.n], [swimlanes.n], and [users] (active email list).
 
   Scenario: empty model yields board header and guidance comments only
     Given a board model:
@@ -151,7 +151,6 @@ Feature: Board model to tasks INI format
       ; Swimlanes split the board horizontally (e.g. by team or stream).
       [users]
       active = a@b.c
-      inactive = zed@x.y
 
       """
 

@@ -216,26 +216,26 @@ Feature: Board model from INI and UI helpers
     When I check whether the owner assignment is allowed
     Then the boolean result is "true"
 
-  Scenario: canAssignCardOwner allows keeping the same owner even when inactive on the board
+  Scenario: canAssignCardOwner allows keeping the same owner even when no longer on the board
     Given card owner assignment input as JSON:
       """
-      {"ownerEmail":"a@a.a","users":[{"email":"a@a.a","name":"A","active":false}],"previousOwnerEmail":"a@a.a"}
+      {"ownerEmail":"a@a.a","users":[{"email":"b@b.b","name":"B"}],"previousOwnerEmail":"a@a.a"}
       """
     When I check whether the owner assignment is allowed
     Then the boolean result is "true"
 
-  Scenario: canAssignCardOwner allows emails not listed on the board
+  Scenario: canAssignCardOwner blocks emails not on the board when access is configured
     Given card owner assignment input as JSON:
       """
       {"ownerEmail":"outsider@x.y","users":[{"email":"a@a.a","name":"A"}],"previousOwnerEmail":""}
       """
     When I check whether the owner assignment is allowed
-    Then the boolean result is "true"
+    Then the boolean result is "false"
 
-  Scenario: canAssignCardOwner blocks assigning an inactive listed user as a new owner
+  Scenario: canAssignCardOwner blocks assigning a user not on the board as a new owner
     Given card owner assignment input as JSON:
       """
-      {"ownerEmail":"a@a.a","users":[{"email":"a@a.a","name":"A","active":false}],"previousOwnerEmail":"b@b.b"}
+      {"ownerEmail":"a@a.a","users":[{"email":"b@b.b","name":"B"}],"previousOwnerEmail":"c@c.c"}
       """
     When I check whether the owner assignment is allowed
     Then the boolean result is "false"
@@ -286,7 +286,7 @@ Feature: Board model from INI and UI helpers
       {"board":{},"columns":[{"index":1,"title":"Wip","type":"done","isDone":true,"wipLimit":2}],"swimlanes":[],"users":[]}
       """
 
-  Scenario: sectionsToBoardModel marks users inactive via inactive or explicit active false
+  Scenario: sectionsToBoardModel omits inactive legacy user sections
     Given INI-shaped sections as JSON:
       """
       {"users.1":{"email":"old@x.y","name":"Old","inactive":"true"},"users.2":{"email":"new@x.y","name":"New","Active":"NO"}}
@@ -294,7 +294,7 @@ Feature: Board model from INI and UI helpers
     When I convert INI sections to a board model
     Then the board model JSON should be:
       """
-      {"board":{},"columns":[],"swimlanes":[],"users":[{"index":1,"email":"old@x.y","name":"Old","active":false},{"index":2,"email":"new@x.y","name":"New","active":false}]}
+      {"board":{},"columns":[],"swimlanes":[],"users":[]}
       """
 
   Scenario: sectionsToBoardModel skips users with no email and defaults swimlane titles

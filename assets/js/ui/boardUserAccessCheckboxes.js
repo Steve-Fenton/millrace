@@ -1,7 +1,7 @@
 /**
  * Board access checkboxes against Millrace catalog users.
  * @param {{ email: string, name: string, active?: boolean }[]} millraceUsers
- * @param {{ email: string, active?: boolean }[]} boardAccess
+ * @param {{ email: string, active?: boolean }[]} boardAccess active users on this board
  */
 export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   const wrap = document.createElement("div");
@@ -14,7 +14,7 @@ export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   const hint = document.createElement("p");
   hint.className = "flow-board-user-hint";
   hint.textContent =
-    "Users are defined in tasks/.millrace.ini. Check to grant board access; uncheck to deactivate on this board.";
+    "Users are defined in tasks/.millrace.ini. Check to grant board access; uncheck to remove access.";
 
   const list = document.createElement("div");
   list.className = "flow-board-user-access-list";
@@ -22,15 +22,11 @@ export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   wrap.append(label, hint, list);
 
   /** @type {Set<string>} */
-  const initialOnBoard = new Set();
-  /** @type {Map<string, { email: string, active?: boolean }>} */
-  const boardByEmail = new Map();
+  const activeOnBoard = new Set();
   for (const u of boardAccess ?? []) {
     const email = String(u.email ?? "").trim();
-    if (!email) continue;
-    const low = email.toLowerCase();
-    initialOnBoard.add(low);
-    boardByEmail.set(low, u);
+    if (!email || u.active === false) continue;
+    activeOnBoard.add(email.toLowerCase());
   }
 
   const sorted = [...(millraceUsers ?? [])]
@@ -47,16 +43,11 @@ export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
   for (const u of sorted) {
     const email = String(u.email).trim();
     const low = email.toLowerCase();
-    const boardEntry = boardByEmail.get(low);
-    const onBoard = boardEntry != null;
-    const checked = onBoard && boardEntry.active !== false;
+    const checked = activeOnBoard.has(low);
     const millraceInactive = u.active === false;
 
     const row = document.createElement("label");
     row.className = "flow-board-user-access-option";
-    if (!checked && onBoard) {
-      row.classList.add("flow-board-user-access-option--board-inactive");
-    }
     if (millraceInactive) {
       row.classList.add("flow-board-user-access-option--millrace-inactive");
     }
@@ -96,14 +87,8 @@ export function createBoardUserAccessCheckboxes(millraceUsers, boardAccess) {
         const email = String(u.email).trim();
         const low = email.toLowerCase();
         const cb = checkboxes.get(low);
-        if (!cb || cb.disabled) continue;
-        const checked = cb.checked;
-        const wasOnBoard = initialOnBoard.has(low);
-        if (checked) {
-          rows.push({ email, active: true });
-        } else if (wasOnBoard) {
-          rows.push({ email, active: false });
-        }
+        if (!cb || cb.disabled || !cb.checked) continue;
+        rows.push({ email, active: true });
       }
       return rows;
     },

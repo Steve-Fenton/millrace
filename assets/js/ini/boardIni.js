@@ -79,18 +79,9 @@ export function serializeBoardIniFromModel(model) {
     .filter((u) => u.active !== false)
     .map((u) => String(u.email ?? "").trim())
     .filter(Boolean);
-  const inactive = users
-    .filter((u) => u.active === false)
-    .map((u) => String(u.email ?? "").trim())
-    .filter(Boolean);
-  if (active.length > 0 || inactive.length > 0) {
+  if (active.length > 0) {
     lines.push("[users]");
-    if (active.length > 0) {
-      lines.push(`active = ${active.join(", ")}`);
-    }
-    if (inactive.length > 0) {
-      lines.push(`inactive = ${inactive.join(", ")}`);
-    }
+    lines.push(`active = ${active.join(", ")}`);
     lines.push("");
   }
 

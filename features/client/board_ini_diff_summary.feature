@@ -498,7 +498,7 @@ Feature: Board INI change summary
       ]
       """
 
-  Scenario: user deactivated
+  Scenario: user removed from board access
     Given the earlier board INI text is:
       """
       [board]
@@ -527,17 +527,14 @@ Feature: Board INI change summary
       [columns.2]
       title = Done
       is_done = true
-
-      [users]
-      inactive = alice@example.com
       """
     When I summarize the board INI diff
     Then the board diff summary JSON should be:
       """
-      ["User deactivated: alice@example.com"]
+      ["User removed: alice@example.com"]
       """
 
-  Scenario: user activated
+  Scenario: user granted board access
     Given the earlier board INI text is:
       """
       [board]
@@ -550,9 +547,6 @@ Feature: Board INI change summary
       [columns.2]
       title = Done
       is_done = true
-
-      [users]
-      inactive = alice@example.com
       """
     And the later board INI text is:
       """
@@ -573,7 +567,7 @@ Feature: Board INI change summary
     When I summarize the board INI diff
     Then the board diff summary JSON should be:
       """
-      ["User activated: alice@example.com"]
+      ["User added: alice@example.com"]
       """
 
   Scenario: combination of changes is capped at fourteen lines

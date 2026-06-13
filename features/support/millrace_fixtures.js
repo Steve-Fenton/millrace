@@ -384,7 +384,6 @@ is_done = true
 
 [users]
 active = active@example.com
-inactive = removed@example.com
 `,
         "utf8"
       );

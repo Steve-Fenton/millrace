@@ -127,9 +127,7 @@ function parseBoardUserAccessFromSections(sections) {
   if (
     flat &&
     typeof flat === "object" &&
-    (flat.active !== undefined ||
-      flat.inactive !== undefined ||
-      flat.access !== undefined)
+    (flat.active !== undefined || flat.access !== undefined)
   ) {
     /** @type {BoardUserDef[]} */
     const users = [];
@@ -139,12 +137,6 @@ function parseBoardUserAccessFromSections(sections) {
       if (seen.has(low)) continue;
       seen.add(low);
       users.push({ index: 0, email, name: email, active: true });
-    }
-    for (const email of parseEmailList(flat.inactive)) {
-      const low = email.toLowerCase();
-      if (seen.has(low)) continue;
-      seen.add(low);
-      users.push({ index: 0, email, name: email, active: false });
     }
     return users;
   }
@@ -237,8 +229,10 @@ export function canAssignCardOwner(ownerEmail, users, previousOwnerEmail) {
   if (!o) return true;
   const prev = String(previousOwnerEmail ?? "").trim();
   if (prev && o.toLowerCase() === prev.toLowerCase()) return true;
-  const u = boardUserEntryForEmail(users, o);
-  if (!u) return true;
+  const list = users ?? [];
+  if (list.length === 0) return true;
+  const u = boardUserEntryForEmail(list, o);
+  if (!u) return false;
   return u.active !== false;
 }
 
@@ -319,11 +313,12 @@ export function sectionsToBoardModel(sections) {
         activeRaw === "0" ||
         activeRaw === "no";
       const active = !inactive && !activeExplicitFalse;
+      if (!active) continue;
       users.push({
         index: idx,
         email,
         name: displayName || email,
-        active,
+        active: true,
       });
     }
   }
