@@ -3,8 +3,10 @@ import { createMillraceBrandMark } from "../ui/brandMark.js";
 import { setFlowDocumentTitle } from "../ui/documentTitle.js";
 import {
   fetchLocalUserPreferences,
+  fetchMillraceUsers,
   patchLocalUserPreferences,
 } from "../client.js";
+import { createUserEmailField } from "../ui/selectOwner.js";
 import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 import { escapeHtml } from "../html/escape.js";
 import { applyFlowTheme } from "../ui/applyTheme.js";
@@ -116,43 +118,32 @@ function renderPreferencesFlowTimestamps(initial) {
 
 /**
  * @param {{ syncMode: "automatic" | "manual", theme: "dark" | "light", mine: string, owner: string }} initial
+ * @param {{ email: string, name: string, active?: boolean }[]} millraceUsers
  */
-function renderPreferencesForm(initial) {
+function renderPreferencesForm(initial, millraceUsers) {
   const form = document.createElement("form");
   form.className = "preferences-form";
 
   const grid = document.createElement("div");
   grid.className = "preferences-grid";
 
-  const mineLabel = document.createElement("label");
-  mineLabel.className = "flow-field preferences-field";
-  const mineSpan = document.createElement("span");
-  mineSpan.className = "flow-field-label";
-  mineSpan.textContent = "Mine";
-  const mineInput = document.createElement("input");
-  mineInput.type = "email";
-  mineInput.className = "flow-input";
-  mineInput.name = "mine";
-  mineInput.autocomplete = "email";
-  mineInput.placeholder = "you@company.com";
-  mineInput.setAttribute("aria-label", "Mine filter email");
-  mineInput.value = initial.mine;
-  mineLabel.append(mineSpan, mineInput);
+  const mineField = createUserEmailField(millraceUsers, initial.mine, {
+    label: "Mine",
+    name: "mine",
+    ariaLabel: "Mine filter email",
+    fallbackPlaceholder: "Add users in tasks/.millrace.ini",
+    fieldClass: "flow-input",
+    wrapClass: "flow-field preferences-field",
+  });
 
-  const ownerLabel = document.createElement("label");
-  ownerLabel.className = "flow-field preferences-field";
-  const ownerSpan = document.createElement("span");
-  ownerSpan.className = "flow-field-label";
-  ownerSpan.textContent = "Default owner";
-  const ownerInput = document.createElement("input");
-  ownerInput.type = "email";
-  ownerInput.className = "flow-input";
-  ownerInput.name = "owner";
-  ownerInput.autocomplete = "email";
-  ownerInput.placeholder = "Prefilled when adding cards";
-  ownerInput.setAttribute("aria-label", "Default card owner email");
-  ownerInput.value = initial.owner;
-  ownerLabel.append(ownerSpan, ownerInput);
+  const ownerField = createUserEmailField(millraceUsers, initial.owner, {
+    label: "Default owner",
+    name: "owner",
+    ariaLabel: "Default card owner email",
+    fallbackPlaceholder: "Prefilled when adding cards",
+    fieldClass: "flow-input",
+    wrapClass: "flow-field preferences-field",
+  });
 
   const syncLabel = document.createElement("label");
   syncLabel.className = "flow-field preferences-field";
@@ -196,7 +187,7 @@ function renderPreferencesForm(initial) {
   themeSelect.value = initial.theme;
   themeLabel.append(themeSpan, themeSelect);
 
-  grid.append(mineLabel, ownerLabel, syncLabel, themeLabel);
+  grid.append(mineField.root, ownerField.root, syncLabel, themeLabel);
 
   const actions = document.createElement("div");
   actions.className = "preferences-form-actions";
@@ -222,8 +213,8 @@ function renderPreferencesForm(initial) {
         await patchLocalUserPreferences({
           syncMode: v,
           theme,
-          mine: String(mineInput.value ?? ""),
-          owner: String(ownerInput.value ?? ""),
+          mine: mineField.getValue(),
+          owner: ownerField.getValue(),
         });
         applyFlowTheme(theme);
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));
@@ -295,12 +286,15 @@ async function main() {
   setFlowDocumentTitle("Preferences");
   mount.innerHTML = `<div class="app-loading">Loading…</div>`;
   try {
-    const initial = await fetchLocalUserPreferences();
+    const [initial, millraceUsers] = await Promise.all([
+      fetchLocalUserPreferences(),
+      fetchMillraceUsers(),
+    ]);
     applyFlowTheme(initial.theme);
     mount.replaceChildren();
     mount.append(
       renderPreferencesShell(
-        renderPreferencesForm(initial),
+        renderPreferencesForm(initial, millraceUsers),
         renderPreferencesFlowTimestamps({
           lastAutoGitPull: initial.lastAutoGitPull,
           lastNpmUpdateCheck: initial.lastNpmUpdateCheck,
