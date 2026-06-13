@@ -15,8 +15,7 @@ function renderUsersForm(initial) {
   form.className = "preferences-form";
 
   const userEditor = createSortableBoardUserList(initial, {
-    label: "Users (use arrows to reorder)",
-    hint: "Stored in tasks/.millrace.ini as [users.N] sections. Tick Admin for users who run owner-only background tasks on their machine. Deactivate keeps the record but marks the user inactive.",
+    label: "Users",
     addLabel: "Add user",
     showAdmin: true,
   });
@@ -112,11 +111,8 @@ function renderUsersShell(form) {
   const secTitle = document.createElement("h2");
   secTitle.className = "charts-section-title preferences-panel__title";
   secTitle.textContent = "Millrace users";
-  const blurb = document.createElement("p");
-  blurb.className = "flow-modal-context preferences-panel__intro";
-  blurb.innerHTML = `Stored in <code class="flow-board-editor-file">${escapeHtml("tasks/.millrace.ini")}</code> as <code class="flow-board-editor-file">[users.N]</code> sections (email, name, and optional <code class="flow-board-editor-file">admin</code>).`;
 
-  panel.append(secTitle, blurb, form);
+  panel.append(secTitle, form);
   body.append(panel);
   root.append(top, body);
   return root;
