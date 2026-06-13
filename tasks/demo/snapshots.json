@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-05-10",
+    "date": "2026-05-18",
     "columns": [
       {
         "name": "To Do",
@@ -15,7 +15,7 @@
     ]
   },
   {
-    "date": "2026-05-17",
+    "date": "2026-05-25",
     "columns": [
       {
         "name": "To Do",
@@ -30,7 +30,7 @@
     ]
   },
   {
-    "date": "2026-05-24",
+    "date": "2026-06-01",
     "columns": [
       {
         "name": "To Do",
@@ -45,57 +45,12 @@
     ]
   },
   {
-    "date": "2026-05-31",
+    "date": "2026-06-08",
     "columns": [
       {
         "name": "To Do",
         "type": "options",
         "count": 23
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-06-05",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-06-11",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-06-12",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
       },
       {
         "name": "Doing",

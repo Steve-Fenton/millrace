@@ -22,6 +22,7 @@ You can find documentation for each of the views here:
 - **[Completed](completed/index.md)**: Browse closed items or search
 - **[Charts](charts/index.md)**: Informational charts and cycle-time analytics
 - **[Preferences](preferences/index.md)**: Local profile (Mine, default owner, sync mode)
+- **[Users](users/index.md)**: Millrace users (email, display name, admin)
 - **[Boards](admin/index.md)**: Create and customise boards
 
 ## Under the hood
@@ -30,7 +31,8 @@ This information may be useful to know. You don't normally hand-crank the INI fi
 
 - **`tasks/localuser.ini`** stores machine-local preferences (default owner, charts granularity, sync hints); keep it gitignored.
 - **`tasks/.millrace.ini`** (section **`[millrace]`**, key **`boards`**) lists active boards so you can switch between multiple boards in one repo.
-- **Board definitions** (`*.ini` under **`tasks/`**) describe columns, optional swimlanes, and WIP limits
+- **Millrace users** (`[users.N]` in `tasks/.millrace.ini`) define email, display name, active flag, and optional `admin` flag for the whole repo.
+- **Board definitions** (`*.ini` under **`tasks/`**) describe columns, optional swimlanes, board access, and WIP limits
 - **Task cards** are stored in **INI files** under **`tasks/{board-slug}/`**
 - **Column snapshots** for cumulative-flow charts live in **`tasks/{board-slug}/snapshots.json`** (daily open-card counts; Millrace captures and commits these automatically)
 - **Abandoned cards** are moved to **`tasks/{board-slug}/abandoned/{year}/`** when you abandon a card from the editor

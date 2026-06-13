@@ -16,11 +16,11 @@ The **Current** board indicates your local selected project.
 
 ## Customizing boards
 
-When you **Edit** a board you can customize columns, swimlanes, and board users. The **Git history** button in the editor shows commits for the board definition file.
+When you **Edit** a board you can customize columns, swimlanes, and **board access**. The **Git history** button in the editor shows commits for the board definition file.
 
 Each column has a **type** (Options, To do, In progress, Waiting, Done). Exactly one column must be type **Done**; this drives the Done column on the board and completion analytics. You can set an optional **WIP limit** per column.
 
-Board **users** (email and display name) power the owner filter and owner picker when creating or editing cards. Inactive users stay in the list but are hidden from pickers.
+**Board access** — tick [Millrace users](../users/index.md) to grant access to the board. Users with access power the owner filter and owner picker when creating or editing cards. Inactive Millrace users stay in the catalog but are hidden from pickers until you reactivate them on the Users page.
 
 ![Screenshot: Editing boards](../screenshots/demo-admin-edit-board-dialog.png)
 

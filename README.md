@@ -113,6 +113,7 @@ flowchart LR
   r3["/charts/"] --> e3["pages/charts.js"]
   r4["/complete/"] --> e4["pages/complete.js"]
   r5["/preferences/"] --> e5["pages/preferences.js"]
+  r6["/users/"] --> e6["pages/users.js"]
 ```
 
 Conceptually, shared code stacks from route and app entry points down through UI and domain layers to parsing and small utilities:
@@ -147,7 +148,7 @@ flowchart TB
 - **`html/`**: Low-level helpers: escape text for HTML, derive URL-safe slugs, parse markup strings into DOM nodes.
 - **`ini/`**: INI parsing plus board/card helpers (sections, columns, swimlanes).
 - **`models/`**: Structured board and task-card models derived from parsed INI text.
-- **`pages/`**: Page entry bundles wired from each route’s `index.html` (admin, charts, completed work, preferences).
+- **`pages/`**: Page entry bundles wired from each route’s `index.html` (boards, charts, completed work, preferences, users).
 - **`ui/`**: Shared presentation pieces: header brand mark and styled modal alerts, confirms, and email prompts (replacing `alert` / `confirm`).
 
 ## features

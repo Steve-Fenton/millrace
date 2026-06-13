@@ -133,9 +133,9 @@ test.describe("doc screenshots", () => {
     });
   });
 
-  test("demo board — admin page full page", async ({ page }) => {
+  test("demo board — boards page full page", async ({ page }) => {
     await page.goto("/admin/");
-    /** Admin uses `admin-shell` without `preferences-shell` (preferences adds that class). */
+    /** Boards uses `admin-shell` without `preferences-shell` (preferences adds that class). */
     await page.waitForSelector(".board-shell.admin-shell:not(.preferences-shell)", {
       timeout: 30_000,
     });
@@ -150,7 +150,21 @@ test.describe("doc screenshots", () => {
     });
   });
 
-  test("demo board — admin edit board dialog (Demo row)", async ({ page }) => {
+  test("demo board — users page full page", async ({ page }) => {
+    await page.goto("/users/");
+    await page.waitForSelector(".users-shell", { timeout: 30_000 });
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-users-full.png"
+    );
+    await page.screenshot({
+      path: out,
+      fullPage: true,
+      scale: "css",
+    });
+  });
+
+  test("demo board — boards edit board dialog (Demo row)", async ({ page }) => {
     await page.goto("/admin/");
     await page.waitForSelector(".board-shell.admin-shell:not(.preferences-shell)", {
       timeout: 30_000,
@@ -162,6 +176,10 @@ test.describe("doc screenshots", () => {
 
     const dialog = page.locator("dialog.flow-modal--edit-board");
     await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.locator(".flow-board-user-access-loading")).toHaveCount(0);
+    await expect(
+      dialog.locator(".flow-board-user-access-list .flow-board-user-access-option").first()
+    ).toBeVisible({ timeout: 15_000 });
 
     const out = path.join(
       process.cwd(),

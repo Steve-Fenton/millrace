@@ -68,8 +68,9 @@ Head back to the [docs](../index.md) for more information on using Millrace.
 
 Suggested first steps:
 
-1. Visit the admin screen to update board users and customize your board
-1. Visit the preferences page to update settings
+1. Visit the **Users** page to add Millrace users (email, display name)
+1. Visit **Boards** to customize your board and grant users access
+1. Visit **Preferences** to set **Mine** and other local settings
 1. Start adding tasks to your board!
 
 ## PM2 tips
