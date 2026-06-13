@@ -115,3 +115,10 @@ Then("the flow API JSON field {string} should be:", function (field, docString) 
   const expected = docString.trim();
   assert.strictEqual(this.flowApiResponse[field], expected);
 });
+
+Then("the flow API JSON field {string} should equal:", function (field, docString) {
+  assert.deepStrictEqual(
+    this.flowApiResponse[field],
+    JSON.parse(docString.trim())
+  );
+});

@@ -384,18 +384,21 @@ export function createSortableSwimlaneList(initial) {
 /**
  * Board `[users.N]` entries: email (owner field on cards), display name, and active flag.
  * @param {{ email: string, name: string, active?: boolean }[]} initial
+ * @param {{ label?: string, hint?: string, addLabel?: string }} [opts]
  */
-export function createSortableBoardUserList(initial) {
+export function createSortableBoardUserList(initial, opts = {}) {
   const wrap = document.createElement("div");
   wrap.className = "flow-field flow-board-sortable-field";
 
   const label = document.createElement("span");
   label.className = "flow-field-label";
-  label.textContent = "Board users (use arrows to reorder)";
+  label.textContent =
+    opts.label ?? "Board users (use arrows to reorder)";
 
   const hint = document.createElement("p");
   hint.className = "flow-board-user-hint";
   hint.textContent =
+    opts.hint ??
     "Deactivate removes someone from the owner picker and filters, but keeps their name for cards already assigned. New cards cannot use inactive owners.";
 
   const list = document.createElement("div");
@@ -404,7 +407,7 @@ export function createSortableBoardUserList(initial) {
   const addBtn = document.createElement("button");
   addBtn.type = "button";
   addBtn.className = "flow-btn flow-btn-ghost flow-board-sortable-add";
-  addBtn.textContent = "Add board user";
+  addBtn.textContent = opts.addLabel ?? "Add board user";
 
   wrap.append(label, hint, list, addBtn);
 

@@ -620,6 +620,59 @@ export async function patchMillraceSettings(body) {
   return { admin: String(data.admin ?? "").trim() };
 }
 
+/**
+ * Millrace users from `tasks/.millrace.ini` (`[users.N]` sections).
+ * @returns {Promise<{ email: string, name: string, active: boolean }[]>}
+ */
+export async function fetchMillraceUsers() {
+  try {
+    const res = await fetch("/api/millrace-users", NO_STORE);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows = Array.isArray(data.users) ? data.users : [];
+    return rows.map((r) => ({
+      email: String(r?.email ?? "").trim(),
+      name: String(r?.name ?? "").trim(),
+      active: r?.active !== false,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @param {{ email: string, name: string, active?: boolean }[]} users
+ * @returns {Promise<{ email: string, name: string, active: boolean }[]>}
+ */
+export async function patchMillraceUsers(users) {
+  const res = await fetch("/api/millrace-users", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      users: (Array.isArray(users) ? users : []).map((r) => ({
+        email: String(r?.email ?? "").trim(),
+        name: String(r?.name ?? "").trim(),
+        active: r?.active !== false,
+      })),
+    }),
+    ...NO_STORE,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data.message === "string" && data.message.trim()
+        ? data.message.trim()
+        : res.statusText || "Request failed"
+    );
+  }
+  const rows = Array.isArray(data.users) ? data.users : [];
+  return rows.map((r) => ({
+    email: String(r?.email ?? "").trim(),
+    name: String(r?.name ?? "").trim(),
+    active: r?.active !== false,
+  }));
+}
+
 /** @returns {Promise<string>} */
 export async function readLocalUserIni() {
   const { owner } = await fetchLocalUserProfile();
