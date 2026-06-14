@@ -9,4 +9,4 @@ tmp_cov
 
 # tasks/localuser.ini is a special file that is used to store local only settings
 tasks/localuser.ini
-tmp/test
+tmp
