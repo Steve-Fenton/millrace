@@ -37,6 +37,7 @@ import {
   gitChildEnv,
   formatGitExecError,
 } from "../gitOps.js";
+import { getGitHistory } from "../gitHistory.js";
 
 /** Single-line card note for INI (first line, trimmed, bounded). */
 function singleLineNote(raw) {
@@ -104,108 +105,15 @@ app.get("/api/card/git-history", async (req, res) => {
       return;
     }
 
-    if (!existsSync(path.join(dataRoot(), ".git"))) {
-      res.json({
-        gitAvailable: false,
-        path: null,
-        commits: [],
-        message: "No Git repository at the Millrace data root.",
-      });
-      return;
-    }
-
-    let rel = path.relative(dataRoot(), fullPath);
-    rel = rel.split(path.sep).join("/");
-    const norm = path.posix.normalize(rel);
-    const absNorm = path.resolve(dataRoot(), norm);
-    const tasksRoot = path.resolve(dataRoot(), "tasks");
-    if (
-      norm.startsWith("../") ||
-      norm === ".." ||
-      norm.startsWith("/") ||
-      !norm.startsWith("tasks/") ||
-      (!absNorm.startsWith(tasksRoot + path.sep) && absNorm !== tasksRoot)
-    ) {
-      res.status(400).json({ message: "Invalid card path for history." });
-      return;
-    }
-
-    const env = gitChildEnv();
-    const opts = {
-      cwd: dataRoot(),
-      env,
-      maxBuffer: 5 * 1024 * 1024,
-    };
-
-    /** @type {{ hash: string, shortHash: string, date: string, author: string, subject: string, changeSummary?: string[] }[]} */
-    const commits = [];
-    let gitMessage = "";
-
-    try {
-      const { stdout } = await execFileAsync(
-        "git",
-        [
-          "log",
-          `-n${limit}`,
-          "--format=%H%x1f%h%x1f%ai%x1f%an%x1f%s",
-          "--",
-          norm,
-        ],
-        opts
-      );
-      const out = String(stdout ?? "").trim();
-      for (const line of out.split("\n")) {
-        if (!line) continue;
-        const p = line.split("\x1f");
-        if (p.length >= 5) {
-          commits.push({
-            hash: p[0],
-            shortHash: p[1],
-            date: p[2],
-            author: p[3],
-            subject: p.slice(4).join("\x1f"),
-          });
-        }
-      }
-    } catch (e) {
-      gitMessage = formatGitExecError("git log", e);
-    }
-
-    /**
-     * @param {string} rev Commit hash or `hash^`
-     * @param {string} posixPath
-     */
-    async function gitShowBlob(rev, posixPath) {
-      const spec = `${rev}:${posixPath}`;
-      try {
-        const { stdout } = await execFileAsync("git", ["show", spec], opts);
-        return String(stdout ?? "");
-      } catch {
-        return null;
-      }
-    }
-
-    const enriched = [];
-    const batchSize = 6;
-    for (let i = 0; i < commits.length; i += batchSize) {
-      const slice = commits.slice(i, i + batchSize);
-      const part = await Promise.all(
-        slice.map(async (c) => {
-          const afterText = await gitShowBlob(c.hash, norm);
-          const beforeText = await gitShowBlob(`${c.hash}^`, norm);
-          const changeSummary = summarizeCardIniDiff(beforeText, afterText);
-          return { ...c, changeSummary };
-        })
-      );
-      enriched.push(...part);
-    }
-
-    res.json({
-      gitAvailable: true,
-      path: norm,
-      commits: enriched,
-      message: gitMessage || (commits.length === 0 ? "No commits found for this file (not tracked yet, or no history)." : ""),
+    const result = await getGitHistory({
+      absolutePath: fullPath,
+      useFollow: false,
+      limit,
+      summarizeDiff: summarizeCardIniDiff,
+      notFoundMessage: "Card not found.",
+      invalidPathMessage: "Invalid card path for history.",
     });
+    res.json(result);
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Failed to read Git history." });
