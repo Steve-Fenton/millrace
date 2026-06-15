@@ -1,4 +1,4 @@
-import { loadBoardCatalog } from "../boardCatalog.js";
+import { loadBoardCatalog } from "../board/catalog.js";
 import {
   readMillraceCatalogUsers,
   validateMillraceUsersPayload,

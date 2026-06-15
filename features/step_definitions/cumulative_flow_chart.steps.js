@@ -2,17 +2,15 @@ import assert from "node:assert";
 import fs from "node:fs/promises";
 import path from "path";
 import { After, Given, Then, When } from "@cucumber/cucumber";
-import {
-  buildCumulativeFlowStack,
-  utcSnapshotDateString,
-} from "../../server/columnSnapshots.js";
+import { utcSnapshotDateString } from "../../server/snapshots/format.js";
+import { buildCumulativeFlowStack } from "../../server/snapshots/storage.js";
 import { setMillraceDataRootForTesting } from "../../server/dataRoot.js";
 import {
   CATALOG_ONE_BOARD,
   INTEGRATION_DATA_ROOT,
   boardIniTestWithSwimlanes,
 } from "../support/millrace_fixtures.js";
-import { defaultAggregateBoardIniText } from "../../server/boardCatalog.js";
+import { defaultAggregateBoardIniText } from "../../server/board/catalog.js";
 
 const CUMULATIVE_FLOW_ROOT = path.join(
   INTEGRATION_DATA_ROOT,

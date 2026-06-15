@@ -5,9 +5,9 @@ import {
   captureTodayColumnSnapshots,
   migrateLegacySnapshotsJson,
   removeObsoleteSnapshotSettings,
-} from "./columnSnapshots.js";
+} from "./snapshots/storage.js";
 import { dataRoot, millraceDataDirPath } from "./dataRoot.js";
-import { loadBoardCatalog } from "./boardCatalog.js";
+import { loadBoardCatalog } from "./board/catalog.js";
 import {
   execFileAsync,
   gitChildEnv,

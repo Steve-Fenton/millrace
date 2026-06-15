@@ -4,7 +4,11 @@ import path from "path";
 import { columnIsDone } from "../../assets/js/models/boardModel.js";
 import { aggregateCompletionBuckets } from "../analytics/completionCharts.js";
 import { bucketStartMsForGranularity } from "../analytics/time.js";
-import { loadBoardCatalog, loadBoardColumnAndSwimlaneDefsForSlug, loadBoardModelForSlug } from "../boardCatalog.js";
+import { loadBoardCatalog } from "../board/catalog.js";
+import {
+  loadBoardColumnAndSwimlaneDefsForSlug,
+  loadBoardModelForSlug,
+} from "../board/model.js";
 import { isAggregateBoard } from "../../assets/js/models/aggregateBoard.js";
 import { SNAPSHOTS_JSON_BASENAME } from "../constants.js";
 import {

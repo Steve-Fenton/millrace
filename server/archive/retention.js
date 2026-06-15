@@ -18,7 +18,7 @@ import {
   markDataRootPendingSync,
 } from "../localUserIni.js";
 import { parseTaskCardIni } from "../../assets/js/models/taskModel.js";
-import { loadBoardCatalog } from "../boardCatalog.js";
+import { loadBoardCatalog } from "../board/catalog.js";
 import { parseIsoMs } from "../analytics/time.js";
 
 export async function archiveStaleClosedTaskFiles(slug, maxAgeDays) {

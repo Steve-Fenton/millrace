@@ -15,16 +15,18 @@ import { dataRoot } from "../../dataRoot.js";
 import { ensureDir } from "../../fsUtil.js";
 import {
   abandonCardFile,
+  newCardId,
+  resolveCardFilePath,
+  safeCardIniFilename,
+  sanitizeSegment,
+} from "../../board/cardPaths.js";
+import {
   boardIsAggregate,
   laneIndexFromBody,
   loadBoardColumnAndSwimlaneDefsForSlug,
   loadBoardUsersForOwnerPolicy,
   maxSortOrderForCell,
-  newCardId,
-  resolveCardFilePath,
-  safeCardIniFilename,
-  sanitizeSegment,
-} from "../../boardCatalog.js";
+} from "../../board/model.js";
 import { markDataRootPendingSync, writeLocalUserIni } from "../../localUserIni.js";
 
 /** Single-line card note for INI (first line, trimmed, bounded). */

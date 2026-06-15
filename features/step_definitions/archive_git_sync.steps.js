@@ -2,7 +2,7 @@ import assert from "node:assert";
 import fs from "node:fs/promises";
 import path from "path";
 import { After, Given, Then, When } from "@cucumber/cucumber";
-import { runStartupArchiveStaleForCatalogSlugs } from "../../server/archiveAnalytics.js";
+import { runStartupArchiveStaleForCatalogSlugs } from "../../server/archive/retention.js";
 import { setMillraceDataRootForTesting } from "../../server/dataRoot.js";
 import { INTEGRATION_DATA_ROOT } from "../support/millrace_fixtures.js";
 

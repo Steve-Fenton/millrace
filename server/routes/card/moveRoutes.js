@@ -10,16 +10,18 @@ import { resolveCardSwimlaneIndex } from "../../../assets/js/ini/swimlaneResolve
 import { parseTaskCardIniFull } from "../../../assets/js/models/taskModel.js";
 import { dataRoot } from "../../dataRoot.js";
 import {
+  resolveCardFilePath,
+  safeCardIniFilename,
+  sanitizeSegment,
+} from "../../board/cardPaths.js";
+import {
   columnIndexFromTasksPath,
   columnSectionIsDone,
   laneIndexFromBody,
   loadBoardColumnAndSwimlaneDefsForSlug,
   maxSortOrderForCell,
   readFlatBoardIniSummaries,
-  resolveCardFilePath,
-  safeCardIniFilename,
-  sanitizeSegment,
-} from "../../boardCatalog.js";
+} from "../../board/model.js";
 import { markDataRootPendingSync } from "../../localUserIni.js";
 
 /** @param {import("express").Application} app */

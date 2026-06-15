@@ -1,5 +1,5 @@
 import { resolveCardSwimlaneIndex } from "../../assets/js/ini/swimlaneResolve.js";
-import { loadBoardColumnAndSwimlaneDefsForSlug } from "../boardCatalog.js";
+import { loadBoardColumnAndSwimlaneDefsForSlug } from "../board/model.js";
 import { gatherCompletedAndArchiveRows } from "./cardRows/completedArchive.js";
 import { bucketStartMsForGranularity, parseIsoMs } from "./time.js";
 

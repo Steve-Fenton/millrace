@@ -7,11 +7,11 @@ import {
   isAggregateBoard,
   standardAggregateColumns,
 } from "../../../assets/js/models/aggregateBoard.js";
+import { loadBoardCatalog } from "../../board/catalog.js";
 import {
-  loadBoardCatalog,
   loadBoardColumnAndSwimlaneDefsForSlug,
   loadBoardModelForSlug,
-} from "../../boardCatalog.js";
+} from "../../board/model.js";
 import { dataRoot } from "../../dataRoot.js";
 import { parseIsoMs } from "../time.js";
 

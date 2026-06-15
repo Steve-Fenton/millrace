@@ -4,7 +4,7 @@ import {
 } from "../../assets/js/models/boardModel.js";
 import { bucketStartMsForGranularity } from "../analytics/time.js";
 import { gatherOpenBoardRows } from "../analytics/cardRows/openBoard.js";
-import { loadBoardColumnAndSwimlaneDefsForSlug } from "../boardCatalog.js";
+import { loadBoardColumnAndSwimlaneDefsForSlug } from "../board/model.js";
 
 /** Reserved top-level key in legacy `tasks/.millrace/snapshots.json`. */
 export const SNAPSHOTS_SETTINGS_KEY = "settings";

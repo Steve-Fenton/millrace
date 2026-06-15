@@ -2,10 +2,8 @@ import assert from "node:assert";
 import fs from "node:fs/promises";
 import path from "path";
 import { After, Given, Then, When } from "@cucumber/cucumber";
-import {
-  captureTodayColumnSnapshots,
-  utcSnapshotDateString,
-} from "../../server/columnSnapshots.js";
+import { utcSnapshotDateString } from "../../server/snapshots/format.js";
+import { captureTodayColumnSnapshots } from "../../server/snapshots/storage.js";
 import { ensureMillraceSnapshotLayout } from "../../server/millraceSnapshotLayout.js";
 import { setMillraceDataRootForTesting } from "../../server/dataRoot.js";
 import {

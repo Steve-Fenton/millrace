@@ -2,19 +2,19 @@ import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import {
   bucketStartMsForGranularity,
-  buildCycleTimePeriodStats,
   completedClosedInWhenRange,
-  completedRowMatchesSearch,
-  legacySwimlaneFilterCandidates,
-  medianSample,
   parseCompletedWhenFilter,
   parseIsoMs,
-  resolveCompletedLaneFilterIndices,
-  sampleStdDev,
   utcDayBucketMs,
   utcMonthBucketMs,
   utcWeekBucketStartMs,
-} from "../../server/archiveAnalytics.js";
+} from "../../server/analytics/time.js";
+import {
+  completedRowMatchesSearch,
+  legacySwimlaneFilterCandidates,
+  resolveCompletedLaneFilterIndices,
+} from "../../server/analytics/completedFilters.js";
+import { buildCycleTimePeriodStats, medianSample, sampleStdDev } from "../../server/analytics/cycleTime.js";
 
 When("I call parseCompletedWhenFilter with {string}", function (raw) {
   this.completedWhenFilter = parseCompletedWhenFilter(raw);
@@ -29,7 +29,7 @@ When(
   function (when, closed, nowIso) {
     this.closedWhenRangeMatch = completedClosedInWhenRange(
       closed,
-      /** @type {import("../../server/archiveAnalytics.js").CompletedWhenFilter} */ (
+      /** @type {import("../../server/analytics/time.js").CompletedWhenFilter} */ (
         when
       ),
       Date.parse(nowIso)

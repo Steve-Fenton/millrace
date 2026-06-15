@@ -2,14 +2,16 @@ import assert from "node:assert";
 import { Then, When } from "@cucumber/cucumber";
 import {
   boardSlugFromMeta,
-  columnIndexFromTasksPath,
-  defaultNewBoardIniText,
-  laneIndexFromBody,
   newCardId,
-  parseIniTruthy,
   safeCardIniFilename,
   sanitizeSegment,
-} from "../../server/boardCatalog.js";
+} from "../../server/board/cardPaths.js";
+import { defaultNewBoardIniText } from "../../server/board/catalog.js";
+import {
+  columnIndexFromTasksPath,
+  laneIndexFromBody,
+  parseIniTruthy,
+} from "../../server/board/model.js";
 
 When("I call sanitizeSegment with {string}", function (raw) {
   this.sanitized = sanitizeSegment(raw);

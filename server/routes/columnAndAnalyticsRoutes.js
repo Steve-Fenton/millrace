@@ -1,27 +1,24 @@
 import fs from "fs/promises";
 import { boardOwnerEmailsForFilter, parseBoardIni } from "../../assets/js/models/boardModel.js";
 import { resolveCardSwimlaneIndex } from "../../assets/js/ini/swimlaneResolve.js";
+import { aggregateColumnSwimlaneStack, buildCardAgeDistribution } from "../analytics/boardCharts.js";
+import { aggregateCompletionBuckets, aggregateCompletionSwimlaneStack } from "../analytics/completionCharts.js";
+import { buildCycleTimeScatter } from "../analytics/cycleTime.js";
+import { completedClosedInWhenRange, parseCompletedWhenFilter } from "../analytics/time.js";
 import {
-  aggregateColumnSwimlaneStack,
-  aggregateCompletionBuckets,
-  aggregateCompletionSwimlaneStack,
-  buildCardAgeDistribution,
-  buildCycleTimeScatter,
-  completedClosedInWhenRange,
   completedRowMatchesSearch,
-  gatherCompletedArchiveAndOptionalCold,
   legacySwimlaneFilterCandidates,
-  parseCompletedWhenFilter,
   resolveCompletedLaneFilterIndices,
-} from "../archiveAnalytics.js";
-import { buildCumulativeFlowStack } from "../columnSnapshots.js";
+} from "../analytics/completedFilters.js";
+import { gatherCompletedArchiveAndOptionalCold } from "../analytics/cardRows/supplemental.js";
+import { buildCumulativeFlowStack } from "../snapshots/storage.js";
 import { enrichAggregateBoardModel } from "../../assets/js/models/aggregateBoard.js";
+import { loadBoardCatalog } from "../board/catalog.js";
 import {
-  loadBoardCatalog,
   loadBoardUsersForFilter,
   resolveBoardIniPathForSlug,
-  sanitizeSegment,
-} from "../boardCatalog.js";
+} from "../board/model.js";
+import { sanitizeSegment } from "../board/cardPaths.js";
 import { sendColumnCards } from "../columnCards.js";
 
 /** @param {import("express").Application} app */

@@ -1,6 +1,6 @@
 import { resolveCardSwimlaneIndex } from "../../assets/js/ini/swimlaneResolve.js";
 import { columnIsDone } from "../../assets/js/models/boardModel.js";
-import { loadBoardColumnAndSwimlaneDefsForSlug } from "../boardCatalog.js";
+import { loadBoardColumnAndSwimlaneDefsForSlug } from "../board/model.js";
 import { gatherOpenBoardRows } from "./cardRows/openBoard.js";
 import { medianSample } from "./cycleTime.js";
 import { MS_PER_DAY, parseIsoMs, utcDayStartMs } from "./time.js";

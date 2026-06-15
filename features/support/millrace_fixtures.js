@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defaultAggregateBoardIniText } from "../../server/boardCatalog.js";
+import { defaultAggregateBoardIniText } from "../../server/board/catalog.js";
 
 /** Matches existing integration tests; cleared before each scenario. */
 const FIXTURES_DIR = path.dirname(fileURLToPath(import.meta.url));

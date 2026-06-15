@@ -10,11 +10,11 @@ import {
 } from "../assets/js/models/aggregateBoard.js";
 import { parseTaskCardIni } from "../assets/js/models/taskModel.js";
 import { dataRoot } from "./dataRoot.js";
+import { loadBoardCatalog } from "./board/catalog.js";
 import {
-  loadBoardCatalog,
   loadBoardColumnAndSwimlaneDefsForSlug,
   loadBoardModelForSlug,
-} from "./boardCatalog.js";
+} from "./board/model.js";
 
 /**
  * @param {string} slug

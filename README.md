@@ -55,8 +55,8 @@ The **`millrace` npm binary** points at the repo-root **`server.js`**. That file
 - **`server/routes/`** — Each route file exports a `register…Routes(app)` function for one area (flow, boards, columns and charts, cards, git sync, local user, npm update). Card handlers are split under **`routes/card/`** (read, CRUD, move/reorder).
 - **`server/archive/`** — Retention policy: moving stale closed cards to `archive/` and `cold-storage/`, plus startup git sync after moves.
 - **`server/analytics/`** — Chart and completed-view data: time buckets, card row readers, completion/cycle-time/board-state aggregations.
-- **`server/board/`** — Board catalog INI, model loading, and card path helpers (re-exported from **`boardCatalog.js`** for existing imports).
-- **`server/snapshots/`** — Column snapshot JSON format, storage, migration, and cumulative-flow chart building (re-exported from **`columnSnapshots.js`**).
+- **`server/board/`** — Board catalog INI (`catalog.js`), model loading (`model.js`), and card path helpers (`cardPaths.js`).
+- **`server/snapshots/`** — Column snapshot JSON format (`format.js`), storage/migration/capture (`storage.js`), and cumulative-flow chart building.
 - **Other top-level `server/` modules** — Data root and CLI parsing, INI read/write for `tasks/localuser.ini`, git subprocess helpers, npm update checks, and so on.
 
 Dependencies generally flow in one direction: route modules call domain helpers; domain helpers do not import the Express app. That keeps circular imports predictable.

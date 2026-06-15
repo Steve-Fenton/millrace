@@ -5,7 +5,7 @@ import {
   resolveCardFilePath,
   safeCardIniFilename,
   sanitizeSegment,
-} from "../../boardCatalog.js";
+} from "../../board/cardPaths.js";
 import { getGitHistory } from "../../gitHistory.js";
 
 /** @param {import("express").Application} app */

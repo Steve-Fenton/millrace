@@ -13,11 +13,8 @@ import {
   dataRoot,
   isBoardCatalogIniSection,
 } from "./dataRoot.js";
-import {
-  boardSlugFromMeta,
-  loadBoardCatalog,
-  sanitizeSegment,
-} from "./boardCatalog.js";
+import { loadBoardCatalog } from "./board/catalog.js";
+import { boardSlugFromMeta, sanitizeSegment } from "./board/cardPaths.js";
 import {
   readLocalUserIniSections,
   writeLocalUserIniSections,

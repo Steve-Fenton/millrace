@@ -15,13 +15,12 @@ import { boardCatalogIniPath, dataRoot, isBoardCatalogIniSection } from "../data
 import {
   allocateNewBoardSlugAndFile,
   appendBoardCatalogEntry,
-  boardSlugFromMeta,
   defaultAggregateBoardIniText,
   defaultNewBoardIniText,
   loadBoardCatalog,
-  resolveBoardIniPathForSlug,
-  sanitizeSegment,
-} from "../boardCatalog.js";
+} from "../board/catalog.js";
+import { boardSlugFromMeta, sanitizeSegment } from "../board/cardPaths.js";
+import { resolveBoardIniPathForSlug } from "../board/model.js";
 import {
   isPureColumnSwimlaneReorderForTasks,
   syncTaskFilesToNewBoardModel,
