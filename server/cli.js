@@ -1,7 +1,7 @@
 import { existsSync, realpathSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { runStartupArchiveStaleForCatalogSlugs } from "./archiveAnalytics.js";
+import { runStartupArchiveStaleForCatalogSlugs } from "./archive/retention.js";
 import { portFromArgv } from "./cliArgs.js";
 import { app } from "./createApp.js";
 import { ensureDefaultTasksLayout } from "./bootstrapTasks.js";

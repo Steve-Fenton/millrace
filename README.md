@@ -52,10 +52,14 @@ The API for the application: Express serves the static UI and `/api/*`, reads an
 The **`millrace` npm binary** points at the repo-root **`server.js`**. That file stays small on purpose: it re-exports `app`, `setMillraceDataRootForTesting`, and `millraceIntegrationStartup` for integration tests, starts listening only when Node’s main module is `server.js`, and delegates the rest to **`server/`**.
 
 - **`server/createApp.js`** — Builds the Express app: JSON body parser, registers all HTTP handlers, then mounts static file serving (your millrace data directory first, then the packaged UI from the repo root).
-- **`server/routes/*.js`** — Each file exports a `register…Routes(app)` function for one area (flow, boards, columns and charts, cards, git sync, local user).
-- **Everything else under `server/`** — Shared helpers: data root and CLI parsing, INI read/write for `tasks/localuser.ini`, git subprocess helpers, board catalog and card paths, archive/cold-storage and analytics helpers, and so on.
+- **`server/routes/`** — Each route file exports a `register…Routes(app)` function for one area (flow, boards, columns and charts, cards, git sync, local user, npm update). Card handlers are split under **`routes/card/`** (read, CRUD, move/reorder).
+- **`server/archive/`** — Retention policy: moving stale closed cards to `archive/` and `cold-storage/`, plus startup git sync after moves.
+- **`server/analytics/`** — Chart and completed-view data: time buckets, card row readers, completion/cycle-time/board-state aggregations.
+- **`server/board/`** — Board catalog INI, model loading, and card path helpers (re-exported from **`boardCatalog.js`** for existing imports).
+- **`server/snapshots/`** — Column snapshot JSON format, storage, migration, and cumulative-flow chart building (re-exported from **`columnSnapshots.js`**).
+- **Other top-level `server/` modules** — Data root and CLI parsing, INI read/write for `tasks/localuser.ini`, git subprocess helpers, npm update checks, and so on.
 
-Dependencies generally flow in one direction: route modules call shared helpers; helpers do not import the Express app. That keeps circular imports predictable.
+Dependencies generally flow in one direction: route modules call domain helpers; domain helpers do not import the Express app. That keeps circular imports predictable.
 
 ```mermaid
 flowchart TB
@@ -66,8 +70,12 @@ flowchart TB
     createApp[createApp.js]
     routeLayer[routes register functions]
   end
-  subgraph libs [Shared modules]
-    helpers[dataRoot gitOps boardCatalog archiveAnalytics localUserIni ...]
+  subgraph domain [Domain modules]
+    archive[archive retention]
+    analytics[analytics charts and rows]
+    board[board catalog and model]
+    snapshots[snapshots and cumulative flow]
+    shared[dataRoot gitOps localUserIni ...]
   end
   subgraph paths [Where files live]
     userData[dataRoot tasks localuser git]
@@ -75,8 +83,9 @@ flowchart TB
   end
   rootServer --> createApp
   createApp --> routeLayer
-  routeLayer --> helpers
-  helpers --> userData
+  routeLayer --> domain
+  domain --> shared
+  shared --> userData
   createApp -->|"express.static"| userData
   createApp -->|"express.static"| packagedUi
 ```

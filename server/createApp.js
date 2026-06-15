@@ -1,5 +1,5 @@
 import express from "express";
-import { runStartupArchiveStaleForCatalogSlugs } from "./archiveAnalytics.js";
+import { runStartupArchiveStaleForCatalogSlugs } from "./archive/retention.js";
 import { dataRoot } from "./dataRoot.js";
 import { REPO_ROOT } from "./repoRoot.js";
 import { registerBoardRoutes } from "./routes/boardRoutes.js";
