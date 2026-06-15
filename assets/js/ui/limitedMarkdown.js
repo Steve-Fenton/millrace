@@ -1,7 +1,7 @@
 /**
  * Render a restricted markdown subset into `target`.
- * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), paragraphs.
- * Supported inline: **bold**, *italic*, ~~strikethrough~~, [text](https://example.com).
+ * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), fenced code (```), paragraphs.
+ * Supported inline: **bold**, *italic*, ~~strikethrough~~, `code`, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
  * @param {HTMLElement} target
@@ -80,6 +80,30 @@ export function renderLimitedMarkdown(target, source, options) {
     const trimmed = line.trim();
     if (!trimmed) {
       closeLists();
+      continue;
+    }
+
+    const fenceMatch = /^(`{3,})(.*)$/.exec(trimmed);
+    if (fenceMatch) {
+      closeLists();
+      const info = fenceMatch[2].trim();
+      const codeLines = [];
+      lineIndex++;
+      while (lineIndex < lines.length) {
+        const codeLine = lines[lineIndex];
+        if (/^(`{3,})\s*$/.test(codeLine.trim())) {
+          break;
+        }
+        codeLines.push(codeLine);
+        lineIndex++;
+      }
+      const pre = document.createElement("pre");
+      pre.className = "flow-md-code-block";
+      const code = document.createElement("code");
+      if (info) code.dataset.flowMdLang = info;
+      code.textContent = codeLines.join("\n");
+      pre.append(code);
+      frag.append(pre);
       continue;
     }
 
@@ -206,6 +230,18 @@ function appendInlineMarkdown(parent, raw) {
       }
     }
 
+    if (text[i] === "`" && !text.startsWith("```", i)) {
+      const end = text.indexOf("`", i + 1);
+      if (end > i + 1) {
+        const code = document.createElement("code");
+        code.className = "flow-md-code";
+        code.textContent = text.slice(i + 1, end);
+        parent.append(code);
+        i = end + 1;
+        continue;
+      }
+    }
+
     if (text.startsWith("~~", i)) {
       const end = text.indexOf("~~", i + 2);
       if (end > i + 2) {
@@ -264,9 +300,10 @@ function appendInlineMarkdown(parent, raw) {
 function findNextInlineTokenStart(text, from) {
   const nextBold = text.indexOf("**", from);
   const nextStrike = text.indexOf("~~", from);
+  const nextBacktick = text.indexOf("`", from);
   const nextStar = text.indexOf("*", from);
   const nextLink = text.indexOf("[", from);
-  const idx = [nextBold, nextStrike, nextStar, nextLink]
+  const idx = [nextBold, nextStrike, nextBacktick, nextStar, nextLink]
     .filter((v) => v >= 0)
     .sort((a, b) => a - b)[0];
   return idx == null ? text.length : idx;

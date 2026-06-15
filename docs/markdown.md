@@ -9,6 +9,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 - Checkbox lists: `- [ ]` pending, `- [x]` or `- [X]` done
 - Ordered lists: `1. item`
 - Nested lists: indent list items by 2+ spaces under a parent item
+- Fenced code blocks: lines between opening and closing ` ``` ` (optional language tag on the opening line)
 - Paragraphs: plain text lines
 
 ## Supported inline formatting
@@ -16,6 +17,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 - Bold: `**bold**`
 - Italic: `*italic*`
 - Strikethrough: `~~crossed out~~`
+- Inline code: `` `code` ``
 - Links: `[label](https://example.com)`
 
 Only `http://` and `https://` links are rendered as clickable links.
