@@ -686,6 +686,14 @@ function getDragAfterElement(container, y) {
 }
 
 let flowDropMarkerEl = /** @type {HTMLLIElement | null} */ (null);
+let flowDragProxyEl = /** @type {HTMLElement | null} */ (null);
+let flowDragProxyOffset = /** @type {{ x: number, y: number } | null} */ (null);
+let flowDragSourceEl = /** @type {HTMLElement | null} */ (null);
+/** @type {((e: DragEvent) => void) | null} */
+let flowDragProxyMoveHandler = null;
+
+const FLOW_DRAG_IMAGE_HIDE =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 function getDropMarkerLi() {
   if (!flowDropMarkerEl) {
@@ -700,6 +708,53 @@ function removeFlowDropMarker() {
   if (flowDropMarkerEl?.parentNode) {
     flowDropMarkerEl.remove();
   }
+}
+
+function removeFlowDragProxy() {
+  if (flowDragSourceEl && flowDragProxyMoveHandler) {
+    flowDragSourceEl.removeEventListener("drag", flowDragProxyMoveHandler);
+  }
+  flowDragProxyMoveHandler = null;
+  flowDragSourceEl = null;
+  flowDragProxyOffset = null;
+  if (flowDragProxyEl?.parentNode) {
+    flowDragProxyEl.remove();
+  }
+  flowDragProxyEl = null;
+}
+
+/** Floating proxy follows the cursor; native drag image cannot show CSS transforms. */
+function startFlowDragProxy(e, cardEl) {
+  removeFlowDragProxy();
+  const rect = cardEl.getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+  const hideNative = new Image();
+  hideNative.src = FLOW_DRAG_IMAGE_HIDE;
+  e.dataTransfer.setDragImage(hideNative, 0, 0);
+
+  const proxy = cardEl.cloneNode(true);
+  proxy.classList.add("column-card--drag-proxy");
+  proxy.removeAttribute("draggable");
+  proxy.querySelector(".column-card-compass")?.remove();
+  proxy.style.width = `${rect.width}px`;
+  proxy.style.left = `${e.clientX - offsetX}px`;
+  proxy.style.top = `${e.clientY - offsetY}px`;
+  document.body.append(proxy);
+  requestAnimationFrame(() => {
+    proxy.classList.add("column-card--drag-proxy--tilted");
+  });
+
+  flowDragProxyEl = proxy;
+  flowDragProxyOffset = { x: offsetX, y: offsetY };
+  flowDragSourceEl = cardEl;
+  flowDragProxyMoveHandler = (ev) => {
+    if (!flowDragProxyEl || !flowDragProxyOffset) return;
+    if (ev.clientX === 0 && ev.clientY === 0) return;
+    flowDragProxyEl.style.left = `${ev.clientX - flowDragProxyOffset.x}px`;
+    flowDragProxyEl.style.top = `${ev.clientY - flowDragProxyOffset.y}px`;
+  };
+  cardEl.addEventListener("drag", flowDragProxyMoveHandler);
 }
 
 /** Clone visible card content into the drop marker so the slot previews the move. */
@@ -1479,11 +1534,13 @@ function renderBoard(
             e.dataTransfer.setData("application/json", payload);
             e.dataTransfer.setData("text/plain", payload);
             e.dataTransfer.effectAllowed = "move";
+            startFlowDragProxy(e, li);
             li.classList.add("column-card--dragging");
             syncDropMarkerPreview();
           });
           li.addEventListener("dragend", () => {
             li.classList.remove("column-card--dragging");
+            removeFlowDragProxy();
             clearDragFeedback();
           });
         }

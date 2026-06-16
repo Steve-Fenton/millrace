@@ -2378,6 +2378,23 @@ a.column-done-truncation-link:focus-visible {
   opacity: 0.38;
 }
 
+.column-card--drag-proxy {
+  position: fixed;
+  z-index: 985;
+  margin: 0;
+  pointer-events: none;
+  transform: rotate(0deg);
+  opacity: 1;
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+.column-card--drag-proxy--tilted {
+  transform: rotate(3deg);
+  opacity: 0.88;
+}
+
 .column-cell--drop-target {
   outline: 2px dashed var(--accent-emphasis);
   outline-offset: -2px;
