@@ -691,9 +691,21 @@ let flowDragProxyOffset = /** @type {{ x: number, y: number } | null} */ (null);
 let flowDragSourceEl = /** @type {HTMLElement | null} */ (null);
 /** @type {((e: DragEvent) => void) | null} */
 let flowDragProxyMoveHandler = null;
+let flowDragHideCanvas = /** @type {HTMLCanvasElement | null} */ (null);
 
-const FLOW_DRAG_IMAGE_HIDE =
-  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+/** In-DOM 1×1 canvas for setDragImage — avoids favicon fallback when an Image is not loaded yet. */
+function getFlowDragHideCanvas() {
+  if (flowDragHideCanvas) return flowDragHideCanvas;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  canvas.setAttribute("aria-hidden", "true");
+  canvas.style.cssText =
+    "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+  document.body.append(canvas);
+  flowDragHideCanvas = canvas;
+  return canvas;
+}
 
 function getDropMarkerLi() {
   if (!flowDropMarkerEl) {
@@ -729,14 +741,15 @@ function startFlowDragProxy(e, cardEl) {
   const rect = cardEl.getBoundingClientRect();
   const offsetX = e.clientX - rect.left;
   const offsetY = e.clientY - rect.top;
-  const hideNative = new Image();
-  hideNative.src = FLOW_DRAG_IMAGE_HIDE;
-  e.dataTransfer.setDragImage(hideNative, 0, 0);
+  e.dataTransfer.setDragImage(getFlowDragHideCanvas(), 0, 0);
 
   const proxy = cardEl.cloneNode(true);
   proxy.classList.add("column-card--drag-proxy");
   proxy.removeAttribute("draggable");
   proxy.querySelector(".column-card-compass")?.remove();
+  for (const el of proxy.querySelectorAll("a, img, button")) {
+    el.setAttribute("draggable", "false");
+  }
   proxy.style.width = `${rect.width}px`;
   proxy.style.left = `${e.clientX - offsetX}px`;
   proxy.style.top = `${e.clientY - offsetY}px`;
