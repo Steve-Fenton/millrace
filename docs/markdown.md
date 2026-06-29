@@ -10,6 +10,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 - Ordered lists: `1. item`
 - Nested lists: indent list items by 2+ spaces under a parent item
 - Fenced code blocks: lines between opening and closing ` ``` ` (optional language tag on the opening line)
+- Tables: GFM pipe tables (header row, `| --- |` separator row, then body rows)
 - Paragraphs: plain text lines
 
 ## Supported inline formatting
@@ -34,3 +35,14 @@ Example nested list:
 1. Item
    - Sub item
 2. Item
+
+Example table:
+
+```markdown
+| Task | Owner | Status |
+| ---- | ----- | ------ |
+| Wire API | Alex | Done |
+| Update docs | Sam | In progress |
+```
+
+Column alignment follows the separator row (`:---` left, `:---:` center, `---:` right).

@@ -1,6 +1,6 @@
 /**
  * Render a restricted markdown subset into `target`.
- * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), fenced code (```), paragraphs.
+ * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), GFM tables, fenced code (```), paragraphs.
  * Supported inline: **bold**, *italic*, ~~strikethrough~~, `code`, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
@@ -176,6 +176,32 @@ export function renderLimitedMarkdown(target, source, options) {
       continue;
     }
 
+    const headerCells = parseTableRow(trimmed);
+    if (headerCells && headerCells.length >= 1 && lineIndex + 1 < lines.length) {
+      const separatorCells = parseTableRow(lines[lineIndex + 1].trim());
+      if (
+        separatorCells &&
+        separatorCells.length === headerCells.length &&
+        isTableSeparatorRow(separatorCells)
+      ) {
+        closeLists();
+        const alignments = separatorCells.map(parseTableColumnAlignment);
+        lineIndex += 2;
+        const bodyRows = [];
+        while (lineIndex < lines.length) {
+          const bodyTrimmed = lines[lineIndex].trim();
+          if (!bodyTrimmed) break;
+          const rowCells = parseTableRow(bodyTrimmed);
+          if (!rowCells || rowCells.length !== headerCells.length) break;
+          bodyRows.push(rowCells);
+          lineIndex++;
+        }
+        lineIndex--;
+        appendMarkdownTable(frag, headerCells, bodyRows, alignments);
+        continue;
+      }
+    }
+
     closeLists();
     const p = document.createElement("p");
     p.className = "flow-md-paragraph";
@@ -191,6 +217,80 @@ export function renderLimitedMarkdown(target, source, options) {
   }
 
   target.replaceChildren(frag);
+}
+
+/**
+ * Split a markdown table row into trimmed cell strings, or null if the line is not a table row.
+ * @param {string} line
+ * @returns {string[] | null}
+ */
+function parseTableRow(line) {
+  const trimmed = String(line ?? "").trim();
+  if (!trimmed.includes("|")) return null;
+  let inner = trimmed;
+  if (inner.startsWith("|")) inner = inner.slice(1);
+  if (inner.endsWith("|")) inner = inner.slice(0, -1);
+  return inner.split("|").map((cell) => cell.trim());
+}
+
+/**
+ * @param {string[]} cells
+ * @returns {boolean}
+ */
+function isTableSeparatorRow(cells) {
+  return cells.length > 0 && cells.every((cell) => /^:?-+:?$/.test(cell));
+}
+
+/**
+ * @param {string} separatorCell
+ * @returns {"left" | "center" | "right"}
+ */
+function parseTableColumnAlignment(separatorCell) {
+  const s = String(separatorCell ?? "").trim();
+  const left = s.startsWith(":");
+  const right = s.endsWith(":");
+  if (left && right) return "center";
+  if (right) return "right";
+  return "left";
+}
+
+/**
+ * @param {HTMLElement | DocumentFragment} parent
+ * @param {string[]} headerCells
+ * @param {string[][]} bodyRows
+ * @param {Array<"left" | "center" | "right">} alignments
+ */
+function appendMarkdownTable(parent, headerCells, bodyRows, alignments) {
+  const table = document.createElement("table");
+  table.className = "flow-md-table";
+
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  for (let col = 0; col < headerCells.length; col++) {
+    const th = document.createElement("th");
+    th.style.textAlign = alignments[col] ?? "left";
+    appendInlineMarkdown(th, headerCells[col]);
+    headRow.append(th);
+  }
+  thead.append(headRow);
+  table.append(thead);
+
+  if (bodyRows.length) {
+    const tbody = document.createElement("tbody");
+    for (const rowCells of bodyRows) {
+      const tr = document.createElement("tr");
+      for (let col = 0; col < rowCells.length; col++) {
+        const td = document.createElement("td");
+        td.style.textAlign = alignments[col] ?? "left";
+        appendInlineMarkdown(td, rowCells[col]);
+        tr.append(td);
+      }
+      tbody.append(tr);
+    }
+    table.append(tbody);
+  }
+
+  parent.append(table);
 }
 
 /**
