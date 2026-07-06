@@ -36,6 +36,24 @@ test.describe("doc screenshots", () => {
   test("demo board — full page", async ({ page }) => {
     await page.goto("/");
     await page.waitForSelector(".board-shell", { timeout: 30_000 });
+
+    /** Limit Default swimlane height so the full-page shot fits without tall lanes. */
+    const defaultLaneRow = page.locator(".kanban-row").filter({
+      has: page.getByRole("rowheader", { name: "Swimlane Default" }),
+    });
+    const collapseToggle = defaultLaneRow.locator(".swimlane-collapse-toggle");
+    await expect(collapseToggle).toBeVisible({ timeout: 15_000 });
+
+    const mode = await collapseToggle.getAttribute("data-mode");
+    if (mode === "open") {
+      await collapseToggle.click();
+    } else if (mode === "collapsed") {
+      await collapseToggle.click();
+      await expect(collapseToggle).toHaveAttribute("data-mode", "open");
+      await collapseToggle.click();
+    }
+    await expect(defaultLaneRow).toHaveClass(/kanban-row--scroll/);
+
     const out = path.join(
       process.cwd(),
       "docs/screenshots/demo-board-full.png"
