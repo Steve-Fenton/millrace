@@ -682,6 +682,13 @@ body {
   background: var(--accent-dim);
 }
 
+.board-title-picker__separator {
+  height: 1px;
+  margin-block: 0.35rem;
+  margin-inline: 0;
+  background: var(--border);
+}
+
 .board-top-actions {
   display: flex;
   flex-wrap: wrap;

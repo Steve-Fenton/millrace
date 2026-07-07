@@ -1,6 +1,8 @@
+import { AGGREGATE_BOARD_KIND } from "../models/aggregateBoard.js";
+
 export const FLOW_ACTIVE_BOARD_SLUG_KEY = "flow:active-board-slug";
 
-/** @typedef {{ slug: string, name: string, file?: string }} BoardCatalogEntry */
+/** @typedef {{ slug: string, name: string, file?: string, kind?: string }} BoardCatalogEntry */
 
 /**
  * @returns {string}
@@ -63,8 +65,12 @@ async function fetchBoardCatalog() {
       typeof row.file === "string" && row.file.trim()
         ? row.file.trim()
         : "";
+    const kind =
+      typeof row.kind === "string" && row.kind.trim()
+        ? row.kind.trim()
+        : undefined;
     if (!slug) continue;
-    boards.push({ slug, name, file });
+    boards.push({ slug, name, file, kind });
   }
   return boards.length > 0 ? boards : defaultBoards();
 }
@@ -89,6 +95,41 @@ export async function resolveActiveBoardSelection() {
   const activeSlug = pickActiveSlug(boards, stored);
   if (activeSlug !== stored) writeStoredActiveBoardSlug(activeSlug);
   return { boards, activeSlug };
+}
+
+/**
+ * @param {BoardCatalogEntry} a
+ * @param {BoardCatalogEntry} b
+ */
+function compareBoardCatalogEntries(a, b) {
+  const na = String(a.name ?? a.slug ?? "").trim();
+  const nb = String(b.name ?? b.slug ?? "").trim();
+  const byName = na.localeCompare(nb, undefined, { sensitivity: "base" });
+  if (byName !== 0) return byName;
+  return String(a.slug ?? "").localeCompare(String(b.slug ?? ""), undefined, {
+    sensitivity: "base",
+  });
+}
+
+/**
+ * Aggregate boards first (A–Z), then normal boards (A–Z).
+ * @param {BoardCatalogEntry[]} boards
+ */
+export function boardsForTitlePicker(boards) {
+  /** @type {BoardCatalogEntry[]} */
+  const aggregates = [];
+  /** @type {BoardCatalogEntry[]} */
+  const normal = [];
+  for (const b of boards) {
+    if (String(b.kind ?? "").trim().toLowerCase() === AGGREGATE_BOARD_KIND) {
+      aggregates.push(b);
+    } else {
+      normal.push(b);
+    }
+  }
+  aggregates.sort(compareBoardCatalogEntries);
+  normal.sort(compareBoardCatalogEntries);
+  return { aggregates, normal };
 }
 
 /**
@@ -171,7 +212,10 @@ export function createBoardTitlePicker(opts, onSelect) {
     else close();
   }
 
-  for (const b of boards) {
+  const { aggregates, normal } = boardsForTitlePicker(boards);
+
+  /** @param {BoardCatalogEntry} b */
+  function appendBoardOption(b) {
     const opt = document.createElement("button");
     opt.type = "button";
     opt.className = "board-title-picker__option";
@@ -185,6 +229,16 @@ export function createBoardTitlePicker(opts, onSelect) {
     });
     panel.append(opt);
   }
+
+  for (const b of aggregates) appendBoardOption(b);
+  if (aggregates.length > 0 && normal.length > 0) {
+    const sep = document.createElement("div");
+    sep.className = "board-title-picker__separator";
+    sep.setAttribute("role", "separator");
+    sep.setAttribute("aria-hidden", "true");
+    panel.append(sep);
+  }
+  for (const b of normal) appendBoardOption(b);
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
