@@ -47,13 +47,8 @@ pnpm add -g pm2
 Spin it up for the first time:
 
 ```bash
-pnpm start
-```
-
-Then set to it to auto-start:
-
-```bash
-pnpm cycle
+pm2 start pnpm --name <process-name> -- start
+pm2 save
 ```
 
 ## Go
