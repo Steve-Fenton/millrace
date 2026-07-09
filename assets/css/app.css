@@ -210,7 +210,9 @@ body {
   min-height: calc(100dvh - 2 * clamp(1rem, 3vw, 2rem));
 }
 
-.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell) .board-top {
+.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell) .board-top,
+.board-shell:not(.complete-shell):not(.charts-shell):not(.admin-shell)
+  .board-filters-panel {
   flex-shrink: 0;
 }
 
@@ -1131,6 +1133,60 @@ dialog.git-conflict-dialog::backdrop {
   padding-inline: 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--elevated-overlay);
+}
+
+.board-filters-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  border-bottom: 1px solid transparent;
+  background: var(--elevated-overlay);
+  transition:
+    grid-template-rows 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.board-filters-panel--open {
+  grid-template-rows: 1fr;
+  border-bottom-color: var(--border-subtle);
+}
+
+.board-filters-panel__inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem 1.25rem;
+  padding-block: 0;
+  padding-inline: 1.25rem;
+  opacity: 0;
+  transition:
+    opacity 0.18s ease,
+    padding-block 0.22s ease;
+}
+
+.board-filters-panel--open .board-filters-panel__inner {
+  padding-block: 0.85rem;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-filters-panel,
+  .board-filters-panel__inner {
+    transition: none;
+  }
+}
+
+.board-filter-toggle[aria-expanded="true"] {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--surface-hover);
+}
+
+.board-filter-toggle-icon {
+  display: block;
+  pointer-events: none;
 }
 
 .complete-list-wrap {

@@ -84,6 +84,76 @@ test.describe("doc screenshots", () => {
     await openCard.screenshot({ path: out, scale: "css" });
   });
 
+  test("demo board — header with filters expanded", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForSelector(".board-shell", { timeout: 30_000 });
+
+    const filterToggle = page.getByRole("button", { name: "Filters" });
+    await expect(filterToggle).toBeVisible({ timeout: 15_000 });
+    await filterToggle.click();
+
+    const filterPanel = page.locator("#flow-board-filters-panel");
+    await expect(filterPanel).toHaveClass(/board-filters-panel--open/);
+    await expect(
+      page.getByRole("textbox", { name: "Search cards on the board" })
+    ).toBeVisible();
+    /** Wait until the open transition has given the panel a real height. */
+    await expect
+      .poll(async () => {
+        const box = await filterPanel.boundingBox();
+        return box?.height ?? 0;
+      })
+      .toBeGreaterThan(40);
+
+    const topActions = page.locator(".board-top-actions");
+    const ownerFilter = page.locator(".board-filters-panel .board-owner-filter");
+    const cardSearch = page.locator(".board-filters-panel .board-card-search");
+    const actionsBox = await topActions.boundingBox();
+    const ownerBox = await ownerFilter.boundingBox();
+    const searchBox = await cardSearch.boundingBox();
+    expect(actionsBox).toBeTruthy();
+    expect(ownerBox).toBeTruthy();
+    expect(searchBox).toBeTruthy();
+
+    /** Right-hand crop: header actions + Cards/Search controls (not the full-width panel). */
+    const pad = 12;
+    const x = Math.max(
+      0,
+      Math.min(actionsBox.x, ownerBox.x, searchBox.x) - pad
+    );
+    const y = Math.max(
+      0,
+      Math.min(actionsBox.y, ownerBox.y, searchBox.y) - pad
+    );
+    const right =
+      Math.max(
+        actionsBox.x + actionsBox.width,
+        ownerBox.x + ownerBox.width,
+        searchBox.x + searchBox.width
+      ) + pad;
+    const bottom =
+      Math.max(
+        actionsBox.y + actionsBox.height,
+        ownerBox.y + ownerBox.height,
+        searchBox.y + searchBox.height
+      ) + pad;
+
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-board-filters.png"
+    );
+    await page.screenshot({
+      path: out,
+      scale: "css",
+      clip: {
+        x,
+        y,
+        width: right - x,
+        height: bottom - y,
+      },
+    });
+  });
+
   test("demo board — edit card dialog", async ({ page }) => {
     /** The dialog caps at `calc(100dvh - 2rem)` and starts scrolling on the default
      *  1280×800 viewport, which crops the Links row in the screenshot. Give the page

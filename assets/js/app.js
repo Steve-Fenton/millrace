@@ -62,10 +62,7 @@ import {
   filterCardsBySearch,
   normalizeSearchQuery,
 } from "./ui/taskSearch.js";
-import {
-  FLOW_SEARCH_SUBMIT_ICON,
-  wrapSearchInputWithClear,
-} from "./ui/clearFilter.js";
+import { createBoardFiltersPanel } from "./ui/boardFiltersPanel.js";
 import { fillCardLinkWithNewTabIcon } from "./ui/cardLinkOpenNewTab.js";
 import {
   parseCardDeepLinkParams,
@@ -118,6 +115,9 @@ let ownerFilter = { mode: "all", owner: "" };
 
 /** Case-insensitive substring filter across title, description, note, owner, filename, links (board view). */
 let boardCardSearch = "";
+
+/** Whether the board filter row is expanded (session only; not persisted). */
+let boardFiltersOpen = false;
 
 /**
  * @param {{ closed?: string }} card
@@ -1037,43 +1037,25 @@ function renderBoard(
 
   filterWrap.append(filterLabel, ownerSelect);
 
-  const searchWrap = document.createElement("div");
-  searchWrap.className = "board-card-search";
-  const searchLabel = document.createElement("label");
-  searchLabel.className = "board-owner-filter-label";
-  searchLabel.htmlFor = "flow-board-card-search";
-  searchLabel.textContent = "Search";
-  const searchInput = document.createElement("input");
-  searchInput.type = "text";
-  searchInput.id = "flow-board-card-search";
-  searchInput.className = "flow-input board-card-search-input";
-  searchInput.placeholder = "Filter cards…";
-  searchInput.setAttribute("aria-label", "Search cards on the board");
-  searchInput.autocomplete = "off";
-  searchInput.value = boardCardSearch;
-  function runBoardSearch() {
-    boardCardSearch = searchInput.value;
-    void loadApp(false);
-  }
-  const searchFieldWrap = wrapSearchInputWithClear(searchInput, () => {
-    boardCardSearch = "";
-    void loadApp(false);
+  const {
+    toggle: filterToggle,
+    panel: filterPanel,
+  } = createBoardFiltersPanel({
+    open: boardFiltersOpen,
+    onOpenChange: (open) => {
+      boardFiltersOpen = open;
+    },
+    searchValue: boardCardSearch,
+    onSearch: (query) => {
+      boardCardSearch = query;
+      void loadApp(false);
+    },
+    onSearchClear: () => {
+      boardCardSearch = "";
+      void loadApp(false);
+    },
+    leadingControls: [filterWrap],
   });
-  const searchBtn = document.createElement("button");
-  searchBtn.type = "button";
-  searchBtn.className =
-    "flow-btn flow-btn-primary flow-btn-icon board-card-search-btn board-card-search-btn--icon";
-  searchBtn.setAttribute("aria-label", "Search");
-  searchBtn.title = "Search";
-  searchBtn.innerHTML = FLOW_SEARCH_SUBMIT_ICON;
-  searchBtn.addEventListener("click", () => runBoardSearch());
-  searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      runBoardSearch();
-    }
-  });
-  searchWrap.append(searchLabel, searchFieldWrap, searchBtn);
 
   topLeft.append(brand, titleOrPicker);
 
@@ -1108,7 +1090,7 @@ function renderBoard(
     void performBoardGitSync();
   });
 
-  topActions.append(filterWrap, searchWrap, syncBtn, badge, navMenu);
+  topActions.append(filterToggle, syncBtn, badge, navMenu);
   top.append(topLeft, topActions);
 
   const kanban = document.createElement("div");
@@ -1842,7 +1824,7 @@ function renderBoard(
   const kanbanScroll = document.createElement("div");
   kanbanScroll.className = "board-kanban-scroll";
   kanbanScroll.append(kanban);
-  root.append(top, kanbanScroll);
+  root.append(top, filterPanel, kanbanScroll);
   if (
     compassPersistCard &&
     compassPersistCard.boardSlug === boardSlug &&

@@ -10,7 +10,11 @@ Task cards are arranged on the board and you can drag and drop them to a new loc
 
 ## Filter and search
 
-Use the **Owner** dropdown to show all cards, only **Mine** (your email from [Preferences](../preferences/index.md)), or a specific board user.
+Click the **filter** icon in the board header to show or hide the filter row.
+
+![Screenshot: Board header with filters expanded](../screenshots/demo-board-filters.png)
+
+Use the **Cards** dropdown to show all cards, only **Mine** (your email from [Preferences](../preferences/index.md)), or a specific board user.
 
 Use **Search** to filter visible cards by title, description, note, owner, filename, or links. Matching is case-insensitive and updates when you press Enter or click the search button.
 
