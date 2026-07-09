@@ -112,6 +112,18 @@ function compareBoardCatalogEntries(a, b) {
 }
 
 /**
+ * @param {BoardCatalogEntry} board
+ * @param {string} query
+ */
+export function boardMatchesPickerFilter(board, query) {
+  const q = String(query ?? "").trim().toLowerCase();
+  if (!q) return true;
+  const name = String(board.name ?? "").toLowerCase();
+  const slug = String(board.slug ?? "").toLowerCase();
+  return name.includes(q) || slug.includes(q);
+}
+
+/**
  * Aggregate boards first (A–Z), then normal boards (A–Z).
  * @param {BoardCatalogEntry[]} boards
  */
@@ -155,13 +167,14 @@ export function createBoardTitlePicker(opts, onSelect) {
   wrap.className = "board-title-picker";
 
   const panelId = `flow-board-picker-${Math.random().toString(36).slice(2, 9)}`;
+  const listId = `${panelId}-list`;
 
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "board-title board-title-picker__trigger";
   btn.setAttribute("aria-haspopup", "listbox");
   btn.setAttribute("aria-expanded", "false");
-  btn.setAttribute("aria-controls", panelId);
+  btn.setAttribute("aria-controls", listId);
   btn.setAttribute("aria-label", `Board: ${name}. Change board`);
   btn.title = "Change board";
 
@@ -181,14 +194,46 @@ export function createBoardTitlePicker(opts, onSelect) {
   panel.id = panelId;
   panel.className = "board-title-picker__panel";
   panel.hidden = true;
-  panel.setAttribute("role", "listbox");
-  panel.setAttribute("aria-label", "Boards");
+
+  const filterWrap = document.createElement("div");
+  filterWrap.className = "board-title-picker__filter";
+
+  const filterInput = document.createElement("input");
+  filterInput.type = "search";
+  filterInput.className = "flow-input board-title-picker__filter-input";
+  filterInput.placeholder = "Filter boards…";
+  filterInput.setAttribute("aria-label", "Filter boards");
+  filterInput.autocomplete = "off";
+  filterInput.addEventListener("click", (e) => e.stopPropagation());
+  filterInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+      btn.focus();
+    }
+  });
+
+  filterWrap.append(filterInput);
+
+  const list = document.createElement("div");
+  list.id = listId;
+  list.className = "board-title-picker__list";
+  list.setAttribute("role", "listbox");
+  list.setAttribute("aria-label", "Boards");
+
+  const empty = document.createElement("p");
+  empty.className = "board-title-picker__empty";
+  empty.textContent = "No matching boards";
+  empty.hidden = true;
 
   /** @type {(() => void) | null} */
   let closeOnDoc = null;
 
   function close() {
     panel.hidden = true;
+    filterInput.value = "";
+    applyFilter();
     btn.setAttribute("aria-expanded", "false");
     if (closeOnDoc) {
       document.removeEventListener("mousedown", closeOnDoc);
@@ -198,7 +243,10 @@ export function createBoardTitlePicker(opts, onSelect) {
 
   function open() {
     panel.hidden = false;
+    filterInput.value = "";
+    applyFilter();
     btn.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => filterInput.focus());
     if (!closeOnDoc) {
       closeOnDoc = (e) => {
         if (!wrap.contains(/** @type {Node} */ (e.target))) close();
@@ -214,8 +262,11 @@ export function createBoardTitlePicker(opts, onSelect) {
 
   const { aggregates, normal } = boardsForTitlePicker(boards);
 
-  /** @param {BoardCatalogEntry} b */
-  function appendBoardOption(b) {
+  /** @type {{ el: HTMLButtonElement, board: BoardCatalogEntry, group: "aggregate" | "normal" }[]} */
+  const optionEntries = [];
+
+  /** @param {BoardCatalogEntry} b @param {"aggregate" | "normal"} group */
+  function appendBoardOption(b, group) {
     const opt = document.createElement("button");
     opt.type = "button";
     opt.className = "board-title-picker__option";
@@ -227,18 +278,41 @@ export function createBoardTitlePicker(opts, onSelect) {
       close();
       if (b.slug !== activeSlug) onSelect(b.slug);
     });
-    panel.append(opt);
+    list.append(opt);
+    optionEntries.push({ el: opt, board: b, group });
   }
 
-  for (const b of aggregates) appendBoardOption(b);
-  if (aggregates.length > 0 && normal.length > 0) {
-    const sep = document.createElement("div");
-    sep.className = "board-title-picker__separator";
-    sep.setAttribute("role", "separator");
-    sep.setAttribute("aria-hidden", "true");
-    panel.append(sep);
+  for (const b of aggregates) appendBoardOption(b, "aggregate");
+
+  const separator = document.createElement("div");
+  separator.className = "board-title-picker__separator";
+  separator.setAttribute("role", "separator");
+  separator.setAttribute("aria-hidden", "true");
+  list.append(separator);
+
+  for (const b of normal) appendBoardOption(b, "normal");
+
+  function applyFilter() {
+    const q = filterInput.value.trim();
+    let visibleAggregates = 0;
+    let visibleNormal = 0;
+    for (const entry of optionEntries) {
+      const match = boardMatchesPickerFilter(entry.board, q);
+      entry.el.hidden = !match;
+      entry.el.classList.toggle("board-title-picker__option--filtered-out", !match);
+      if (match) {
+        if (entry.group === "aggregate") visibleAggregates++;
+        else visibleNormal++;
+      }
+    }
+    separator.hidden = visibleAggregates === 0 || visibleNormal === 0;
+    empty.hidden = visibleAggregates + visibleNormal > 0;
+    list.hidden = !empty.hidden;
   }
-  for (const b of normal) appendBoardOption(b);
+
+  filterInput.addEventListener("input", applyFilter);
+
+  panel.append(filterWrap, list, empty);
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -246,12 +320,14 @@ export function createBoardTitlePicker(opts, onSelect) {
   });
 
   wrap.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !panel.hidden) {
+    if (e.key === "Escape" && !panel.hidden && document.activeElement !== filterInput) {
       e.preventDefault();
       close();
       btn.focus();
     }
   });
+
+  applyFilter();
 
   wrap.append(btn, panel);
   return wrap;

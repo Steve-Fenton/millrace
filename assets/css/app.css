@@ -648,12 +648,39 @@ body {
   z-index: 40;
   min-width: min(100%, 12rem);
   max-width: min(20rem, 92vw);
-  padding-block: 0.35rem;
+  padding-block: 0;
   padding-inline: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);
   box-shadow: var(--shadow-dropdown);
+}
+
+.board-title-picker__filter {
+  padding-block: 0.45rem 0.5rem;
+  padding-inline: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.board-title-picker__filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.88rem;
+}
+
+.board-title-picker__list {
+  max-height: min(16rem, 50vh);
+  overflow-y: auto;
+  padding-block: 0.35rem;
+  padding-inline: 0;
+}
+
+.board-title-picker__empty {
+  margin: 0;
+  padding-block: 0.5rem 0.65rem;
+  padding-inline: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .board-title-picker__option {
@@ -670,6 +697,16 @@ body {
   color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+
+.board-title-picker__option[hidden],
+.board-title-picker__option--filtered-out {
+  display: none !important;
+}
+
+.board-title-picker__separator[hidden],
+.board-title-picker__list[hidden] {
+  display: none !important;
 }
 
 .board-title-picker__option:hover {
