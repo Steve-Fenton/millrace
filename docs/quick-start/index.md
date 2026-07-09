@@ -32,6 +32,12 @@ You can choose your own port by adding it to the `start` command, i.e.: `pnpm ex
 
 Run the following scripts.
 
+Set-up PNPM (it may report "No changes to the environment were made", which is fine).
+
+```bash
+pnpm setup
+```
+
 Install dependencies:
 
 ```bash
@@ -55,7 +61,7 @@ pm2 save
 
 Open `http://localhost:8888` and use your app.
 
-If you changed the port number in step 2, adjust the URL accordingly.
+If you changed the port number in step 2, adjust the port number in the URL accordingly.
 
 The first time you open Millrace, you'll see a default board.
 
