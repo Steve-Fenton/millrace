@@ -7,6 +7,7 @@ import { app } from "./createApp.js";
 import { ensureDefaultTasksLayout } from "./bootstrapTasks.js";
 import { runMillraceSnapshotLayoutStartup } from "./millraceSnapshotLayout.js";
 import { boardCatalogIniPath, dataRoot } from "./dataRoot.js";
+import { pullLatestProjectChanges } from "./npmUpdatePrepare.js";
 
 const PORT = portFromArgv(process.argv) ?? (Number(process.env.PORT) || 8888);
 const HOST = process.env.HOST;
@@ -51,9 +52,22 @@ export function startMillraceServerIfPrimary() {
   void startPrimaryServer();
 }
 
+/**
+ * Pull remote changes first so startup automation (column snapshots / archive)
+ * and the first UI load see up-to-date tasks instead of yesterday's local tree.
+ */
+export async function runPrimaryServerPreListen(deps = {}) {
+  const pullFn = deps.pullLatestProjectChanges ?? pullLatestProjectChanges;
+  const bootstrapFn = deps.ensureDefaultTasksLayout ?? ensureDefaultTasksLayout;
+  const snapshotFn =
+    deps.runMillraceSnapshotLayoutStartup ?? runMillraceSnapshotLayoutStartup;
+  await pullFn();
+  await bootstrapFn();
+  await snapshotFn();
+}
+
 async function startPrimaryServer() {
-  await ensureDefaultTasksLayout();
-  await runMillraceSnapshotLayoutStartup();
+  await runPrimaryServerPreListen();
   if (HOST != null && HOST !== "") {
     app.listen(PORT, HOST, () => {
       void onListen();
