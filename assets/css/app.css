@@ -1425,7 +1425,7 @@ dialog.git-conflict-dialog::backdrop {
 .admin-shell {
   display: flex;
   flex-direction: column;
-  min-height: min(100vh - 2rem, 100%);
+  min-height: 66vh;
 }
 
 .charts-toolbar {
