@@ -7,6 +7,71 @@ import {
 export const BOARD_FILTER_ICON = `<svg class="board-filter-toggle-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 5h16l-6.5 7.5V19l-3 1.5v-8L4 5z"/></svg>`;
 
 export const BOARD_FILTERS_PANEL_ID = "flow-board-filters-panel";
+export const COMPLETE_FILTERS_PANEL_ID = "flow-complete-filters-panel";
+export const CHARTS_FILTERS_PANEL_ID = "flow-charts-filters-panel";
+
+/**
+ * Collapsible filter chrome: header toggle + expandable row (right-aligned).
+ *
+ * @param {{
+ *   open?: boolean,
+ *   onOpenChange?: (open: boolean) => void,
+ *   panelId: string,
+ *   children: HTMLElement[],
+ * }} opts
+ * @returns {{
+ *   toggle: HTMLButtonElement,
+ *   panel: HTMLDivElement,
+ *   isOpen: () => boolean,
+ * }}
+ */
+export function createCollapsibleFiltersPanel(opts) {
+  let open = Boolean(opts.open);
+  const onOpenChange = opts.onOpenChange;
+  const panelId = opts.panelId;
+
+  const panel = document.createElement("div");
+  panel.id = panelId;
+  panel.className = "board-filters-panel";
+  if (open) {
+    panel.classList.add("board-filters-panel--open");
+  } else {
+    panel.inert = true;
+  }
+  const panelInner = document.createElement("div");
+  panelInner.className = "board-filters-panel__inner";
+  for (const el of opts.children) {
+    panelInner.append(el);
+  }
+  panel.append(panelInner);
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "flow-btn flow-btn-icon board-filter-toggle";
+  toggle.setAttribute("aria-label", "Filters");
+  toggle.title = "Filters";
+  toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  toggle.setAttribute("aria-controls", panelId);
+  toggle.innerHTML = BOARD_FILTER_ICON;
+
+  function applyOpen() {
+    panel.classList.toggle("board-filters-panel--open", open);
+    panel.inert = !open;
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    onOpenChange?.(open);
+  }
+
+  toggle.addEventListener("click", () => {
+    open = !open;
+    applyOpen();
+  });
+
+  return {
+    toggle,
+    panel,
+    isOpen: () => open,
+  };
+}
 
 /**
  * Collapsible board filter chrome: header toggle + expandable row with search
@@ -29,9 +94,6 @@ export const BOARD_FILTERS_PANEL_ID = "flow-board-filters-panel";
  * }}
  */
 export function createBoardFiltersPanel(opts) {
-  let open = Boolean(opts.open);
-  const onOpenChange = opts.onOpenChange;
-
   const searchWrap = document.createElement("div");
   searchWrap.className = "board-card-search";
   const searchLabel = document.createElement("label");
@@ -70,40 +132,11 @@ export function createBoardFiltersPanel(opts) {
   });
   searchWrap.append(searchLabel, searchFieldWrap, searchBtn);
 
-  const panel = document.createElement("div");
-  panel.id = BOARD_FILTERS_PANEL_ID;
-  panel.className = "board-filters-panel";
-  if (open) {
-    panel.classList.add("board-filters-panel--open");
-  } else {
-    panel.inert = true;
-  }
-  const panelInner = document.createElement("div");
-  panelInner.className = "board-filters-panel__inner";
-  for (const el of opts.leadingControls ?? []) {
-    panelInner.append(el);
-  }
-  panelInner.append(searchWrap);
-  panel.append(panelInner);
-
-  function applyOpen() {
-    panel.classList.toggle("board-filters-panel--open", open);
-    panel.inert = !open;
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    onOpenChange?.(open);
-  }
-
-  const toggle = document.createElement("button");
-  toggle.type = "button";
-  toggle.className = "flow-btn flow-btn-icon board-filter-toggle";
-  toggle.setAttribute("aria-label", "Filters");
-  toggle.title = "Filters";
-  toggle.setAttribute("aria-expanded", open ? "true" : "false");
-  toggle.setAttribute("aria-controls", BOARD_FILTERS_PANEL_ID);
-  toggle.innerHTML = BOARD_FILTER_ICON;
-  toggle.addEventListener("click", () => {
-    open = !open;
-    applyOpen();
+  const { toggle, panel, isOpen } = createCollapsibleFiltersPanel({
+    open: opts.open,
+    onOpenChange: opts.onOpenChange,
+    panelId: BOARD_FILTERS_PANEL_ID,
+    children: [...(opts.leadingControls ?? []), searchWrap],
   });
 
   return {
@@ -111,6 +144,6 @@ export function createBoardFiltersPanel(opts) {
     panel,
     searchInput,
     searchBtn,
-    isOpen: () => open,
+    isOpen,
   };
 }

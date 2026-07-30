@@ -29,6 +29,10 @@ import {
   FLOW_SEARCH_SUBMIT_ICON,
   wrapSearchInputWithClear,
 } from "../ui/clearFilter.js";
+import {
+  COMPLETE_FILTERS_PANEL_ID,
+  createCollapsibleFiltersPanel,
+} from "../ui/boardFiltersPanel.js";
 import { fillCardLinkWithNewTabIcon } from "../ui/cardLinkOpenNewTab.js";
 import { swimlaneNameForIniItem } from "../ini/cardIni.js";
 import { resolveCardSwimlaneIndex } from "../ini/swimlaneResolve.js";
@@ -38,6 +42,9 @@ import { displayTaskTitle } from "../models/taskModel.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 const PAGE_SIZE = 50;
+
+/** @type {boolean} */
+let completeFiltersOpen = false;
 
 const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
 
@@ -449,17 +456,8 @@ function renderCompleteShell(
   searchWrap.append(searchLabel, searchFieldWrap, deepLabel, searchBtn);
   topLeft.append(brand, titleOrPicker);
 
-  const topActions = document.createElement("div");
-  topActions.className = "board-top-actions";
-
-  const navMenu = createFlowNavMenu({ current: "completed" });
-
-  topActions.append(navMenu);
-  top.append(topLeft, topActions);
-
-  const filterPanel = document.createElement("div");
-  filterPanel.className = "complete-filters-panel";
-  filterPanel.append(filterWrap, whenWrap);
+  /** @type {HTMLElement[]} */
+  const filterChildren = [filterWrap, whenWrap];
   const showLaneFilter =
     swimlanesSorted.length > 0 || legacySwimlaneFilters.length > 0;
   if (showLaneFilter) {
@@ -530,9 +528,29 @@ function renderCompleteShell(
       void main();
     });
     laneWrap.append(laneLabel, laneSelect);
-    filterPanel.append(laneWrap);
+    filterChildren.push(laneWrap);
   }
-  filterPanel.append(searchWrap);
+  filterChildren.push(searchWrap);
+
+  const {
+    toggle: filterToggle,
+    panel: filterPanel,
+  } = createCollapsibleFiltersPanel({
+    open: completeFiltersOpen,
+    onOpenChange: (open) => {
+      completeFiltersOpen = open;
+    },
+    panelId: COMPLETE_FILTERS_PANEL_ID,
+    children: filterChildren,
+  });
+
+  const topActions = document.createElement("div");
+  topActions.className = "board-top-actions";
+
+  const navMenu = createFlowNavMenu({ current: "completed" });
+
+  topActions.append(filterToggle, navMenu);
+  top.append(topLeft, topActions);
 
   const scroll = document.createElement("div");
   scroll.className = "complete-list-wrap";

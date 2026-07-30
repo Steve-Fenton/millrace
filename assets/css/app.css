@@ -506,7 +506,7 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.85rem;
-  flex: 1 1 14rem;
+  flex: 0 1 auto;
   min-width: min(100%, 10rem);
 }
 
@@ -1146,15 +1146,9 @@ dialog.git-conflict-dialog::backdrop {
   max-height: min(100vh - 2rem, 100%);
 }
 
-.complete-filters-panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.85rem 1.25rem;
-  padding-block: 0.75rem;
-  padding-inline: 1.25rem;
-  border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
+.complete-shell .board-top,
+.complete-shell .board-filters-panel {
+  flex-shrink: 0;
 }
 
 .board-filters-panel {
@@ -1428,11 +1422,8 @@ dialog.git-conflict-dialog::backdrop {
   min-height: 66vh;
 }
 
-.charts-toolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.45rem 0.55rem;
+.charts-shell .board-top,
+.charts-shell .board-filters-panel {
   flex-shrink: 0;
 }
 

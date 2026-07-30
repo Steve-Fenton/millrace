@@ -11,7 +11,7 @@ You can use the **Expand** icon to view a larger version of each chart.
 
 ## Granularity
 
-You can set chart **granularity** (for example weekly vs monthly) from this view. That preference is stored with your local profile (see [Preferences](../preferences/index.md) and `tasks/localuser.ini` in the main docs).
+Click the **filter** icon in the header to show or hide the filter row. Use **Group by** to set chart granularity (weekly or monthly). That preference is stored with your local profile (see [Preferences](../preferences/index.md) and `tasks/localuser.ini` in the main docs).
 
 ## Completions
 

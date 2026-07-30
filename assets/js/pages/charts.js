@@ -16,10 +16,17 @@ import {
 } from "../ui/boardSelector.js";
 import { escapeHtml } from "../html/escape.js";
 import { initFlowTheme } from "../ui/applyTheme.js";
+import {
+  CHARTS_FILTERS_PANEL_ID,
+  createCollapsibleFiltersPanel,
+} from "../ui/boardFiltersPanel.js";
 
 const NO_STORE = /** @type {const} */ ({ cache: "no-store" });
 
 /** @typedef {"weekly" | "monthly"} Granularity */
+
+/** @type {boolean} */
+let chartsFiltersOpen = false;
 
 /**
  * @param {string} boardSlug
@@ -1545,8 +1552,8 @@ function renderChartsShell(
     titleOrPicker.title = name;
   }
 
-  const toolbar = document.createElement("div");
-  toolbar.className = "charts-toolbar";
+  const granWrap = document.createElement("div");
+  granWrap.className = "board-owner-filter";
 
   const granLabel = document.createElement("label");
   granLabel.className = "board-owner-filter-label";
@@ -1585,15 +1592,27 @@ function renderChartsShell(
     })();
   });
 
-  toolbar.append(granLabel, granSelect);
-  topLeft.append(brand, titleOrPicker, toolbar);
+  granWrap.append(granLabel, granSelect);
+  topLeft.append(brand, titleOrPicker);
+
+  const {
+    toggle: filterToggle,
+    panel: filterPanel,
+  } = createCollapsibleFiltersPanel({
+    open: chartsFiltersOpen,
+    onOpenChange: (open) => {
+      chartsFiltersOpen = open;
+    },
+    panelId: CHARTS_FILTERS_PANEL_ID,
+    children: [granWrap],
+  });
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
 
   const navMenu = createFlowNavMenu({ current: "charts" });
 
-  topActions.append(navMenu);
+  topActions.append(filterToggle, navMenu);
   top.append(topLeft, topActions);
 
   const body = document.createElement("div");
@@ -1745,7 +1764,7 @@ function renderChartsShell(
   );
 
   body.append(dashboard);
-  root.append(top, body);
+  root.append(top, filterPanel, body);
   return root;
 }
 

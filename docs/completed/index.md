@@ -4,7 +4,7 @@ The **Completed** view shows cards that are finished. By default these come from
 
 ![Screenshot: The completed view](../screenshots/demo-completed-full.png)
 
-You can filter the card list by owner, swimlane, and **Closed** date (this week, this month, last week, last month, or all). Use **Search** to match title, owner, links, and related fields.
+Click the **filter** icon in the header to show or hide the filter row (aligned to the right). You can filter the card list by owner, swimlane, and **Closed** date (this week, this month, last week, last month, or all). Use **Search** to match title, owner, links, and related fields.
 
 Each row shows a source badge: **Board**, **Archive**, **Cold**, **Abandoned**, or **In-flight**, so you can tell where a card was found.
 

@@ -208,6 +208,19 @@ test.describe("doc screenshots", () => {
   test("demo board — completed page full page", async ({ page }) => {
     await page.goto("/complete/");
     await page.waitForSelector(".complete-shell", { timeout: 30_000 });
+
+    const filterToggle = page.getByRole("button", { name: "Filters" });
+    await expect(filterToggle).toBeVisible({ timeout: 15_000 });
+    await filterToggle.click();
+    const filterPanel = page.locator("#flow-complete-filters-panel");
+    await expect(filterPanel).toHaveClass(/board-filters-panel--open/);
+    await expect
+      .poll(async () => {
+        const box = await filterPanel.boundingBox();
+        return box?.height ?? 0;
+      })
+      .toBeGreaterThan(40);
+
     const out = path.join(
       process.cwd(),
       "docs/screenshots/demo-completed-full.png"
@@ -224,6 +237,19 @@ test.describe("doc screenshots", () => {
     await page.goto("/charts/?g=weekly");
     await page.waitForSelector(".charts-shell", { timeout: 30_000 });
     await expect(page.locator("#flow-chart-granularity")).toHaveValue("weekly");
+
+    const filterToggle = page.getByRole("button", { name: "Filters" });
+    await expect(filterToggle).toBeVisible({ timeout: 15_000 });
+    await filterToggle.click();
+    const filterPanel = page.locator("#flow-charts-filters-panel");
+    await expect(filterPanel).toHaveClass(/board-filters-panel--open/);
+    await expect
+      .poll(async () => {
+        const box = await filterPanel.boundingBox();
+        return box?.height ?? 0;
+      })
+      .toBeGreaterThan(40);
+
     const out = path.join(
       process.cwd(),
       "docs/screenshots/demo-charts-full.png"
@@ -396,6 +422,19 @@ test.describe("doc screenshots", () => {
     await page.waitForSelector(".charts-shell", { timeout: 30_000 });
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     await expect(page.locator("#flow-chart-granularity")).toHaveValue("weekly");
+
+    const filterToggle = page.getByRole("button", { name: "Filters" });
+    await expect(filterToggle).toBeVisible({ timeout: 15_000 });
+    await filterToggle.click();
+    const filterPanel = page.locator("#flow-charts-filters-panel");
+    await expect(filterPanel).toHaveClass(/board-filters-panel--open/);
+    await expect
+      .poll(async () => {
+        const box = await filterPanel.boundingBox();
+        return box?.height ?? 0;
+      })
+      .toBeGreaterThan(40);
+
     const out = path.join(
       process.cwd(),
       "docs/screenshots/demo-charts-full-light.png"
