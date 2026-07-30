@@ -1062,10 +1062,6 @@ function renderBoard(
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
 
-  const badge = document.createElement("span");
-  badge.className = "board-badge";
-  badge.textContent = aggregate ? "Aggregate" : "Kanban";
-
   const navMenu = createFlowNavMenu({ current: "board" });
 
   const syncBtn = document.createElement("button");
@@ -1090,7 +1086,16 @@ function renderBoard(
     void performBoardGitSync();
   });
 
-  topActions.append(filterToggle, syncBtn, badge, navMenu);
+  /** @type {HTMLElement[]} */
+  const topActionNodes = [filterToggle, syncBtn];
+  if (aggregate) {
+    const badge = document.createElement("span");
+    badge.className = "board-badge board-badge--accent";
+    badge.textContent = "Aggregate";
+    topActionNodes.push(badge);
+  }
+  topActionNodes.push(navMenu);
+  topActions.append(...topActionNodes);
   top.append(topLeft, topActions);
 
   const kanban = document.createElement("div");

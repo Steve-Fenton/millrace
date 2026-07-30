@@ -452,13 +452,9 @@ function renderCompleteShell(
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
 
-  const badge = document.createElement("span");
-  badge.className = "board-badge";
-  badge.textContent = "Completed";
-
   const navMenu = createFlowNavMenu({ current: "completed" });
 
-  topActions.append(badge, navMenu);
+  topActions.append(navMenu);
   top.append(topLeft, topActions);
 
   const filterPanel = document.createElement("div");

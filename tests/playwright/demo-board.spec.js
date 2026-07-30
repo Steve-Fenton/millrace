@@ -27,11 +27,39 @@ const CHART_EXPAND_SHOTS = [
 ];
 
 test.describe("doc screenshots", () => {
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context, page }) => {
     await context.addInitScript((key) => {
       localStorage.setItem(key, "demo");
     }, ACTIVE_BOARD_KEY);
+    await useTheme(page, "dark");
   });
+
+  /**
+   * Force a theme via preferences API so screenshots do not depend on local settings.
+   * @param {import("@playwright/test").Page} page
+   * @param {"dark" | "light"} theme
+   */
+  async function useTheme(page, theme) {
+    await page.unroute("**/api/local-user/preferences");
+    await page.route("**/api/local-user/preferences", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      const data = await response.json();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...data, theme }),
+      });
+    });
+  }
+
+  /** @param {import("@playwright/test").Page} page */
+  async function useLightTheme(page) {
+    await useTheme(page, "light");
+  }
 
   test("demo board — full page", async ({ page }) => {
     await page.goto("/");
@@ -270,7 +298,9 @@ test.describe("doc screenshots", () => {
     await expect(page.getByRole("heading", { name: "Users", level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: "Add user" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Save" })).toBeVisible();
-    await expect(page.locator(".flow-nav-menu__trigger")).toBeVisible();
+    await expect(page.locator(".flow-nav-menu__links a[aria-current='page']")).toHaveText(
+      "Users"
+    );
   });
 
   test("demo board — boards edit board dialog (Demo row)", async ({ page }) => {
@@ -330,5 +360,79 @@ test.describe("doc screenshots", () => {
         page.locator("dialog.flow-modal--chart-expand")
       ).toHaveCount(0);
     }
+  });
+
+  test("demo board — light theme board full page", async ({ page }) => {
+    await useLightTheme(page);
+    await page.goto("/");
+    await page.waitForSelector(".board-shell", { timeout: 30_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+    const defaultLaneRow = page.locator(".kanban-row").filter({
+      has: page.getByRole("rowheader", { name: "Swimlane Default" }),
+    });
+    const collapseToggle = defaultLaneRow.locator(".swimlane-collapse-toggle");
+    await expect(collapseToggle).toBeVisible({ timeout: 15_000 });
+    const mode = await collapseToggle.getAttribute("data-mode");
+    if (mode === "open") {
+      await collapseToggle.click();
+    } else if (mode === "collapsed") {
+      await collapseToggle.click();
+      await expect(collapseToggle).toHaveAttribute("data-mode", "open");
+      await collapseToggle.click();
+    }
+    await expect(defaultLaneRow).toHaveClass(/kanban-row--scroll/);
+
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-board-full-light.png"
+    );
+    await page.screenshot({ path: out, fullPage: true, scale: "css" });
+  });
+
+  test("demo board — light theme charts page", async ({ page }) => {
+    await useLightTheme(page);
+    await page.goto("/charts/?g=weekly");
+    await page.waitForSelector(".charts-shell", { timeout: 30_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.locator("#flow-chart-granularity")).toHaveValue("weekly");
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-charts-full-light.png"
+    );
+    await page.screenshot({ path: out, fullPage: true, scale: "css" });
+  });
+
+  test("demo board — light theme preferences page", async ({ page }) => {
+    await useLightTheme(page);
+    await page.goto("/preferences/");
+    await page.waitForSelector(".preferences-shell", { timeout: 30_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-preferences-full-light.png"
+    );
+    await page.screenshot({ path: out, fullPage: true, scale: "css" });
+  });
+
+  test("demo board — light theme edit card dialog", async ({ page }) => {
+    await useLightTheme(page);
+    await page.setViewportSize({ width: 1280, height: 1400 });
+    await page.goto("/");
+    await page.waitForSelector(".board-shell", { timeout: 30_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+    const editBtn = page.locator(".flow-card-edit-btn").first();
+    await expect(editBtn).toBeVisible({ timeout: 15_000 });
+    await editBtn.click();
+
+    const dialog = page.locator("dialog.flow-modal--edit-card");
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+
+    const out = path.join(
+      process.cwd(),
+      "docs/screenshots/demo-edit-card-dialog-light.png"
+    );
+    await dialog.screenshot({ path: out, scale: "css" });
   });
 });

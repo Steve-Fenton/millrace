@@ -256,14 +256,26 @@ async function fetchCumulativeFlowStack(boardSlug, granularity) {
 }
 
 /**
+ * Theme-aware chart series fill from CSS custom properties.
  * @param {number} i
- * @param {number} n
+ * @param {number} [_n]
  */
-function swimlaneStackFill(i, n) {
-  const hue = ((i * 47) % 360) + (n > 1 ? 0 : 200);
-  const sat = n <= 1 ? 45 : 52;
-  const light = 48 - (i % 3) * 4;
-  return `hsl(${hue} ${sat}% ${light}%)`;
+function swimlaneStackFill(i, _n) {
+  const vars = [
+    "--chart-1",
+    "--chart-2",
+    "--chart-3",
+    "--chart-4",
+    "--chart-5",
+    "--chart-6",
+    "--chart-7",
+    "--chart-8",
+  ];
+  const name = vars[((i % vars.length) + vars.length) % vars.length];
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return raw || "#635bff";
 }
 
 /**
@@ -1590,13 +1602,9 @@ function renderChartsShell(
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
 
-  const badge = document.createElement("span");
-  badge.className = "board-badge";
-  badge.textContent = "Charts";
-
   const navMenu = createFlowNavMenu({ current: "charts" });
 
-  topActions.append(badge, navMenu);
+  topActions.append(navMenu);
   top.append(topLeft, topActions);
 
   const body = document.createElement("div");

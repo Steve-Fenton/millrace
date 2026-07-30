@@ -21,17 +21,13 @@ function navMenuItemIconSvg(kind) {
 }
 
 /**
- * Header hamburger: Board, Completed, Charts, Preferences, Users, Boards.
- * @param {{ current: "board" | "completed" | "charts" | "preferences" | "users" | "admin" }} opts
- * @returns {HTMLElement}
+ * @param {{ board: string, completed: string, charts: string, preferences: string, users: string, admin: string }} hrefs
+ * @param {"board" | "completed" | "charts" | "preferences" | "users" | "admin"} current
  */
-export function createFlowNavMenu(opts) {
-  const { current } = opts;
-  /** @type {{ board: string, completed: string, charts: string, preferences: string, users: string, admin: string }} */
-  let hrefs;
+function navHrefMap(current) {
   switch (current) {
     case "board":
-      hrefs = {
+      return {
         board: "index.html",
         completed: "complete/",
         charts: "charts/",
@@ -39,9 +35,8 @@ export function createFlowNavMenu(opts) {
         users: "users/",
         admin: "admin/",
       };
-      break;
     case "completed":
-      hrefs = {
+      return {
         board: "../index.html",
         completed: "index.html",
         charts: "../charts/",
@@ -49,9 +44,8 @@ export function createFlowNavMenu(opts) {
         users: "../users/",
         admin: "../admin/",
       };
-      break;
     case "charts":
-      hrefs = {
+      return {
         board: "../index.html",
         completed: "../complete/",
         charts: "index.html",
@@ -59,9 +53,8 @@ export function createFlowNavMenu(opts) {
         users: "../users/",
         admin: "../admin/",
       };
-      break;
     case "preferences":
-      hrefs = {
+      return {
         board: "../index.html",
         completed: "../complete/",
         charts: "../charts/",
@@ -69,9 +62,8 @@ export function createFlowNavMenu(opts) {
         users: "../users/",
         admin: "../admin/",
       };
-      break;
     case "users":
-      hrefs = {
+      return {
         board: "../index.html",
         completed: "../complete/",
         charts: "../charts/",
@@ -79,9 +71,8 @@ export function createFlowNavMenu(opts) {
         users: "index.html",
         admin: "../admin/",
       };
-      break;
     case "admin":
-      hrefs = {
+      return {
         board: "../index.html",
         completed: "../complete/",
         charts: "../charts/",
@@ -89,9 +80,8 @@ export function createFlowNavMenu(opts) {
         users: "../users/",
         admin: "index.html",
       };
-      break;
     default:
-      hrefs = {
+      return {
         board: "index.html",
         completed: "complete/",
         charts: "charts/",
@@ -100,9 +90,69 @@ export function createFlowNavMenu(opts) {
         admin: "admin/",
       };
   }
+}
+
+/**
+ * @param {string} href
+ * @param {string} label
+ * @param {boolean} isCurrent
+ * @param {"board" | "completed" | "charts" | "preferences" | "users" | "admin"} kind
+ * @param {"menuitem" | undefined} role
+ * @returns {HTMLAnchorElement}
+ */
+function createNavItem(href, label, isCurrent, kind, role) {
+  const a = document.createElement("a");
+  a.className = "flow-nav-menu__item";
+  if (isCurrent) {
+    a.classList.add("flow-nav-menu__item--current");
+    a.setAttribute("aria-current", "page");
+  }
+  a.href = href;
+  if (role) a.setAttribute("role", role);
+
+  const icon = document.createElement("span");
+  icon.className = "flow-nav-menu__item-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = navMenuItemIconSvg(kind);
+
+  const text = document.createElement("span");
+  text.className = "flow-nav-menu__item-text";
+  text.textContent = label;
+
+  a.append(icon, text);
+  return a;
+}
+
+/**
+ * Header navigation: visible tabs on wide viewports, overflow menu on narrow ones.
+ * @param {{ current: "board" | "completed" | "charts" | "preferences" | "users" | "admin" }} opts
+ * @returns {HTMLElement}
+ */
+export function createFlowNavMenu(opts) {
+  const { current } = opts;
+  const hrefs = navHrefMap(current);
+
+  /** @type {Array<{ href: string, label: string, kind: "board" | "completed" | "charts" | "preferences" | "users" | "admin" }>} */
+  const items = [
+    { href: hrefs.board, label: "Board", kind: "board" },
+    { href: hrefs.completed, label: "Completed", kind: "completed" },
+    { href: hrefs.charts, label: "Charts", kind: "charts" },
+    { href: hrefs.preferences, label: "Preferences", kind: "preferences" },
+    { href: hrefs.users, label: "Users", kind: "users" },
+    { href: hrefs.admin, label: "Boards", kind: "admin" },
+  ];
 
   const wrap = document.createElement("div");
   wrap.className = "flow-nav-menu";
+
+  const links = document.createElement("nav");
+  links.className = "flow-nav-menu__links";
+  links.setAttribute("aria-label", "Primary");
+  for (const item of items) {
+    links.append(
+      createNavItem(item.href, item.label, current === item.kind, item.kind)
+    );
+  }
 
   const panelId = "flow-nav-panel";
 
@@ -123,46 +173,17 @@ export function createFlowNavMenu(opts) {
   panel.setAttribute("role", "menu");
   panel.setAttribute("aria-label", "Navigation");
 
-  /**
-   * @param {string} href
-   * @param {string} label
-   * @param {boolean} isCurrent
-   * @param {"board" | "completed" | "charts" | "preferences" | "users" | "admin"} kind
-   */
-  function addItem(href, label, isCurrent, kind) {
-    const a = document.createElement("a");
-    a.className = "flow-nav-menu__item";
-    if (isCurrent) {
-      a.classList.add("flow-nav-menu__item--current");
-      a.setAttribute("aria-current", "page");
-    }
-    a.href = href;
-    a.setAttribute("role", "menuitem");
-
-    const icon = document.createElement("span");
-    icon.className = "flow-nav-menu__item-icon";
-    icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = navMenuItemIconSvg(kind);
-
-    const text = document.createElement("span");
-    text.className = "flow-nav-menu__item-text";
-    text.textContent = label;
-
-    a.append(icon, text);
-    panel.append(a);
+  for (const item of items) {
+    panel.append(
+      createNavItem(
+        item.href,
+        item.label,
+        current === item.kind,
+        item.kind,
+        "menuitem"
+      )
+    );
   }
-
-  addItem(hrefs.board, "Board", current === "board", "board");
-  addItem(hrefs.completed, "Completed", current === "completed", "completed");
-  addItem(hrefs.charts, "Charts", current === "charts", "charts");
-  addItem(
-    hrefs.preferences,
-    "Preferences",
-    current === "preferences",
-    "preferences"
-  );
-  addItem(hrefs.users, "Users", current === "users", "users");
-  addItem(hrefs.admin, "Boards", current === "admin", "admin");
 
   let closeOnDoc = null;
 
@@ -209,6 +230,6 @@ export function createFlowNavMenu(opts) {
     }
   });
 
-  wrap.append(btn, panel);
+  wrap.append(links, btn, panel);
   return wrap;
 }

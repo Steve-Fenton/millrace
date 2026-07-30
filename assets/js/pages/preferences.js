@@ -253,11 +253,8 @@ function renderPreferencesShell(form, flowTimestamps) {
 
   const topActions = document.createElement("div");
   topActions.className = "board-top-actions";
-  const badge = document.createElement("span");
-  badge.className = "board-badge";
-  badge.textContent = "This device";
   const navMenu = createFlowNavMenu({ current: "preferences" });
-  topActions.append(badge, navMenu);
+  topActions.append(navMenu);
   top.append(topLeft, topActions);
 
   const body = document.createElement("div");
