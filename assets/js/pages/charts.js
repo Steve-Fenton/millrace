@@ -256,26 +256,15 @@ async function fetchCumulativeFlowStack(boardSlug, granularity) {
 }
 
 /**
- * Theme-aware chart series fill from CSS custom properties.
+ * Original high-contrast chart series palette.
  * @param {number} i
- * @param {number} [_n]
+ * @param {number} n
  */
-function swimlaneStackFill(i, _n) {
-  const vars = [
-    "--chart-1",
-    "--chart-2",
-    "--chart-3",
-    "--chart-4",
-    "--chart-5",
-    "--chart-6",
-    "--chart-7",
-    "--chart-8",
-  ];
-  const name = vars[((i % vars.length) + vars.length) % vars.length];
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-  return raw || "#635bff";
+function swimlaneStackFill(i, n) {
+  const hue = ((i * 47) % 360) + (n > 1 ? 0 : 200);
+  const sat = n <= 1 ? 45 : 52;
+  const light = 48 - (i % 3) * 4;
+  return `hsl(${hue} ${sat}% ${light}%)`;
 }
 
 /**
