@@ -1272,6 +1272,7 @@ dialog.git-conflict-dialog::backdrop {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-height: 2.75rem;
 }
 
 .complete-table__title-main {
