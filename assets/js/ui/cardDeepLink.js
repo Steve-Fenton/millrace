@@ -180,7 +180,11 @@ export function showCopyLinkButtonCopied(btn, opts = {}) {
     btn.dataset.copyLinkIconOriginal = btn.innerHTML;
   }
 
+  const visibleLabel = btn
+    .querySelector(".flow-edit-card-header-action-label")
+    ?.cloneNode(true);
   btn.innerHTML = CARD_LINK_COPIED_ICON_SVG;
+  if (visibleLabel) btn.append(visibleLabel);
   btn.classList.add("flow-btn-copy-card-link-icon--copied");
   btn.setAttribute("aria-label", "Link copied");
   btn.title = "Link copied";

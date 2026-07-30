@@ -3020,10 +3020,26 @@ dialog.flow-modal::backdrop {
 }
 
 .flow-edit-card-header-actions {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: flex-start;
+  display: flex;
+  align-items: stretch;
   gap: 0.35rem;
+}
+
+.flow-btn.flow-btn-icon.flow-edit-card-header-action {
+  flex: 1 1 0;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  width: auto;
+  height: 2.25rem;
+  padding-inline: 0.65rem;
+}
+
+.flow-edit-card-header-action-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .flow-modal-header--edit-card .flow-modal-title {
@@ -3484,40 +3500,16 @@ dialog.flow-modal::backdrop {
   color: var(--text-muted);
 }
 
-.flow-modal-meta--dates {
-  margin-block-end: 1rem;
-  padding-block: 0.55rem;
-  padding-inline: 0;
-  border-radius: 0;
-  border: none;
-  border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
-  font-size: var(--text-small);
-  line-height: 1.45;
-  color: var(--text-muted);
+.flow-modal-context--edit-card {
+  margin-block-start: 0.55rem;
+  margin-block-end: 0.75rem;
+  line-height: 1.4;
 }
 
-.flow-card-meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.65rem;
-}
-
-.flow-card-meta-row + .flow-card-meta-row {
-  margin-block-start: 0.35rem;
-}
-
-.flow-card-meta-label {
+.flow-edit-card-context-value {
+  color: var(--text);
   font-weight: 500;
   letter-spacing: -0.01em;
-  text-transform: none;
-  font-size: var(--text-label);
-  color: var(--text-muted);
-}
-
-.flow-card-meta-value {
-  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 

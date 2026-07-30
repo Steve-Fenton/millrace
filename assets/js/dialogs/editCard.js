@@ -184,34 +184,46 @@ export async function openCardEditorDialog(ctx) {
     <dialog class="flow-modal flow-modal--edit-card" aria-labelledby="flow-edit-card-title" aria-describedby="flow-edit-card-context">
       <div class="flow-modal-header flow-modal-header--edit-card">
         <h2 id="flow-edit-card-title" class="flow-modal-title">Edit card</h2>
-        <div class="flow-edit-card-header-actions">
-          <button
-            type="button"
-            class="flow-btn flow-btn-icon flow-btn-duplicate-card-icon"
-            aria-label="Duplicate card in this column and swimlane"
-            title="Duplicate card"
-          >
-            <svg class="flow-duplicate-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="8" r="3"/><path d="M10 9.5 13 12"/><circle cx="16" cy="15" r="5.25"/><path d="M16 12.25v5.5M13.25 15h5.5" stroke-width="1.5"/></svg>
-          </button>
-          <button
-            type="button"
-            class="flow-btn flow-btn-icon flow-btn-history-icon"
-            aria-label="Git commit history for this card"
-            title="Git history"
-          >
-            <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-          </button>
-          <button
-            type="button"
-            class="flow-btn flow-btn-icon flow-btn-copy-card-link-icon"
-            aria-label="Copy link to this card"
-            title="Copy link"
-          >
-            ${CARD_LINK_ICON_SVG}
-          </button>
-        </div>
       </div>
-      <p id="flow-edit-card-context" class="flow-modal-context">${escapeHtml(ctx.columnTitle)}${ctx.swimlaneTitle ? ` · ${escapeHtml(ctx.swimlaneTitle)}` : ""}</p>
+      <div class="flow-edit-card-header-actions">
+        <button
+          type="button"
+          class="flow-btn flow-btn-icon flow-edit-card-header-action flow-btn-duplicate-card-icon"
+          aria-label="Duplicate card in this column and swimlane"
+          title="Duplicate card"
+        >
+          <svg class="flow-duplicate-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="8" r="3"/><path d="M10 9.5 13 12"/><circle cx="16" cy="15" r="5.25"/><path d="M16 12.25v5.5M13.25 15h5.5" stroke-width="1.5"/></svg>
+          <span class="flow-edit-card-header-action-label">Duplicate</span>
+        </button>
+        <button
+          type="button"
+          class="flow-btn flow-btn-icon flow-edit-card-header-action flow-btn-history-icon"
+          aria-label="Git commit history for this card"
+          title="Git history"
+        >
+          <svg class="flow-history-icon-svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          <span class="flow-edit-card-header-action-label">History</span>
+        </button>
+        <button
+          type="button"
+          class="flow-btn flow-btn-icon flow-edit-card-header-action flow-btn-copy-card-link-icon"
+          aria-label="Copy link to this card"
+          title="Copy link"
+        >
+          ${CARD_LINK_ICON_SVG}
+          <span class="flow-edit-card-header-action-label">Copy link</span>
+        </button>
+        <button
+          type="button"
+          class="flow-btn flow-btn-icon flow-edit-card-header-action flow-edit-card-abandon"
+          aria-label="Abandon card"
+          title="Abandon card"
+        >
+          <svg class="flow-delete-icon-svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2m-9 4v10m10-10v10M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+          <span class="flow-edit-card-header-action-label">Abandon</span>
+        </button>
+      </div>
+      <p id="flow-edit-card-context" class="flow-modal-context flow-modal-context--edit-card"></p>
       <form class="flow-modal-form">
         <label class="flow-field">
           <span class="flow-field-label">Title</span>
@@ -225,19 +237,9 @@ export async function openCardEditorDialog(ctx) {
           <span class="flow-field-label">Description</span>
           <textarea class="flow-input flow-textarea flow-textarea--edit-description" name="description" rows="12" placeholder="Optional"></textarea>
         </label>
-        <div class="flow-modal-actions flow-modal-actions--split">
-          <button
-            type="button"
-            class="flow-btn flow-btn-delete-icon"
-            aria-label="Abandon card"
-            title="Abandon card"
-          >
-            <svg class="flow-delete-icon-svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2m-9 4v10m10-10v10M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
-          </button>
-          <div class="flow-modal-actions-main">
-            <button type="button" class="flow-btn flow-btn-ghost flow-cancel">Cancel</button>
-            <button type="submit" class="flow-btn flow-btn-primary">Save</button>
-          </div>
+        <div class="flow-modal-actions">
+          <button type="button" class="flow-btn flow-btn-ghost flow-cancel">Cancel</button>
+          <button type="submit" class="flow-btn flow-btn-primary">Save</button>
         </div>
       </form>
     </dialog>
@@ -248,36 +250,34 @@ export async function openCardEditorDialog(ctx) {
   const contextP = modal.querySelector(".flow-modal-context");
   const createdRaw = String(initial.created ?? "").trim();
   const closedRaw = String(initial.closed ?? "").trim();
-  if (contextP && (createdRaw || closedRaw)) {
-    const meta = document.createElement("div");
-    meta.className = "flow-modal-meta flow-modal-meta--dates";
+  if (contextP) {
     if (createdRaw) {
-      const row = document.createElement("div");
-      row.className = "flow-card-meta-row";
-      const label = document.createElement("span");
-      label.className = "flow-card-meta-label";
-      label.textContent = "Created";
+      contextP.append("Created ");
       const timeEl = document.createElement("time");
-      timeEl.className = "flow-card-meta-value";
+      timeEl.className = "flow-edit-card-context-value";
       timeEl.dateTime = createdRaw;
       timeEl.textContent = formatCardTimestampDisplay(createdRaw);
-      row.append(label, timeEl);
-      meta.append(row);
+      contextP.append(timeEl, ". ");
     }
+    contextP.append("Current position ");
+    if (ctx.swimlaneTitle) {
+      const swimlane = document.createElement("span");
+      swimlane.className = "flow-edit-card-context-value";
+      swimlane.textContent = ctx.swimlaneTitle;
+      contextP.append(swimlane, " ");
+    }
+    const column = document.createElement("span");
+    column.className = "flow-edit-card-context-value";
+    column.textContent = ctx.columnTitle;
+    contextP.append(column);
     if (closedRaw) {
-      const row = document.createElement("div");
-      row.className = "flow-card-meta-row";
-      const label = document.createElement("span");
-      label.className = "flow-card-meta-label";
-      label.textContent = "Closed";
+      contextP.append(". Closed ");
       const timeEl = document.createElement("time");
-      timeEl.className = "flow-card-meta-value";
+      timeEl.className = "flow-edit-card-context-value";
       timeEl.dateTime = closedRaw;
       timeEl.textContent = formatCardTimestampDisplay(closedRaw);
-      row.append(label, timeEl);
-      meta.append(row);
+      contextP.append(timeEl);
     }
-    contextP.insertAdjacentElement("afterend", meta);
   }
 
   const form = modal.querySelector("form");
@@ -529,7 +529,7 @@ export async function openCardEditorDialog(ctx) {
       })();
     });
 
-    modal.querySelector(".flow-btn-delete-icon")?.addEventListener("click", () => {
+    modal.querySelector(".flow-edit-card-abandon")?.addEventListener("click", () => {
       void (async () => {
         const ok = await showFlowConfirm(
           "Abandon this card? It will be removed from the board and moved to the abandoned folder.",
