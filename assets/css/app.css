@@ -10,12 +10,10 @@
   --border-subtle: #23252c;
   --text: #f5f5f7;
   --text-muted: #9898a0;
-  /* Restrained indigo-blue accent (quieter than sky) */
-  --accent: #635bff;
-  --accent-hover: #7a73ff;
+  /* Clear sky-blue accent from the original Millrace theme. */
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
   --accent-on: #ffffff;
-  --link: #9b97ff;
-  --link-hover: #bbb8ff;
   --error: #ff6b6b;
   --error-soft: #ff8a8a;
   --error-pale: #ffb4b4;
@@ -122,11 +120,9 @@ html[data-theme="light"] {
   --border-subtle: #e8e8ed;
   --text: #1d1d1f;
   --text-muted: #6e6e73;
-  --accent: #635bff;
-  --accent-hover: #4b45c6;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
   --accent-on: #ffffff;
-  --link: #4f46c9;
-  --link-hover: #3730a3;
   --error: #de2c2c;
   --error-soft: #e5484d;
   --error-pale: #f5a3a3;
@@ -2662,7 +2658,7 @@ a.column-done-truncation-link:focus-visible {
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.35;
-  color: var(--link);
+  color: var(--accent);
   text-decoration: none;
   border-radius: 0;
   border: none;
@@ -2707,7 +2703,7 @@ a.column-done-truncation-link:focus-visible {
 }
 
 .column-card-link:hover {
-  color: var(--link-hover);
+  color: var(--accent-hover);
   text-decoration: underline;
   text-underline-offset: 0.12em;
   background: transparent;
@@ -3615,7 +3611,7 @@ select.board-owner-filter-select {
 
 select.flow-input:focus,
 select.board-owner-filter-select:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath stroke='%23635bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 input[type="checkbox"] {
