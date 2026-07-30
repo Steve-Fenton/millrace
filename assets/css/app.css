@@ -6,6 +6,8 @@
   --surface: #16171c;
   --surface-hover: #1c1e24;
   --elevated: #22242b;
+  /* Kanban cards sit above column cells — lighter than --surface in dark mode */
+  --card: #22242b;
   --border: #2e3139;
   --border-subtle: #23252c;
   --text: #f5f5f7;
@@ -116,6 +118,7 @@ html[data-theme="light"] {
   --surface: #ffffff;
   --surface-hover: #f0f0f2;
   --elevated: #f0f0f2;
+  --card: #f5f5f7;
   --border: #d2d2d7;
   --border-subtle: #e8e8ed;
   --text: #1d1d1f;
@@ -2388,7 +2391,7 @@ a.column-done-truncation-link:focus-visible {
   padding-inline: 0.6rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--bg);
+  background: var(--card);
   box-shadow: none;
 }
 
@@ -2423,7 +2426,7 @@ a.column-done-truncation-link:focus-visible {
   box-sizing: border-box;
   padding: 0.35rem;
   border-radius: inherit;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
   backdrop-filter: blur(6px);
   place-items: center;
   justify-items: center;
