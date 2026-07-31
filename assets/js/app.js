@@ -75,7 +75,8 @@ import { initFlowTheme } from "./ui/applyTheme.js";
 
 const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M7 3v8M3 7h8"/></svg>`;
 
-const EDIT_CARD_ICON = `<svg class="flow-card-edit-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+/** Four outward arrows — hover control to open the in-card move compass. */
+const MOVE_CARD_ICON = `<svg class="flow-card-move-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>`;
 
 /** Next to assignee name on kanban cards (decorative). */
 const COLUMN_CARD_OWNER_ICON = `<svg class="column-card-owner-icon-svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
@@ -1299,30 +1300,33 @@ function renderBoard(
         const fn = card.filename && String(card.filename).trim();
         if (fn) {
           li.classList.add("column-card--editable");
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.className = "flow-card-edit-btn";
-          editBtn.setAttribute("aria-label", "Edit card");
-          editBtn.title = "Edit card";
-          editBtn.innerHTML = EDIT_CARD_ICON;
-          editBtn.draggable = false;
-          editBtn.addEventListener("mousedown", (e) => e.stopPropagation());
-          editBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
-          editBtn.addEventListener("click", (e) => {
+          const moveBtn = document.createElement("button");
+          moveBtn.type = "button";
+          moveBtn.className = "flow-card-move-btn";
+          moveBtn.setAttribute("aria-label", "Move card");
+          moveBtn.title = "Move card";
+          moveBtn.innerHTML = MOVE_CARD_ICON;
+          moveBtn.draggable = false;
+          moveBtn.addEventListener("mousedown", (e) => e.stopPropagation());
+          moveBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+          moveBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            void openCardEditorDialog({
-              boardSlug: cardStorageBoardSlug(card, boardSlug, model),
-              columnIndex: Number(card.sourceColumnIndex ?? col.index),
-              filename: fn,
-              columnTitle: col.title,
-              swimlaneIndex: Number(lane.index),
-              swimlaneTitle: lane.title || undefined,
-              boardUsers: model.users,
+            root.querySelectorAll(".column-card--compass-open").forEach((el) => {
+              if (el !== li) {
+                el.classList.remove("column-card--compass-open");
+                el.draggable = true;
+              }
             });
+            li.classList.toggle("column-card--compass-open");
+            const compassOpen = li.classList.contains("column-card--compass-open");
+            li.draggable = !compassOpen;
+            compassPersistCard = compassOpen
+              ? { boardSlug, filename: fn }
+              : null;
           });
           const headRow = document.createElement("div");
           headRow.className = "column-card-head-row";
-          headRow.append(titleEl, editBtn);
+          headRow.append(titleEl, moveBtn);
           li.append(headRow);
         } else {
           li.append(titleEl);
@@ -1487,21 +1491,19 @@ function renderBoard(
 
           li.addEventListener("click", (e) => {
             if (e.target.closest("a.column-card-link")) return;
-            if (e.target.closest(".flow-card-edit-btn")) return;
+            if (e.target.closest(".flow-card-move-btn")) return;
             if (e.target.closest(".column-card-nudge")) return;
+            if (li.classList.contains("column-card--compass-open")) return;
             e.stopPropagation();
-            root.querySelectorAll(".column-card--compass-open").forEach((el) => {
-              if (el !== li) {
-                el.classList.remove("column-card--compass-open");
-                el.draggable = true;
-              }
+            void openCardEditorDialog({
+              boardSlug: cardStorageBoardSlug(card, boardSlug, model),
+              columnIndex: Number(card.sourceColumnIndex ?? col.index),
+              filename: fn,
+              columnTitle: col.title,
+              swimlaneIndex: Number(lane.index),
+              swimlaneTitle: lane.title || undefined,
+              boardUsers: model.users,
             });
-            li.classList.toggle("column-card--compass-open");
-            const compassOpen = li.classList.contains("column-card--compass-open");
-            li.draggable = !compassOpen;
-            compassPersistCard = compassOpen
-              ? { boardSlug, filename: fn }
-              : null;
           });
 
           li.draggable = true;
@@ -1517,8 +1519,8 @@ function renderBoard(
           }
           li.title =
             ownerFilter.mode === "all"
-              ? "Click for move arrows, or drag to reorder / move columns"
-              : "Click for move arrows, or drag among visible cards";
+              ? "Click to edit, or drag to reorder / move columns"
+              : "Click to edit, or drag among visible cards";
           li.addEventListener("dragstart", (e) => {
             if (li.classList.contains("column-card--compass-open")) {
               e.preventDefault();

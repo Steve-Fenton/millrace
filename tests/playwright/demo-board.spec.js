@@ -98,12 +98,29 @@ test.describe("doc screenshots", () => {
     await page.goto("/");
     await page.waitForSelector(".board-shell", { timeout: 30_000 });
 
-    const firstTitle = page.locator(".column-card .column-card-title").first();
-    await expect(firstTitle).toBeVisible({ timeout: 15_000 });
-    await firstTitle.click();
+    const firstCard = page.locator(".column-card--editable").first();
+    await expect(firstCard).toBeVisible({ timeout: 15_000 });
+    await firstCard.hover();
+    const moveBtn = firstCard.locator(".flow-card-move-btn");
+    await expect(moveBtn).toBeVisible();
+    const [cardBox, moveBox] = await Promise.all([
+      firstCard.boundingBox(),
+      moveBtn.boundingBox(),
+    ]);
+    expect(cardBox).toBeTruthy();
+    expect(moveBox).toBeTruthy();
+    expect(moveBox.y - cardBox.y).toBeLessThanOrEqual(6);
+    expect(
+      cardBox.x + cardBox.width - (moveBox.x + moveBox.width)
+    ).toBeLessThanOrEqual(6);
+    await moveBtn.click();
 
     const openCard = page.locator(".column-card--compass-open").first();
     await expect(openCard).toBeVisible();
+    await openCard
+      .locator(".column-card-compass")
+      .click({ position: { x: 8, y: 8 } });
+    await expect(page.locator("dialog.flow-modal--edit-card")).toBeHidden();
 
     const out = path.join(
       process.cwd(),
@@ -191,9 +208,9 @@ test.describe("doc screenshots", () => {
     await page.goto("/");
     await page.waitForSelector(".board-shell", { timeout: 30_000 });
 
-    const editBtn = page.locator(".flow-card-edit-btn").first();
-    await expect(editBtn).toBeVisible({ timeout: 15_000 });
-    await editBtn.click();
+    const card = page.locator(".column-card--editable").first();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await card.locator(".column-card-title").click();
 
     const dialog = page.locator("dialog.flow-modal--edit-card");
     await expect(dialog).toBeVisible({ timeout: 15_000 });
@@ -461,9 +478,9 @@ test.describe("doc screenshots", () => {
     await page.waitForSelector(".board-shell", { timeout: 30_000 });
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
-    const editBtn = page.locator(".flow-card-edit-btn").first();
-    await expect(editBtn).toBeVisible({ timeout: 15_000 });
-    await editBtn.click();
+    const card = page.locator(".column-card--editable").first();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await card.locator(".column-card-title").click();
 
     const dialog = page.locator("dialog.flow-modal--edit-card");
     await expect(dialog).toBeVisible({ timeout: 15_000 });

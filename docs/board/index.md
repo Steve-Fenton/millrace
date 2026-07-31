@@ -4,7 +4,7 @@ The **Board** view is the main Kanban workspace. Each board is divided into colu
 
 ![Screenshot: The board view](../screenshots/demo-board-full.png)
 
-Task cards are arranged on the board and you can drag and drop them to a new location. You can also click a card to open a navigation control that lets you move the card.
+Task cards are arranged on the board and you can drag and drop them to a new location. Click a card to open the editor. Hover a card and select the **Move** icon to open a navigation control that lets you move the card with arrow buttons.
 
 ![Screenshot: Card navigation controls](../screenshots/demo-card-move-icons.png)
 
@@ -34,7 +34,7 @@ Selections are stored per board in `tasks/localuser.ini` under `[swimlanes.<boar
 
 ## Edit task cards
 
-When you hover over a card, you can select the **Edit** icon to open the card editor. From here you can update your task information, add links, and use the header actions.
+Click a card to open the card editor. From here you can update your task information, add links, and use the header actions.
 
 Card descriptions support limited **Markdown** (see [supported markdown](../markdown.md)).
 

@@ -2328,13 +2328,14 @@ a.column-done-truncation-link:focus-visible {
   opacity: 0.95;
 }
 
-/* Keep edit-btn layout space so preview height matches the source card. */
-.column-card--drop-preview .flow-card-edit-btn {
+/* Keep move-btn layout space so preview height matches the source card. */
+.column-card--drop-preview .flow-card-move-btn {
   visibility: hidden;
   pointer-events: none;
 }
 
-.flow-card-edit-btn {
+.flow-card-edit-btn,
+.flow-card-move-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -2357,14 +2358,26 @@ a.column-done-truncation-link:focus-visible {
     background 0.12s ease;
 }
 
-.column-card:hover .flow-card-edit-btn,
-.column-card:focus-within .flow-card-edit-btn,
-.column-card .flow-card-edit-btn:focus-visible {
+.column-card .flow-card-move-btn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 5;
+}
+
+.column-card:not(.column-card--compass-open):hover .flow-card-move-btn,
+.column-card:not(.column-card--compass-open):focus-within .flow-card-move-btn,
+.column-card:not(.column-card--compass-open) .flow-card-move-btn:focus-visible {
   opacity: 1;
 }
 
-.column-card .flow-card-edit-btn:hover,
-.column-card .flow-card-edit-btn:focus-visible {
+.column-card--compass-open .flow-card-move-btn {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.column-card .flow-card-move-btn:hover,
+.column-card .flow-card-move-btn:focus-visible {
   color: var(--accent);
   background: var(--accent-dim);
 }
@@ -2396,17 +2409,10 @@ a.column-done-truncation-link:focus-visible {
   box-shadow: none;
 }
 
-/** Title + edit: only this row uses two columns; the card grid above stays single-column. */
+/** Leave room for the move control positioned in the card's top-right corner. */
 .column-card-head-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.35rem;
+  padding-inline-end: 2.65rem;
   min-width: 0;
-}
-
-.column-card-head-row .flow-card-edit-btn {
-  justify-self: end;
 }
 
 /** Strategic / critical cards — override background and border in your theme if needed */
@@ -2429,6 +2435,7 @@ a.column-done-truncation-link:focus-visible {
   border-radius: inherit;
   background: color-mix(in srgb, var(--card) 78%, transparent);
   backdrop-filter: blur(6px);
+  place-content: center;
   place-items: center;
   justify-items: center;
   grid-template-columns: repeat(3, minmax(0, 1.85rem));
