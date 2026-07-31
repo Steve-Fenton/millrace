@@ -345,12 +345,12 @@
       {
         "name": "Ideas",
         "type": "options",
-        "count": 4
+        "count": 3
       },
       {
         "name": "Doing",
         "type": "in_progress",
-        "count": 0
+        "count": 1
       },
       {
         "name": "Review",
