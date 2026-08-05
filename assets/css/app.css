@@ -5,6 +5,7 @@
   --bg: #0c0d10;
   --surface: #16171c;
   --surface-hover: #1c1e24;
+  --column-cell-hover: var(--surface-hover);
   --elevated: #22242b;
   /* Kanban cards sit above column cells — lighter than --surface in dark mode */
   --card: #22242b;
@@ -75,7 +76,7 @@
   --shadow-accent-glow: 0 0 0 1.5px var(--accent-border);
   --shadow-error-inset: inset 0 1px 0 var(--error-subtle);
   --wip-over-cell-bg: color-mix(in srgb, var(--error) 7%, var(--surface));
-  --wip-over-cell-bg-hover: color-mix(in srgb, var(--error) 11%, var(--surface-hover));
+  --wip-over-cell-bg-hover: color-mix(in srgb, var(--error) 8%, var(--column-cell-hover));
   --wip-over-head-text: var(--error-pale);
   --shadow: 0 1px 2px var(--black-shadow-light), 0 8px 24px var(--black-shadow);
   --shadow-modal:
@@ -117,6 +118,7 @@ html[data-theme="light"] {
   --bg: #f5f5f7;
   --surface: #ffffff;
   --surface-hover: #f0f0f2;
+  --column-cell-hover: color-mix(in srgb, var(--text) 2%, var(--surface));
   --elevated: #f0f0f2;
   --card: #f5f5f7;
   --border: #d2d2d7;
@@ -145,7 +147,7 @@ html[data-theme="light"] {
   --black-overlay: color-mix(in srgb, black 28%, transparent);
 
   --wip-over-cell-bg: color-mix(in srgb, var(--error) 5%, var(--surface));
-  --wip-over-cell-bg-hover: color-mix(in srgb, var(--error) 9%, var(--surface-hover));
+  --wip-over-cell-bg-hover: color-mix(in srgb, var(--error) 6%, var(--column-cell-hover));
   --wip-over-head-text: var(--error);
 
   color-scheme: light;
@@ -2107,16 +2109,13 @@ dialog.git-conflict-dialog::backdrop {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
-  border-bottom: 2px solid var(--border);
   transition:
     background 0.15s ease,
-    border-color 0.15s ease,
     color 0.15s ease;
 }
 
 .column-head--wip-over {
   background: var(--error-dim);
-  border-bottom-color: var(--error-emphasis);
   color: var(--wip-over-head-text);
 }
 
@@ -2215,7 +2214,7 @@ dialog.git-conflict-dialog::backdrop {
 }
 
 .column-cell:hover {
-  background: var(--surface-hover);
+  background: var(--column-cell-hover);
 }
 
 .column-cell--wip-over:hover {
