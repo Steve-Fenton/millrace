@@ -21,7 +21,7 @@ Add a `package.json` file. You can use this example.
     "cycle": "pm2 restart millrace"
   },
   "dependencies": {
-    "millrace": "^0.1.2"
+    "millrace": "^0.1.3"
   }
 }
 ```
