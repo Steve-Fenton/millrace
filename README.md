@@ -6,24 +6,24 @@ The ability to control the flow of water along the millrace is crucial. The goal
 
 ![Millrace](assets/svg/millrace.svg)
 
-Millrace is an lightweight git-friendly work management tool designed for optimal flow.
+Millrace is a lightweight git-friendly work management tool designed for optimal flow.
 
 Because it doesn't try to be a project plan, resource schedule, or Gantt chart, Millrace is the backshot wheel of the *project management tools* category. And it's ideal for software teams as it lives in a Git repository.
 
-Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You create a git repository for you work, add the Millrace package from npm, and run the app to visuallly manage work, while git does all the hard work tracking changes in high-fidelity.
+Millrace is a **git-friendly** work item manager with a **Kanban-first** workflow. You create a git repository for your work, add the Millrace package from npm, and run the app to visually manage work, while git does all the hard work tracking changes in high-fidelity.
 
-This isn't a watefall. It's engineering.
+This isn't a waterfall. It's engineering.
 
 [Read the documentation](docs/index.md).
 
 ## Automatic screenshots
 
-This project uses Playwright to automate screenshots. They can be refreshed using these stps:
+This project uses Playwright to automate screenshots. They can be refreshed using these steps:
 
 1. Installing packages `pnpm install`
-1. Installing screenshot dependencies `screenshots:install`
-1. Running the app `pnpm start`
-1. Running Playwright `pnpm screenshots`
+2. Installing screenshot dependencies `pnpm screenshots:install`
+3. Running the app `pnpm start`
+4. Running Playwright `pnpm screenshots`
 
 This uses the test data reset script (see below).
 
@@ -31,13 +31,17 @@ This uses the test data reset script (see below).
 
 There is a test data reset mechanism for the test board, "Demo".
 
-This lives within the `script` folder.
+This lives within the `scripts` folder.
 
-- reset-demo-board.mjs
+- `reset-demo-board.mjs`
   - Uses the set of INI files to reset the board
   - Sets dates to be relative to now for easier testing
-- demo-board-template/
+- `demo-board-template/`
   - Contains a set of INI files
+- `demo-board-snapshots-template.json`
+  - Snapshot seed data restored with the demo board
+
+Run `pnpm reset-demo` to reset the Demo board without taking screenshots. Cucumber tests live under `features/` (`pnpm test`).
 
 ## App design
 
@@ -46,6 +50,8 @@ We use the [Web UI Boilerplate Storybook](https://basher.github.io/Web-UI-Boiler
 ## `server.js`
 
 The API for the application: Express serves the static UI and `/api/*`, reads and writes `tasks/*.ini`, and runs git operations for sync and history. It imports the same `assets/js` ini, models, and git helpers as the browser bundles so parsing stays consistent.
+
+API route reference: [API.md](API.md).
 
 ### How the server code is organized
 
@@ -111,7 +117,7 @@ flowchart LR
 
 ### `assets/js`
 
-Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js`, `client.js`, and `flow*.js`).
+Bundled browser modules. Route-specific entry scripts live under **`pages/`**; shared libraries sit in the folders below (alongside top-level modules such as `app.js` and `client.js`).
 
 Each route’s `index.html` loads one entry module:
 
@@ -130,7 +136,7 @@ Conceptually, shared code stacks from route and app entry points down through UI
 ```mermaid
 flowchart TB
   subgraph entry["Entry"]
-    app["app.js · client.js · flow*.js"]
+    app["app.js · client.js"]
     pages["pages/"]
   end
   subgraph presentation["Presentation"]
@@ -152,13 +158,13 @@ flowchart TB
   presentation --> utilities
 ```
 
-- **`dialogs/`**: Modal flows for creating or editing boards and task cards (DOM, validation, and API calls).
-- **`git/`**: Helpers around Git merge-conflict markers (detecting hunks, choosing a side), not a full Git client.
+- **`dialogs/`**: Modal flows for creating, editing, or renaming boards and task cards, plus Git conflict resolution (DOM, validation, and API calls).
+- **`git/`**: Board/task INI diffs, sync-flow helpers, and merge-conflict marker handling (detecting hunks, choosing a side) — not a full Git client.
 - **`html/`**: Low-level helpers: escape text for HTML, derive URL-safe slugs, parse markup strings into DOM nodes.
 - **`ini/`**: INI parsing plus board/card helpers (sections, columns, swimlanes).
-- **`models/`**: Structured board and task-card models derived from parsed INI text.
-- **`pages/`**: Page entry bundles wired from each route’s `index.html` (boards, charts, completed work, preferences, users).
-- **`ui/`**: Shared presentation pieces: header brand mark and styled modal alerts, confirms, and email prompts (replacing `alert` / `confirm`).
+- **`models/`**: Structured board and task-card models derived from parsed INI text (including aggregate board views).
+- **`pages/`**: Page entry bundles wired from each route’s `index.html` (admin, charts, completed work, preferences, users).
+- **`ui/`**: Shared presentation pieces: brand mark, menus, filters, owner/theme helpers, limited markdown, card links and editors, and styled modal alerts/confirms (replacing `alert` / `confirm`).
 
 ## features
 
