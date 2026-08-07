@@ -15,7 +15,7 @@ let toastEl = null;
 let toastTimer = 0;
 
 /**
- * Brief non-blocking message (fixed near bottom of the viewport).
+ * Brief non-blocking message (fixed near the top of the viewport).
  * @param {string} message
  * @param {{ durationMs?: number }} [opts]
  */

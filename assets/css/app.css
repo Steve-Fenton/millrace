@@ -1702,7 +1702,6 @@ dialog.git-conflict-dialog::backdrop {
   padding-inline: 1.25rem;
   border-radius: var(--radius);
   border: 1px solid var(--accent-border-strong);
-  border-inline-start: 4px solid var(--accent);
   background: var(--elevated);
   color: var(--text);
   font-size: var(--text-body);
