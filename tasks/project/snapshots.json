@@ -430,12 +430,12 @@
       {
         "name": "Doing",
         "type": "in_progress",
-        "count": 2
+        "count": 1
       },
       {
         "name": "Review",
         "type": "waiting",
-        "count": 0
+        "count": 1
       }
     ]
   }
