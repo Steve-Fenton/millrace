@@ -11,6 +11,7 @@ Feature: Millrace users API
       email = alice@example.com
       name = Alice
       admin = true
+      git_username = alice_git
 
       [users.2]
       email = bob@example.com
@@ -23,7 +24,7 @@ Feature: Millrace users API
     And the flow API JSON field "users" should equal:
       """
       [
-        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true },
+        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true, "gitUsername": "alice_git" },
         { "email": "bob@example.com", "name": "Bob", "active": false, "admin": false }
       ]
       """
@@ -52,6 +53,7 @@ Feature: Millrace users API
       [users.1]
       email = alice@example.com
       name = Alice
+      git_username = alice_git
       """
     And an Express app with flow routes registered
     When I request GET "/api/millrace-users"
@@ -59,7 +61,7 @@ Feature: Millrace users API
     And the flow API JSON field "users" should equal:
       """
       [
-        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true }
+        { "email": "alice@example.com", "name": "Alice", "active": true, "admin": true, "gitUsername": "alice_git" }
       ]
       """
 
@@ -75,8 +77,8 @@ Feature: Millrace users API
       """
       {
         "users": [
-          { "email": "ops@example.com", "name": "Ops", "active": true, "admin": true },
-          { "email": "old@example.com", "name": "Former", "active": false, "admin": false }
+          { "email": "ops@example.com", "name": "Ops", "active": true, "admin": true, "gitUsername": "ops_git" },
+          { "email": "old@example.com", "name": "Former", "active": false, "admin": false, "gitUsername": "old_git" }
         ]
       }
       """
@@ -84,6 +86,8 @@ Feature: Millrace users API
     And the millrace catalog INI should contain "email = ops@example.com"
     And the millrace catalog INI should contain "admin = true"
     And the millrace catalog INI should contain "active = false"
+    And the millrace catalog INI should contain "git_username = ops_git"
+    And the millrace catalog INI should contain "git_username = old_git"
     And the millrace catalog INI should not contain "admin_email ="
 
   Scenario: PATCH /api/millrace-users rejects duplicate emails
