@@ -382,9 +382,9 @@ export function createSortableSwimlaneList(initial) {
 }
 
 /**
- * Board `[users.N]` entries: email (owner field on cards), display name, and active flag.
- * @param {{ email: string, name: string, active?: boolean }[]} initial
- * @param {{ label?: string, addLabel?: string }} [opts]
+ * Board `[users.N]` entries: email (owner field on cards), display name, active flag, and git username.
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean, gitUsername?: string }[]} initial
+ * @param {{ label?: string, addLabel?: string, showAdmin?: boolean }} [opts]
  */
 export function createSortableBoardUserList(initial, opts = {}) {
   const wrap = document.createElement("div");
@@ -406,12 +406,13 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   const showAdmin = opts.showAdmin === true;
 
-  /** @type {{ email: string, name: string, active: boolean, admin: boolean }[]} */
+  /** @type {{ email: string, name: string, active: boolean, admin: boolean, gitUsername?: string }[]} */
   let rows = (Array.isArray(initial) ? initial : []).map((r) => ({
     email: String(r?.email ?? "").trim(),
     name: String(r?.name ?? "").trim(),
     active: r?.active !== false,
     admin: r?.admin === true,
+    gitUsername: String(r?.gitUsername ?? "").trim() || undefined,
   }));
 
   function moveRow(from, to) {
@@ -492,6 +493,17 @@ export function createSortableBoardUserList(initial, opts = {}) {
       ? "Shown on cards instead of raw email"
       : "Still shown for cards assigned to this person";
 
+    const gitUsernameIn = document.createElement("input");
+    gitUsernameIn.type = "text";
+    gitUsernameIn.className = "flow-input flow-board-sortable-user-git-username";
+    gitUsernameIn.placeholder = "Git username";
+    gitUsernameIn.autocomplete = "username";
+    gitUsernameIn.value = row.gitUsername ?? "";
+    gitUsernameIn.readOnly = !row.active;
+    gitUsernameIn.title = row.active
+      ? "Git username for CODEOWNERS file (e.g., @username)"
+      : "Reactivate to change git username";
+
     const toggleAct = document.createElement("button");
     toggleAct.type = "button";
     toggleAct.className =
@@ -516,7 +528,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
       render();
     });
 
-    rowEl.append(reorder, emailIn, nameIn);
+    rowEl.append(reorder, emailIn, nameIn, gitUsernameIn);
     if (showAdmin) {
       const adminLabel = document.createElement("label");
       adminLabel.className = "flow-board-user-admin-label";
@@ -540,6 +552,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
     for (const rowEl of els) {
       const em = rowEl.querySelector(".flow-board-sortable-user-email");
       const nm = rowEl.querySelector(".flow-board-sortable-user-name");
+      const gu = rowEl.querySelector(".flow-board-sortable-user-git-username");
       if (!rows[i]) break;
       const adminCb = rowEl.querySelector(".flow-board-user-admin-input");
       rows[i] = {
@@ -547,6 +560,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
         name: String(nm?.value ?? "").trim(),
         active: rows[i].active,
         admin: adminCb instanceof HTMLInputElement ? adminCb.checked : rows[i].admin,
+        gitUsername: String(gu?.value ?? "").trim() || undefined,
       };
       i++;
     }
@@ -561,7 +575,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   addBtn.addEventListener("click", () => {
     syncRowInputsToState();
-    rows.push({ email: "", name: "", active: true, admin: false });
+    rows.push({ email: "", name: "", active: true, admin: false, gitUsername: undefined });
     render();
     const last = list.querySelector(
       ".flow-board-sortable-row:last-child .flow-board-sortable-user-email"
@@ -573,7 +587,7 @@ export function createSortableBoardUserList(initial, opts = {}) {
 
   return {
     root: wrap,
-    /** @returns {{ email: string, name: string, active: boolean, admin: boolean }[]} */
+    /** @returns {{ email: string, name: string, active: boolean, admin: boolean, gitUsername?: string }[]} */
     getRows() {
       syncRowInputsToState();
       return rows.map((r) => ({ ...r }));

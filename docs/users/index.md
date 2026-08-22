@@ -4,7 +4,7 @@ The **Users** view manages Millrace users stored in **`tasks/.millrace.ini`** as
 
 ![Screenshot: The Users view](../screenshots/demo-users-full.png)
 
-- **Add** users with an email and display name
+- **Add** users with an email, display name, and optional git username
 - **Admin** — users with the Admin checkbox are treated as Millrace admins (for example, archive automation and npm update prompts when their **Mine** preference matches)
 - **Deactivate** users to hide them from owner pickers while keeping cards assigned to them
 - **Save** writes changes to **`tasks/.millrace.ini`**
@@ -20,6 +20,7 @@ Each user is a section like:
 email = millrace@example.com
 name = Steve Fenton
 admin = true
+git_username = steve-fenton
 ```
 
 Inactive users are stored with **`active = false`**. Legacy **`[millrace] admin_email`** is still honoured until users are saved from this view (it is then removed in favour of per-user **`admin`** flags).

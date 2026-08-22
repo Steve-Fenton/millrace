@@ -586,7 +586,7 @@ export async function patchLocalUserPreferences(body) {
 
 /**
  * Millrace users from `tasks/.millrace.ini` (`[users.N]` sections).
- * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean }[]>}
+ * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean, gitUsername?: string }[]>}
  */
 export async function fetchMillraceUsers() {
   try {
@@ -599,6 +599,7 @@ export async function fetchMillraceUsers() {
       name: String(r?.name ?? "").trim(),
       active: r?.active !== false,
       admin: r?.admin === true,
+      gitUsername: String(r?.gitUsername ?? "").trim() || undefined,
     }));
   } catch {
     return [];
@@ -606,8 +607,8 @@ export async function fetchMillraceUsers() {
 }
 
 /**
- * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
- * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean }[]>}
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean, gitUsername?: string }[]} users
+ * @returns {Promise<{ email: string, name: string, active: boolean, admin: boolean, gitUsername?: string }[]>}
  */
 export async function patchMillraceUsers(users) {
   const res = await fetch("/api/millrace-users", {
@@ -619,6 +620,7 @@ export async function patchMillraceUsers(users) {
         name: String(r?.name ?? "").trim(),
         active: r?.active !== false,
         admin: r?.admin === true,
+        gitUsername: String(r?.gitUsername ?? "").trim() || undefined,
       })),
     }),
     ...NO_STORE,
@@ -637,6 +639,7 @@ export async function patchMillraceUsers(users) {
     name: String(r?.name ?? "").trim(),
     active: r?.active !== false,
     admin: r?.admin === true,
+    gitUsername: String(r?.gitUsername ?? "").trim() || undefined,
   }));
 }
 

@@ -6,7 +6,7 @@ import { markDataRootPendingSync } from "./localUserIni.js";
 const USERS_SECTION_RE = /^users\.(\d+)$/i;
 
 /**
- * @typedef {{ index: number, email: string, name: string, active: boolean, admin: boolean }} MillraceUserDef
+ * @typedef {{ index: number, email: string, name: string, active: boolean, admin: boolean, gitUsername?: string }} MillraceUserDef
  */
 
 /**
@@ -46,12 +46,15 @@ export function parseMillraceUsersFromIniSections(sections) {
       adminRaw === "true" ||
       adminRaw === "1" ||
       adminRaw === "yes";
+    const gitUsernameRaw = String(sec.git_username ?? sec.gitUsername ?? "").trim();
+    const gitUsername = gitUsernameRaw || undefined;
     users.push({
       index: idx,
       email,
       name: displayName || email,
       active,
       admin,
+      gitUsername,
     });
   }
   users.sort((a, b) => a.index - b.index);
@@ -84,6 +87,9 @@ function serializeMillraceUsersIniLines(users) {
     }
     if (u.admin) {
       lines.push("admin = true");
+    }
+    if (u.gitUsername) {
+      lines.push(`git_username = ${String(u.gitUsername).trim()}`);
     }
     lines.push("");
   }
@@ -173,6 +179,7 @@ export async function readMillraceCatalogUsers() {
       name: u.name,
       active: u.active,
       admin: u.admin,
+      gitUsername: u.gitUsername,
     }));
   } catch {
     return [];
@@ -180,7 +187,7 @@ export async function readMillraceCatalogUsers() {
 }
 
 /**
- * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean, gitUsername?: string }[]} users
  * @returns {string | null} error message, or null if valid
  */
 export function validateMillraceUsersPayload(users) {
@@ -209,7 +216,7 @@ export function validateMillraceUsersPayload(users) {
 
 /**
  * Replace all `[users.N]` sections in `tasks/.millrace.ini`.
- * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} users
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean, gitUsername?: string }[]} users
  */
 export async function writeMillraceCatalogUsers(users) {
   const err = validateMillraceUsersPayload(users);
@@ -228,6 +235,7 @@ export async function writeMillraceCatalogUsers(users) {
       name,
       active: row?.active !== false,
       admin: row?.admin === true,
+      gitUsername: String(row?.gitUsername ?? "").trim() || undefined,
     });
   }
 

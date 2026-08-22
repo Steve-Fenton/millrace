@@ -7,7 +7,7 @@ import { initFlowTheme } from "../ui/applyTheme.js";
 import { showFlowAlert, showFlowToast } from "../ui/showMessage.js";
 
 /**
- * @param {{ email: string, name: string, active?: boolean, admin?: boolean }[]} initial
+ * @param {{ email: string, name: string, active?: boolean, admin?: boolean, gitUsername?: string }[]} initial
  */
 function renderUsersForm(initial) {
   const form = document.createElement("form");
