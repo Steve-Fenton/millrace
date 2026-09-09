@@ -431,3 +431,47 @@ export function toggleMarkdownTaskLine(source, lineIndex) {
   lines[lineIndex] = m[1] + nextInner + m[3];
   return lines.join("\n");
 }
+
+/**
+ * @typedef {{ total: number, completed: number, percent: number }} ChecklistProgress
+ */
+
+/**
+ * Parse markdown source for GitHub-style checklist items (`- [ ]`, `- [x]`, `* [ ]`, `* [x]`).
+ * Skips checklist items inside fenced code blocks.
+ *
+ * @param {string | undefined} source
+ * @returns {ChecklistProgress | null} returns null if total === 0, else checklist progress metrics
+ */
+export function parseMarkdownChecklist(source) {
+  const raw = String(source ?? "").replace(/\r\n?/g, "\n");
+  if (!raw.trim()) return null;
+
+  const lines = raw.split("\n");
+  let total = 0;
+  let completed = 0;
+  let inCodeBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (/^`{3,}/.test(trimmed)) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    const trimmedStart = lines[i].trimStart();
+    const taskMatch = /^[-*]\s+\[([ xX])\]\s*(.*)$/.exec(trimmedStart);
+    if (taskMatch) {
+      total++;
+      if (taskMatch[1] === "x" || taskMatch[1] === "X") {
+        completed++;
+      }
+    }
+  }
+
+  if (total === 0) return null;
+  const percent = Math.round((completed / total) * 100);
+  return { total, completed, percent };
+}
+

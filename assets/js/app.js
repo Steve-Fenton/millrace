@@ -72,6 +72,7 @@ import { takePendingCardEditorOpen } from "./ui/openCardEditorAfterRefresh.js";
 import { escapeHtml } from "./html/escape.js";
 import { displayTaskTitle } from "./models/taskModel.js";
 import { initFlowTheme } from "./ui/applyTheme.js";
+import { parseMarkdownChecklist } from "./ui/limitedMarkdown.js";
 
 const ADD_ICON = `<svg class="column-add-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M7 3v8M3 7h8"/></svg>`;
 
@@ -1408,6 +1409,26 @@ function renderBoard(
           if (linkWrap.childElementCount > 0) {
             li.append(linkWrap);
           }
+        }
+
+        const checklist = parseMarkdownChecklist(card.description);
+        if (checklist) {
+          const progressTrack = document.createElement("div");
+          progressTrack.className = "column-card-checklist-progress";
+          progressTrack.setAttribute("role", "progressbar");
+          progressTrack.setAttribute("aria-valuenow", String(checklist.percent));
+          progressTrack.setAttribute("aria-valuemin", "0");
+          progressTrack.setAttribute("aria-valuemax", "100");
+          const tip = `${checklist.completed} of ${checklist.total} tasks completed (${checklist.percent}%)`;
+          progressTrack.title = tip;
+          progressTrack.setAttribute("aria-label", tip);
+
+          const progressBar = document.createElement("div");
+          progressBar.className = "column-card-checklist-progress-bar";
+          progressBar.style.width = `${checklist.percent}%`;
+
+          progressTrack.append(progressBar);
+          li.append(progressTrack);
         }
 
         if (fn) {
