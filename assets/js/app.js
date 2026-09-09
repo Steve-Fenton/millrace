@@ -1415,6 +1415,9 @@ function renderBoard(
         if (checklist) {
           const progressTrack = document.createElement("div");
           progressTrack.className = "column-card-checklist-progress";
+          if (checklist.percent === 100) {
+            progressTrack.classList.add("is-complete");
+          }
           progressTrack.setAttribute("role", "progressbar");
           progressTrack.setAttribute("aria-valuenow", String(checklist.percent));
           progressTrack.setAttribute("aria-valuemin", "0");

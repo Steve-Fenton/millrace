@@ -2746,6 +2746,10 @@ a.column-done-truncation-link:focus-visible {
   pointer-events: none;
 }
 
+.column-card-checklist-progress.is-complete {
+  opacity: 0.5;
+}
+
 .column-card-checklist-progress-bar {
   height: 100%;
   background: var(--accent);
