@@ -72,6 +72,7 @@ On an **aggregate board**, copied links use the **source** board where the card 
 - **Strategic**: Tick this box for crucial tasks, they get a target icon and extra highlighting.
 - **Notes**: A short text field for useful contextual information, which is shown on the card.
 - **Next action date**: Add a next action date to bring cards to your attention.
+- **List progress**: If you add a list to your card [markdown](../markdown.md), your progress will be shown on the card.
 
 ## Version control sync
 
