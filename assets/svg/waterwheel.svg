@@ -2,7 +2,7 @@
   <title>Water wheel</title>
   <desc>A stylized water wheel with spokes and paddles.</desc>
 
-  <!-- Accent: app.css --accent (#38bdf8). Channel: sky-800 (#075985). Hub: #0369a1 -->
+  <!-- Accent: app.css accent (#38bdf8). Channel: sky-800 (#075985). Hub: #0369a1 -->
   <g>
     <circle cx="108" cy="150" r="90" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.28"/>
     <circle cx="108" cy="150" r="85" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.4"/>
