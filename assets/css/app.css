@@ -3362,6 +3362,16 @@ dialog.flow-modal::backdrop {
   word-break: break-word;
 }
 
+.flow-description-preview .flow-md-blockquote {
+  margin-block-end: 0.45rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 3px solid var(--accent);
+  color: var(--text-muted);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .flow-description-preview .flow-md-list {
   margin-block-end: 0.45rem;
   padding-inline-start: 1.2rem;

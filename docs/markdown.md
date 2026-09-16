@@ -5,6 +5,7 @@ Card descriptions support a small, safe markdown subset intended to keep content
 ## Supported block formatting
 
 - Headings: `#`, `##`, `###`
+- Blockquotes: lines starting with `>`
 - Unordered lists: `- item` or `* item`
 - Checkbox lists: `- [ ]` pending, `- [x]` or `- [X]` done
 - Ordered lists: `1. item`
@@ -28,7 +29,7 @@ Only `http://` and `https://` links are rendered as clickable links.
 - Raw HTML is not rendered.
 - Empty lines split paragraphs and lists.
 - Unsupported syntax is shown as plain text.
-- In the card editor’s **Preview** tab, task checkboxes update the description text (`[ ]` ↔ `[x]`).
+- In the card editor's **Preview** tab, task checkboxes update the description text (`[ ]` ↔ `[x]`).
 
 Example nested list:
 

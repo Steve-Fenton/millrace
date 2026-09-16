@@ -67,7 +67,7 @@ Then("limited markdown block at index {int} tag should be {string}", function (i
 });
 
 Then("limited markdown block at index {int} text should be {string}", function (index, text) {
-  assert.strictEqual(markdownBlockAt(this, index).textContent, text);
+  assert.strictEqual(markdownBlockAt(this, index).textContent, expandMarkdownMacros(text));
 });
 
 Then(

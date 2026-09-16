@@ -1,6 +1,6 @@
 /**
  * Render a restricted markdown subset into `target`.
- * Supported blocks: headings (#..###), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), GFM tables, fenced code (```), paragraphs.
+ * Supported blocks: headings (#..###), blockquotes (`>`), ordered/unordered lists (incl. `- [ ]` / `- [x]` tasks), GFM tables, fenced code (```), paragraphs.
  * Supported inline: **bold**, *italic*, ~~strikethrough~~, `code`, [text](https://example.com).
  * Content is always inserted as text (no raw HTML passthrough).
  *
@@ -104,6 +104,23 @@ export function renderLimitedMarkdown(target, source, options) {
       code.textContent = codeLines.join("\n");
       pre.append(code);
       frag.append(pre);
+      continue;
+    }
+
+    const blockquoteMatch = /^>\s?(.*)$/.exec(trimmed);
+    if (blockquoteMatch) {
+      closeLists();
+      const blockquote = document.createElement("blockquote");
+      blockquote.className = "flow-md-blockquote";
+      const quoteLines = [blockquoteMatch[1]];
+      while (lineIndex + 1 < lines.length) {
+        const nextQuoteMatch = /^>\s?(.*)$/.exec(lines[lineIndex + 1].trim());
+        if (!nextQuoteMatch) break;
+        quoteLines.push(nextQuoteMatch[1]);
+        lineIndex++;
+      }
+      appendInlineMarkdown(blockquote, quoteLines.join("\n"));
+      frag.append(blockquote);
       continue;
     }
 

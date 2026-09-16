@@ -38,6 +38,28 @@ Feature: Limited markdown rendering
     And limited markdown block at index 0 should contain element "code" with text "code"
     And limited markdown block at index 0 should contain link "link" with href "https://example.com/"
 
+  Scenario: blockquote renders with inline formatting
+    Given limited markdown source is:
+      """
+      > **quoted** text
+      """
+    When I render limited markdown
+    Then limited markdown block count should be 1
+    And limited markdown block at index 0 tag should be "BLOCKQUOTE"
+    And limited markdown block at index 0 text should be "quoted text"
+    And limited markdown block at index 0 should contain element "strong" with text "quoted"
+
+  Scenario: consecutive blockquote lines render as one blockquote
+    Given limited markdown source is:
+      """
+      > first line
+      > second line
+      """
+    When I render limited markdown
+    Then limited markdown block count should be 1
+    And limited markdown block at index 0 tag should be "BLOCKQUOTE"
+    And limited markdown block at index 0 text should be "first line{NL}second line"
+
   Scenario: unordered list items render as a ul
     Given limited markdown source is:
       """
