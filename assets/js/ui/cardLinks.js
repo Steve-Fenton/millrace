@@ -1,5 +1,7 @@
 const REMOVE_ICON = `<svg class="flow-link-remove-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l6 6M10 4l-6 6"/></svg>`;
 
+const OPEN_TAB_ICON = `<svg class="flow-link-open-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>`;
+
 /**
  * Host for link label, e.g. `https://example.com/path` → `example.com`.
  * @param {string} raw
@@ -16,6 +18,38 @@ function displayHostFromUrlInput(raw) {
     const u = new URL(candidate);
     const host = (u.hostname || "").replace(/^www\./i, "");
     return host;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Normalizes user-entered URL candidate for external navigation.
+ * Rejects javascript:, data:, and vbscript: schemes.
+ * @param {string} raw
+ * @returns {string}
+ */
+function resolveExternalUrl(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  let candidate = s;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) {
+    candidate = `https://${s}`;
+  }
+  try {
+    const base =
+      typeof window !== "undefined" && window.location?.href
+        ? window.location.href
+        : "http://localhost/";
+    const u = new URL(candidate, base);
+    if (
+      u.protocol === "javascript:" ||
+      u.protocol === "data:" ||
+      u.protocol === "vbscript:"
+    ) {
+      return "";
+    }
+    return u.href;
   } catch {
     return "";
   }
@@ -54,6 +88,38 @@ export function createLinksEditor(initialLinks) {
     urlIn.autocomplete = "off";
     urlIn.spellcheck = false;
 
+    const openLink = document.createElement("a");
+    openLink.className = "flow-btn flow-btn-icon flow-link-open";
+    openLink.target = "_blank";
+    openLink.rel = "noopener noreferrer";
+    openLink.setAttribute("aria-label", "Open link in new tab");
+    openLink.title = "Open link in new tab";
+    openLink.innerHTML = OPEN_TAB_ICON;
+
+    function syncOpenLink() {
+      const href = resolveExternalUrl(urlIn.value);
+      if (href) {
+        openLink.href = href;
+        openLink.removeAttribute("aria-disabled");
+        openLink.removeAttribute("tabindex");
+        openLink.classList.remove("is-disabled");
+      } else {
+        openLink.removeAttribute("href");
+        openLink.setAttribute("aria-disabled", "true");
+        openLink.setAttribute("tabindex", "-1");
+        openLink.classList.add("is-disabled");
+      }
+    }
+
+    urlIn.addEventListener("input", syncOpenLink);
+
+    openLink.addEventListener("click", (e) => {
+      syncOpenLink();
+      if (!openLink.getAttribute("href")) {
+        e.preventDefault();
+      }
+    });
+
     const textIn = document.createElement("input");
     textIn.type = "text";
     textIn.className = "flow-input flow-link-text";
@@ -65,6 +131,7 @@ export function createLinksEditor(initialLinks) {
     rm.type = "button";
     rm.className = "flow-link-remove";
     rm.setAttribute("aria-label", "Remove link");
+    rm.title = "Remove link";
     rm.innerHTML = REMOVE_ICON;
     rm.addEventListener("click", () => {
       row.remove();
@@ -83,7 +150,9 @@ export function createLinksEditor(initialLinks) {
       syncTextFromUrlIfEmpty();
     });
 
-    row.append(urlIn, textIn, rm);
+    syncOpenLink();
+
+    row.append(urlIn, openLink, textIn, rm);
     list.append(row);
     if (focusUrlField) {
       requestAnimationFrame(() => urlIn.focus());
