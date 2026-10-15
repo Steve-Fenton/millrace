@@ -4,7 +4,7 @@
   "description": "Git-friendly Kanban work items as INI files under tasks/ — local server and web UI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Steve-Fenton/millrace"
+    "url": "git+https://github.com/Steve-Fenton/millrace.git"
   },
   "type": "module",
   "bin": {
