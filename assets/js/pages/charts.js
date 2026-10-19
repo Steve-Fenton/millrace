@@ -1111,15 +1111,61 @@ function renderScatterSvg(buckets, granularity, timeDomain = null) {
     const tm = Date.parse(b.t);
     const cx = xAt(tm);
     const cy = yAt(b.n);
+
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "charts-point-group");
+    g.setAttribute("tabindex", "0");
+    g.setAttribute(
+      "aria-label",
+      `${formatBucketLabel(b.t, granularity)}: ${b.n} card${b.n === 1 ? "" : "s"}`
+    );
+
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hit.setAttribute("cx", String(cx));
+    hit.setAttribute("cy", String(cy));
+    hit.setAttribute("r", "14");
+    hit.setAttribute("class", "charts-point-hit");
+
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     c.setAttribute("cx", String(cx));
     c.setAttribute("cy", String(cy));
     c.setAttribute("r", "6");
     c.setAttribute("class", "charts-point");
+
     const tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
     tip.textContent = `${formatBucketLabel(b.t, granularity)} — ${b.n} card${b.n === 1 ? "" : "s"}`;
     c.append(tip);
-    svg.append(c);
+
+    const valStr = String(b.n);
+    const badgeW = Math.max(22, valStr.length * 8 + 14);
+    const badgeH = 18;
+    const badgeX = cx - badgeW / 2;
+    const badgeY = cy - 25;
+
+    const badge = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    badge.setAttribute("class", "charts-point-badge");
+    badge.setAttribute("aria-hidden", "true");
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", String(badgeX));
+    rect.setAttribute("y", String(badgeY));
+    rect.setAttribute("width", String(badgeW));
+    rect.setAttribute("height", String(badgeH));
+    rect.setAttribute("rx", "4");
+    rect.setAttribute("ry", "4");
+    rect.setAttribute("class", "charts-point-badge-bg");
+
+    const valText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    valText.setAttribute("x", String(cx));
+    valText.setAttribute("y", String(badgeY + badgeH / 2));
+    valText.setAttribute("text-anchor", "middle");
+    valText.setAttribute("dominant-baseline", "central");
+    valText.setAttribute("class", "charts-point-badge-text");
+    valText.textContent = valStr;
+
+    badge.append(rect, valText);
+    g.append(hit, c, badge);
+    svg.append(g);
   }
 
   return svg;

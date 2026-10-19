@@ -2009,6 +2009,57 @@ dialog.git-conflict-dialog::backdrop {
   stroke-width: 1.5;
 }
 
+.charts-point-group {
+  outline: none;
+  cursor: pointer;
+}
+
+.charts-point-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+}
+
+.charts-point-badge {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  transform: translateY(2px);
+  transform-origin: center;
+}
+
+.charts-point-group:hover .charts-point-badge,
+.charts-point-group:focus-visible .charts-point-badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.charts-point-group:hover .charts-point,
+.charts-point-group:focus-visible .charts-point {
+  fill: var(--accent);
+  stroke: var(--accent-emphasis);
+  stroke-width: 2;
+}
+
+.charts-point-group:focus-visible .charts-point {
+  stroke-width: 2.5;
+}
+
+.charts-point-badge-bg {
+  fill: var(--elevated);
+  stroke: var(--accent-border);
+  stroke-width: 1;
+  filter: drop-shadow(0 2px 4px var(--black-shadow-light));
+}
+
+.charts-point-badge-text {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  user-select: none;
+}
+
 .charts-point--cycle {
   fill: var(--purple-medium);
   stroke: var(--purple-border);
