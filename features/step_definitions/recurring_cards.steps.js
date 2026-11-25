@@ -61,20 +61,27 @@ Given(
   }
 );
 
+async function putCard(world, body) {
+  const { status, json } = await millraceHttp(world.flowApiAgent, "PUT", "/api/card", {
+    title: "Water the plants",
+    description: "",
+    ...body,
+  });
+  world.lastHttpStatus = status;
+  world.lastJson = json;
+}
+
 When(
-  "I put card {string} in column {int} on board {string} with recurrence {string}",
-  async function (filename, columnIndex, slug, recurrence) {
-    const { status, json } = await millraceHttp(this.flowApiAgent, "PUT", "/api/card", {
-      boardSlug: slug,
-      columnIndex,
-      filename,
-      title: "Water the plants",
-      description: "",
-      owner: "",
-      recurrence,
-    });
-    this.lastHttpStatus = status;
-    this.lastJson = json;
+  "I put card {string} in column {int} on board {string} with owner {string} and recurrence {string}",
+  async function (filename, columnIndex, slug, owner, recurrence) {
+    await putCard(this, { boardSlug: slug, columnIndex, filename, owner, recurrence });
+  }
+);
+
+When(
+  "I put card {string} in column {int} on board {string} with owner {string} and no recurrence change",
+  async function (filename, columnIndex, slug, owner) {
+    await putCard(this, { boardSlug: slug, columnIndex, filename, owner });
   }
 );
 

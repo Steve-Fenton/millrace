@@ -6,6 +6,11 @@ Feature: Recurring cards
 
   Background:
     Given the Millrace integration server has profile "flow-board"
+    And I write integration tasks localuser.ini:
+      """
+      [user]
+      mine = owner@example.com
+      """
     And the integration board "test" is defined as:
       """
       [board]
@@ -54,11 +59,43 @@ Feature: Recurring cards
     When I send a GET request to "/api/board?boardSlug=test"
     Then the integration board "test" should have 1 card files
 
+  Scenario: recurring cards owned by someone else are not spawned
+    Given the integration board "test" has a recurring card "FLOW-rec.ini" in column "Ideas" due 3 days ago repeating "2 weeks"
+    And I write integration tasks localuser.ini:
+      """
+      [user]
+      mine = colleague@example.com
+      """
+    When I send a GET request to "/api/board?boardSlug=test"
+    Then the integration board "test" should have 1 card files
+
+  Scenario: no recurring cards are spawned when the local user is not set
+    Given the integration board "test" has a recurring card "FLOW-rec.ini" in column "Ideas" due 3 days ago repeating "2 weeks"
+    And I write integration tasks localuser.ini:
+      """
+      [user]
+      owner = owner@example.com
+      """
+    When I send a GET request to "/api/board?boardSlug=test"
+    Then the integration board "test" should have 1 card files
+
   Scenario: PUT sets and clears the recurrence
     Given the integration board "test" has a recurring card "FLOW-rec.ini" in column "Ideas" due -5 days ago repeating ""
-    When I put card "FLOW-rec.ini" in column 1 on board "test" with recurrence "3 weeks"
+    When I put card "FLOW-rec.ini" in column 1 on board "test" with owner "owner@example.com" and recurrence "3 weeks"
     Then the response status should be 200
     And the recurring card "FLOW-rec.ini" on board "test" should still have recurrence "3 weeks"
-    When I put card "FLOW-rec.ini" in column 1 on board "test" with recurrence ""
+    When I put card "FLOW-rec.ini" in column 1 on board "test" with owner "owner@example.com" and recurrence ""
     Then the response status should be 200
     And the recurring card "FLOW-rec.ini" on board "test" should still have recurrence ""
+
+  Scenario: PUT rejects a recurring card without an owner
+    Given the integration board "test" has a recurring card "FLOW-rec.ini" in column "Ideas" due -5 days ago repeating ""
+    When I put card "FLOW-rec.ini" in column 1 on board "test" with owner "" and recurrence "3 weeks"
+    Then the response status should be 400
+    And the recurring card "FLOW-rec.ini" on board "test" should still have recurrence ""
+
+  Scenario: PUT rejects removing the owner from a recurring card
+    Given the integration board "test" has a recurring card "FLOW-rec.ini" in column "Ideas" due -5 days ago repeating "2 weeks"
+    When I put card "FLOW-rec.ini" in column 1 on board "test" with owner "" and no recurrence change
+    Then the response status should be 400
+    And the recurring card "FLOW-rec.ini" on board "test" should still have recurrence "2 weeks"

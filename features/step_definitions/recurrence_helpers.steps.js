@@ -40,12 +40,28 @@ Then(
   }
 );
 
-function dueCheck(closed, nad, recurrence, today) {
+const ME = "me@example.com";
+
+function dueCheck(closed, nad, recurrence, today, owner = ME) {
   /** @type {Record<string, string>} */
-  const item = { next_action_date: nad, recurrence };
+  const item = { next_action_date: nad, recurrence, owner };
   if (closed) item.closed = "2026-11-01T00:00:00.000Z";
-  return recurringItemIsDue(item, today);
+  return recurringItemIsDue(item, today, ME);
 }
+
+Then(
+  "a recurring item owned by {string} due {string} should be due on {string}",
+  function (owner, nad, today) {
+    assert.strictEqual(dueCheck(false, nad, "2 weeks", today, owner), true);
+  }
+);
+
+Then(
+  "a recurring item owned by {string} due {string} should not be due on {string}",
+  function (owner, nad, today) {
+    assert.strictEqual(dueCheck(false, nad, "2 weeks", today, owner), false);
+  }
+);
 
 Then(
   "a recurring item with next action {string} and recurrence {string} should be due on {string}",

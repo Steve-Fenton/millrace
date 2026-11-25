@@ -411,6 +411,13 @@ export async function openCardEditorDialog(ctx) {
         });
         return false;
       }
+      if (recurrence && !owner) {
+        await showFlowAlert(
+          "Recurring cards need an owner. Copies are only created for the person the card is assigned to.",
+          { title: "Edit card" }
+        );
+        return false;
+      }
       if (recurrence && !nextActionDate) {
         await showFlowAlert(
           "Recurring cards need a next action date. The first copy is created on that date.",

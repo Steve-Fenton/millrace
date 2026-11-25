@@ -267,7 +267,7 @@ Update a card.
 | `note` | no | Single-line note; omit to leave unchanged; empty clears |
 | `strategic` | no | Truthy sets strategic; present-and-falsy clears |
 | `nextActionDate` | no | ISO date string; empty clears |
-| `recurrence` | no | `"<n> weeks"` or `"<n> months"`; empty clears; omit to leave unchanged |
+| `recurrence` | no | `"<n> weeks"` or `"<n> months"`; empty clears; omit to leave unchanged. A recurring card must have an `owner` (400 otherwise) |
 | `links` | no | Array of link objects; omit to keep existing |
 
 ### `DELETE` card

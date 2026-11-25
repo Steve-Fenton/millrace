@@ -20,7 +20,10 @@ import { loadBoardCatalog } from "./board/catalog.js";
 import { newCardId, sanitizeSegment } from "./board/cardPaths.js";
 import { loadBoardModelForSlug, maxSortOrderForCell } from "./board/model.js";
 import { dataRoot } from "./dataRoot.js";
-import { markDataRootPendingSync } from "./localUserIni.js";
+import {
+  markDataRootPendingSync,
+  readLocalUserIniSections,
+} from "./localUserIni.js";
 
 /**
  * Column that receives copies of recurring cards: the first `type = to_do`
@@ -36,13 +39,19 @@ export function recurringTargetColumnIndex(columns) {
 }
 
 /**
- * True when an `[item]` record is an open recurring card whose next action date
- * is today or earlier (`todayYmd` is local YYYY-MM-DD).
+ * True when an `[item]` record is an open recurring card owned by `mine` whose
+ * next action date is today or earlier (`todayYmd` is local YYYY-MM-DD).
+ * Cards owned by someone else (or nobody) wait until their owner runs Millrace,
+ * so nothing piles up for people who are away.
  * @param {Record<string, string>} item
  * @param {string} todayYmd
+ * @param {string} mine — local user's email (`[user] mine`)
  */
-export function recurringItemIsDue(item, todayYmd) {
+export function recurringItemIsDue(item, todayYmd, mine) {
   if (String(item?.closed ?? "").trim()) return false;
+  const me = String(mine ?? "").trim().toLowerCase();
+  const owner = String(item?.owner ?? "").trim().toLowerCase();
+  if (!me || owner !== me) return false;
   if (!parseRecurrence(item?.recurrence)) return false;
   const nad = normalizeNextActionDate(item?.next_action_date);
   return Boolean(nad) && nad <= todayYmd;
@@ -67,7 +76,7 @@ const inFlight = new Map();
  * Spawn copies of due recurring cards on one board and roll their next action
  * dates forward. Safe to call repeatedly; does nothing when nothing is due.
  * @param {string} slugRaw
- * @param {{ nowMs?: number }} [opts]
+ * @param {{ nowMs?: number, mine?: string }} [opts] — `mine` defaults to `[user] mine` in localuser.ini
  * @returns {Promise<{ spawned: Array<{ source: string, filename: string }> }>}
  */
 export function runRecurringCardsForSlug(slugRaw, opts = {}) {
@@ -85,11 +94,18 @@ export function runRecurringCardsForSlug(slugRaw, opts = {}) {
 
 /**
  * @param {string} slug
- * @param {{ nowMs?: number }} opts
+ * @param {{ nowMs?: number, mine?: string }} opts
  */
 async function spawnDueRecurringCards(slug, opts) {
   /** @type {Array<{ source: string, filename: string }>} */
   const spawned = [];
+  let mine = opts.mine;
+  if (mine === undefined) {
+    const sections = await readLocalUserIniSections();
+    mine = String(sections.user?.mine ?? sections.user?.Mine ?? "");
+  }
+  mine = mine.trim();
+  if (!mine) return { spawned };
   let model;
   try {
     model = await loadBoardModelForSlug(slug);
@@ -125,7 +141,7 @@ async function spawnDueRecurringCards(slug, opts) {
       continue;
     }
     const { item, links } = parseTaskCardIniFull(raw);
-    if (!recurringItemIsDue(item, todayYmd)) continue;
+    if (!recurringItemIsDue(item, todayYmd, mine)) continue;
 
     const recurrence = parseRecurrence(item.recurrence);
     const dueYmd = normalizeNextActionDate(item.next_action_date);

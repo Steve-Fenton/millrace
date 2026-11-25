@@ -40,3 +40,9 @@ Feature: Recurrence helpers
     And a recurring item with next action "2026-11-26" and recurrence "2 weeks" should not be due on "2026-11-25"
     And a recurring item with next action "2026-11-20" and recurrence "" should not be due on "2026-11-25"
     And a closed recurring item with next action "2026-11-20" and recurrence "2 weeks" should not be due on "2026-11-25"
+
+  Scenario: only cards owned by the local user are due
+    Then a recurring item owned by "me@example.com" due "2026-11-20" should be due on "2026-11-25"
+    And a recurring item owned by "ME@Example.com" due "2026-11-20" should be due on "2026-11-25"
+    And a recurring item owned by "colleague@example.com" due "2026-11-20" should not be due on "2026-11-25"
+    And a recurring item owned by "" due "2026-11-20" should not be due on "2026-11-25"

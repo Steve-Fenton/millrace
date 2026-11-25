@@ -127,6 +127,14 @@ export function registerCardCrudRoutes(app) {
         else delete item.recurrence;
       }
 
+      if (item.recurrence && !String(item.owner ?? "").trim()) {
+        res.status(400).json({
+          message:
+            "Recurring cards need an owner. Assign the card to someone or turn off recurring.",
+        });
+        return;
+      }
+
       const nextLinks = Array.isArray(req.body.links)
         ? normalizeLinksForIni(req.body.links)
         : parsedLinks;
