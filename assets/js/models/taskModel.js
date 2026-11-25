@@ -1,8 +1,9 @@
 import { parseIni } from "../ini/parseIni.js";
+import { formatRecurrenceIni } from "../ini/recurrence.js";
 
 /**
  * @typedef {{ text: string, url: string }} TaskLink
- * @typedef {{ id?: string, title?: string, description?: string, note?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, next_action_date?: string, strategic?: boolean, links: TaskLink[], filename?: string }} TaskCard
+ * @typedef {{ id?: string, title?: string, description?: string, note?: string, owner?: string, swimlane?: string, column?: string, sort_order?: string, created?: string, closed?: string, next_action_date?: string, recurrence?: string, strategic?: boolean, links: TaskLink[], filename?: string }} TaskCard
  */
 
 /**
@@ -174,6 +175,7 @@ export function parseTaskCardIni(text) {
     created: item.created?.trim(),
     closed: item.closed?.trim(),
     next_action_date: item.next_action_date?.trim(),
+    recurrence: formatRecurrenceIni(item.recurrence) || undefined,
     strategic: parseIniTruthy(item.strategic),
     links,
   };

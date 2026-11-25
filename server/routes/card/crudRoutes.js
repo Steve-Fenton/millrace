@@ -8,6 +8,7 @@ import {
   serializeFullCardIni,
   swimlaneNameForIniItem,
 } from "../../../assets/js/ini/cardIni.js";
+import { formatRecurrenceIni } from "../../../assets/js/ini/recurrence.js";
 import { resolveCardSwimlaneIndex } from "../../../assets/js/ini/swimlaneResolve.js";
 import { canAssignCardOwner } from "../../../assets/js/models/boardModel.js";
 import { parseTaskCardIniFull } from "../../../assets/js/models/taskModel.js";
@@ -114,6 +115,16 @@ export function registerCardCrudRoutes(app) {
         const nad = normalizeNextActionDate(req.body.nextActionDate);
         if (nad) item.next_action_date = nad;
         else delete item.next_action_date;
+      }
+
+      if (
+        req.body &&
+        typeof req.body === "object" &&
+        "recurrence" in req.body
+      ) {
+        const rec = formatRecurrenceIni(req.body.recurrence);
+        if (rec) item.recurrence = rec;
+        else delete item.recurrence;
       }
 
       const nextLinks = Array.isArray(req.body.links)

@@ -48,6 +48,8 @@ Install/update Millrace and run the project cycle.
 
 ### `GET` board
 
+Before responding, spawns copies of any due recurring cards on this board (see `recurrence` on `PUT` card).
+
 Load a board definition.
 
 | Query | Required | Notes |
@@ -265,6 +267,7 @@ Update a card.
 | `note` | no | Single-line note; omit to leave unchanged; empty clears |
 | `strategic` | no | Truthy sets strategic; present-and-falsy clears |
 | `nextActionDate` | no | ISO date string; empty clears |
+| `recurrence` | no | `"<n> weeks"` or `"<n> months"`; empty clears; omit to leave unchanged |
 | `links` | no | Array of link objects; omit to keep existing |
 
 ### `DELETE` card

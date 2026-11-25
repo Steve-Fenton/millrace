@@ -226,6 +226,7 @@ export function serializeFullCardIni(item, links) {
     "owner",
     "note",
     "next_action_date",
+    "recurrence",
     "swimlane",
     "column",
     "sort_order",
@@ -238,6 +239,7 @@ export function serializeFullCardIni(item, links) {
     "title",
     "note",
     "next_action_date",
+    "recurrence",
     "owner",
     "swimlane",
     "column",
@@ -271,6 +273,7 @@ export function serializeFullCardIni(item, links) {
     if (k === "strategic" && String(v).trim() === "") continue;
     if (k === "note" && String(v).trim() === "") continue;
     if (k === "next_action_date" && String(v).trim() === "") continue;
+    if (k === "recurrence" && String(v).trim() === "") continue;
     used.add(k);
     if (k === "description") {
       appendDescription(v);

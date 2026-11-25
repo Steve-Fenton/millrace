@@ -2660,6 +2660,11 @@ a.column-done-truncation-link:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.column-card-recurrence {
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
 /* Day before the date: bring the whole row up to the card title color. */
 .column-card-next-action--due-tomorrow {
   color: var(--text);
@@ -3769,6 +3774,30 @@ input[type="checkbox"]:disabled {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.flow-field--recurrence {
+  gap: 0.4rem;
+}
+
+.flow-recurrence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.flow-recurrence-row[hidden] {
+  display: none;
+}
+
+.flow-recurrence-row .flow-recurrence-every {
+  width: 5rem;
+  flex: 0 0 auto;
+}
+
+.flow-recurrence-row .flow-recurrence-unit {
+  width: auto;
+  flex: 0 0 auto;
 }
 
 .flow-next-action-date-row .flow-next-action-date-input {

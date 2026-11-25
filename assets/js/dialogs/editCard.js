@@ -9,6 +9,7 @@ import {
 import { queueCardEditorOpenAfterRefresh } from "../ui/openCardEditorAfterRefresh.js";
 import { showFlowAlert, showFlowConfirm } from "../ui/showMessage.js";
 import { createNextActionDateField } from "../ui/nextActionDateField.js";
+import { createRecurrenceField } from "../ui/recurrenceField.js";
 import { createOwnerField } from "../ui/selectOwner.js";
 import {
   abandonCard,
@@ -311,10 +312,15 @@ export async function openCardEditorDialog(ctx) {
   noteFieldEl.insertAdjacentElement("afterend", nextActionField.root);
   const nextActionInput = nextActionField.input;
 
+  const recurrenceField = createRecurrenceField(
+    String(initial.recurrence ?? "").trim()
+  );
+  nextActionField.root.insertAdjacentElement("afterend", recurrenceField.root);
+
   const linksEditor = createLinksEditor(
     Array.isArray(initial.links) ? initial.links : []
   );
-  nextActionField.root.insertAdjacentElement("afterend", linksEditor.root);
+  recurrenceField.root.insertAdjacentElement("afterend", linksEditor.root);
 
   createCardDescriptionEditor({ modal, descInput });
 
@@ -334,6 +340,7 @@ export async function openCardEditorDialog(ctx) {
       owner: ownerField.getValue(),
       strategic: Boolean(strategicInput?.checked),
       nextActionDate: String(nextActionInput?.value ?? "").trim(),
+      recurrence: recurrenceField.getValue(),
       links: normalizeLinks(linksEditor.getLinks()),
     });
   }
@@ -397,6 +404,20 @@ export async function openCardEditorDialog(ctx) {
       const note = String(fd.get("note") || "").trim();
       const nextActionDate = String(fd.get("next_action_date") || "").trim();
       const owner = ownerField.getValue();
+      const recurrence = recurrenceField.getValue();
+      if (recurrenceField.checkbox.checked && !recurrence) {
+        await showFlowAlert("Enter how often the card repeats (a whole number of weeks or months).", {
+          title: "Edit card",
+        });
+        return false;
+      }
+      if (recurrence && !nextActionDate) {
+        await showFlowAlert(
+          "Recurring cards need a next action date. The first copy is created on that date.",
+          { title: "Edit card" }
+        );
+        return false;
+      }
 
       try {
         await updateCard({
@@ -409,6 +430,7 @@ export async function openCardEditorDialog(ctx) {
           owner,
           strategic: Boolean(strategicInput?.checked),
           nextActionDate,
+          recurrence,
           links: linksEditor.getLinks(),
         });
         document.dispatchEvent(new CustomEvent("flow:refresh-board"));

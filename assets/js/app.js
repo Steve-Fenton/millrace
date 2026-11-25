@@ -1,5 +1,6 @@
 import { openAddCardDialog } from "./dialogs/addCard.js";
 import { openCardEditorDialog } from "./dialogs/editCard.js";
+import { recurrenceLabel } from "./ini/recurrence.js";
 import {
   boardOwnerEmailsForFilter,
   columnIsDone,
@@ -1369,6 +1370,14 @@ function renderBoard(
           dateEl.dateTime = nextActionDate;
           dateEl.textContent = nextActionDate;
           nextEl.append(labelSpan, dateEl);
+          const repeatText = recurrenceLabel(card.recurrence);
+          if (repeatText) {
+            const repeatEl = document.createElement("span");
+            repeatEl.className = "column-card-recurrence";
+            repeatEl.title = `Recurring: ${repeatText.toLowerCase()}`;
+            repeatEl.textContent = `↻ ${repeatText.toLowerCase()}`;
+            nextEl.append(repeatEl);
+          }
           li.append(nextEl);
         }
         if (card.owner && String(card.owner).trim()) {

@@ -23,6 +23,7 @@ function baselineTaskCard() {
     created: undefined,
     closed: undefined,
     next_action_date: undefined,
+    recurrence: undefined,
     strategic: false,
     links: [],
   };

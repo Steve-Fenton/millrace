@@ -34,12 +34,18 @@ import {
 } from "../gitOps.js";
 import { boardNameUniqueError, renameBoard } from "../boardRename.js";
 import { getGitHistory } from "../gitHistory.js";
+import { runRecurringCardsForSlug } from "../recurringCards.js";
 
 /** @param {import("express").Application} app */
 export function registerBoardRoutes(app) {
 app.get("/api/board", async (req, res) => {
   try {
     const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
+    try {
+      await runRecurringCardsForSlug(slug);
+    } catch (e) {
+      console.warn("[millrace] recurring sweep failed for", slug, e);
+    }
     const boardPath = await resolveBoardIniPathForSlug(slug);
     const text = await fs.readFile(boardPath, "utf8");
     const m = parseBoardIni(text);

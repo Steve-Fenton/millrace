@@ -2,6 +2,7 @@ import { existsSync, realpathSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { runStartupArchiveStaleForCatalogSlugs } from "./archive/retention.js";
+import { runRecurringCardsForCatalogSlugs } from "./recurringCards.js";
 import { portFromArgv } from "./cliArgs.js";
 import { app } from "./createApp.js";
 import { ensureDefaultTasksLayout } from "./bootstrapTasks.js";
@@ -24,6 +25,7 @@ async function onListen() {
     `Millrace ${where} (data root ${dataRoot()}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
   await runStartupArchiveStaleForCatalogSlugs();
+  await runRecurringCardsForCatalogSlugs();
 }
 
 /** Resolve to the real path so symlinked installs (e.g. pnpm) match argv[1]. */
