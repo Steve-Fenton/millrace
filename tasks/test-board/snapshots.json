@@ -313,5 +313,20 @@
         "count": 0
       }
     ]
+  },
+  {
+    "date": "2026-11-25",
+    "columns": [
+      {
+        "name": "To Do",
+        "type": "to_do",
+        "count": 0
+      },
+      {
+        "name": "Doing",
+        "type": "in_progress",
+        "count": 0
+      }
+    ]
   }
 ]

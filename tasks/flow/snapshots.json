@@ -1,0 +1,42 @@
+[
+  {
+    "date": "2026-11-25",
+    "columns": [
+      {
+        "name": "New",
+        "type": "to_do",
+        "count": 3
+      },
+      {
+        "name": "Development",
+        "type": "in_progress",
+        "count": 2
+      },
+      {
+        "name": "PR",
+        "type": "waiting",
+        "count": 2
+      },
+      {
+        "name": "Dev test",
+        "type": "in_progress",
+        "count": 0
+      },
+      {
+        "name": "Deployed to test",
+        "type": "in_progress",
+        "count": 1
+      },
+      {
+        "name": "Testing",
+        "type": "in_progress",
+        "count": 0
+      },
+      {
+        "name": "Ready to deploy",
+        "type": "waiting",
+        "count": 0
+      }
+    ]
+  }
+]
