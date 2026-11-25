@@ -1294,6 +1294,9 @@ function renderBoard(
         const li = document.createElement("li");
         li.className = "column-card";
         if (card.strategic) li.classList.add("column-card--strategic");
+        /** Recurring cards are templates: keep them compact (no note or links). */
+        const isRecurringCard = Boolean(recurrenceLabel(card.recurrence));
+        if (isRecurringCard) li.classList.add("column-card--recurring");
         const titleText = displayTaskTitle(card);
         const titleEl = document.createElement("div");
         titleEl.className = "column-card-title";
@@ -1333,7 +1336,8 @@ function renderBoard(
         } else {
           li.append(titleEl);
         }
-        const noteLine = card.note && String(card.note).trim();
+        const noteLine =
+          !isRecurringCard && card.note && String(card.note).trim();
         if (noteLine) {
           const noteEl = document.createElement("div");
           noteEl.className = "column-card-note";
@@ -1397,7 +1401,11 @@ function renderBoard(
           li.append(own);
         }
 
-        if (Array.isArray(card.links) && card.links.length > 0) {
+        if (
+          !isRecurringCard &&
+          Array.isArray(card.links) &&
+          card.links.length > 0
+        ) {
           const linkWrap = document.createElement("div");
           linkWrap.className = "column-card-links";
           for (const link of card.links) {
