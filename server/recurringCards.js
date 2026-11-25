@@ -13,6 +13,7 @@ import {
   parseRecurrence,
 } from "../assets/js/ini/recurrence.js";
 import { resolveCardSwimlaneIndex } from "../assets/js/ini/swimlaneResolve.js";
+import { linksWithSourceCardLink } from "../assets/js/ui/cardDeepLink.js";
 import { isAggregateBoard } from "../assets/js/models/aggregateBoard.js";
 import { columnTypeOf } from "../assets/js/models/boardModel.js";
 import { parseTaskCardIniFull } from "../assets/js/models/taskModel.js";
@@ -69,6 +70,9 @@ const SPAWN_SKIP_KEYS = new Set([
   "next_action_date",
 ]);
 
+/** Fallback origin for "Source card" links when no request/server address is known. */
+const DEFAULT_BASE_HREF = "http://localhost:8888/";
+
 /** Per-slug in-flight runs so concurrent board loads never double-spawn. */
 const inFlight = new Map();
 
@@ -76,7 +80,8 @@ const inFlight = new Map();
  * Spawn copies of due recurring cards on one board and roll their next action
  * dates forward. Safe to call repeatedly; does nothing when nothing is due.
  * @param {string} slugRaw
- * @param {{ nowMs?: number, mine?: string }} [opts] — `mine` defaults to `[user] mine` in localuser.ini
+ * @param {{ nowMs?: number, mine?: string, baseHref?: string }} [opts] — `mine` defaults to
+ *   `[user] mine` in localuser.ini; `baseHref` is the app origin for the "Source card" link
  * @returns {Promise<{ spawned: Array<{ source: string, filename: string }> }>}
  */
 export function runRecurringCardsForSlug(slugRaw, opts = {}) {
@@ -94,7 +99,7 @@ export function runRecurringCardsForSlug(slugRaw, opts = {}) {
 
 /**
  * @param {string} slug
- * @param {{ nowMs?: number, mine?: string }} opts
+ * @param {{ nowMs?: number, mine?: string, baseHref?: string }} opts
  */
 async function spawnDueRecurringCards(slug, opts) {
   /** @type {Array<{ source: string, filename: string }>} */
@@ -172,7 +177,14 @@ async function spawnDueRecurringCards(slug, opts) {
     try {
       await fs.writeFile(
         path.join(boardRoot, filename),
-        serializeFullCardIni(copy, links),
+        serializeFullCardIni(
+          copy,
+          linksWithSourceCardLink(links, {
+            boardSlug: slug,
+            filename: ent.name,
+            baseHref: opts.baseHref || DEFAULT_BASE_HREF,
+          })
+        ),
         "utf8"
       );
     } catch (e) {
@@ -196,8 +208,11 @@ async function spawnDueRecurringCards(slug, opts) {
   return { spawned };
 }
 
-/** Run the recurring sweep for every board in the catalog (startup). */
-export async function runRecurringCardsForCatalogSlugs() {
+/**
+ * Run the recurring sweep for every board in the catalog (startup).
+ * @param {{ baseHref?: string }} [opts]
+ */
+export async function runRecurringCardsForCatalogSlugs(opts = {}) {
   let catalog = [];
   try {
     catalog = await loadBoardCatalog();
@@ -206,7 +221,7 @@ export async function runRecurringCardsForCatalogSlugs() {
   }
   for (const entry of catalog) {
     try {
-      await runRecurringCardsForSlug(entry.slug);
+      await runRecurringCardsForSlug(entry.slug, opts);
     } catch (e) {
       console.warn("[millrace] recurring sweep failed for", entry.slug, e);
     }

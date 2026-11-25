@@ -42,7 +42,9 @@ app.get("/api/board", async (req, res) => {
   try {
     const slug = sanitizeSegment(String(req.query.boardSlug ?? "board"));
     try {
-      await runRecurringCardsForSlug(slug);
+      await runRecurringCardsForSlug(slug, {
+        baseHref: `${req.protocol}://${req.get("host")}/`,
+      });
     } catch (e) {
       console.warn("[millrace] recurring sweep failed for", slug, e);
     }

@@ -25,7 +25,9 @@ async function onListen() {
     `Millrace ${where} (data root ${dataRoot()}${boardOk ? "" : ` — warning: missing ${boardPath} and ${catalogPath}`})`
   );
   await runStartupArchiveStaleForCatalogSlugs();
-  await runRecurringCardsForCatalogSlugs();
+  await runRecurringCardsForCatalogSlugs({
+    baseHref: `http://${HOST != null && HOST !== "" ? HOST : "localhost"}:${PORT}/`,
+  });
 }
 
 /** Resolve to the real path so symlinked installs (e.g. pnpm) match argv[1]. */

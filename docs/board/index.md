@@ -72,7 +72,7 @@ On an **aggregate board**, copied links use the **source** board where the card 
 - **Strategic**: Tick this box for crucial tasks, they get a target icon and extra highlighting.
 - **Notes**: A short text field for useful contextual information, which is shown on the card.
 - **Next action date**: Add a next action date to bring cards to your attention.
-- **Recurring**: Tick **Recurring** and choose how often (every *n* weeks or months). When the card's next action date arrives, Millrace adds a copy to your board's **To do** column (the first column with the *To do* type, whatever you have named it) and moves the recurring card's next action date to today plus the interval. Copies are only created for cards assigned to you (your **Mine** email in preferences), so cards owned by someone on leave wait until they're back. Recurring cards need an owner and a next action date, and closed recurring cards stop repeating.
+- **Recurring**: Tick **Recurring** and choose how often (every *n* weeks or months). When the card's next action date arrives, Millrace adds a copy to your board's **To do** column (the first column with the *To do* type, whatever you have named it) and moves the recurring card's next action date to today plus the interval. The copy gets a **Source card** link back to the recurring card. Copies are only created for cards assigned to you (your **Mine** email in preferences), so cards owned by someone on leave wait until they're back. Recurring cards need an owner and a next action date, and closed recurring cards stop repeating.
 - **List progress**: If you add a list to your card [markdown](../markdown.md), your progress will be shown on the card.
 
 ## Version control sync

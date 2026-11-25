@@ -143,7 +143,21 @@ Then(
     const { item, links } = await spawnedCopy(slug, source);
     assert.strictEqual(item.title, "Water the plants");
     assert.strictEqual(item.owner, "owner@example.com");
-    assert.deepStrictEqual(links, [{ text: "Plant guide", url: "https://example.com/plants" }]);
+    assert.deepStrictEqual(links[0], { text: "Plant guide", url: "https://example.com/plants" });
     assert.notStrictEqual(item.id, source.replace(/\.ini$/, ""));
+  }
+);
+
+Then(
+  "the spawned copy of {string} on board {string} should link to its source card",
+  async function (source, slug) {
+    const { links } = await spawnedCopy(slug, source);
+    assert.strictEqual(links.length, 2);
+    const link = links[1];
+    assert.strictEqual(link.text, "Source card");
+    const u = new URL(link.url);
+    assert.match(u.protocol, /^https?:$/);
+    assert.strictEqual(u.searchParams.get("board"), slug);
+    assert.strictEqual(u.searchParams.get("card"), source.replace(/\.ini$/, ""));
   }
 );

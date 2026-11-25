@@ -45,6 +45,7 @@ Feature: Recurring cards
     And the spawned copy of "FLOW-rec.ini" on board "test" should have next action date 3 days ago
     And the spawned copy of "FLOW-rec.ini" on board "test" should not be recurring
     And the spawned copy of "FLOW-rec.ini" on board "test" should keep the title, owner and links
+    And the spawned copy of "FLOW-rec.ini" on board "test" should link to its source card
     When I send a GET request to "/api/board?boardSlug=test"
     Then the integration board "test" should have 2 card files
 

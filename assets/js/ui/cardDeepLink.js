@@ -47,13 +47,14 @@ export function cardMatchesId(card, cardId) {
 }
 
 /**
- * @param {{ boardSlug: string, cardId: string }} opts
+ * @param {{ boardSlug: string, cardId: string, baseHref?: string }} opts —
+ *   `baseHref` defaults to the current page (the server passes its own origin)
  * @returns {string}
  */
 export function buildCardDeepLinkUrl(opts) {
   const boardSlug = String(opts.boardSlug ?? "").trim();
   const cardId = normalizeCardId(opts.cardId);
-  const u = new URL(window.location.href);
+  const u = new URL(opts.baseHref || window.location.href);
   u.search = "";
   u.hash = "";
   u.searchParams.set("board", boardSlug);
@@ -65,7 +66,7 @@ export const SOURCE_CARD_LINK_TEXT = "Source card";
 
 /**
  * @param {Array<{ text?: string, url?: string }>} links
- * @param {{ boardSlug: string, filename: string }} source
+ * @param {{ boardSlug: string, filename: string, baseHref?: string }} source
  * @returns {Array<{ text: string, url: string }>}
  */
 export function linksWithSourceCardLink(links, source) {
@@ -85,6 +86,7 @@ export function linksWithSourceCardLink(links, source) {
       url: buildCardDeepLinkUrl({
         boardSlug,
         cardId: normalizeCardId(filename),
+        baseHref: source.baseHref,
       }),
     },
   ];
