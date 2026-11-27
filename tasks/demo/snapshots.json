@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-09-19",
+    "date": "2026-11-01",
     "columns": [
       {
         "name": "To Do",
@@ -15,7 +15,7 @@
     ]
   },
   {
-    "date": "2026-09-26",
+    "date": "2026-11-08",
     "columns": [
       {
         "name": "To Do",
@@ -30,7 +30,7 @@
     ]
   },
   {
-    "date": "2026-10-03",
+    "date": "2026-11-15",
     "columns": [
       {
         "name": "To Do",
@@ -45,7 +45,7 @@
     ]
   },
   {
-    "date": "2026-10-10",
+    "date": "2026-11-22",
     "columns": [
       {
         "name": "To Do",
@@ -60,72 +60,12 @@
     ]
   },
   {
-    "date": "2026-10-15",
+    "date": "2026-11-27",
     "columns": [
       {
         "name": "To Do",
         "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-10-16",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-10-19",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-10-20",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
-      },
-      {
-        "name": "Doing",
-        "type": "in_progress",
-        "count": 3
-      }
-    ]
-  },
-  {
-    "date": "2026-11-25",
-    "columns": [
-      {
-        "name": "To Do",
-        "type": "options",
-        "count": 22
+        "count": 23
       },
       {
         "name": "Doing",
